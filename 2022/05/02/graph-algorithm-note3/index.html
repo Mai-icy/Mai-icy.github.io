@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>图算法笔记3 - 有向图算法 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="图算法笔记3 - 有向图算法"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>图算法笔记3 - 有向图算法</h2>
+            <div class="post-meta">
+                <time class="date">2022.05.02</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="有向图"><a href="#有向图" class="headerlink" title="有向图"></a>有向图</h2><p>特点：每条边都是有方向的，从一个顶点到另一个顶点</p>
+<p>术语：</p>
+<ul>
+<li><strong>指出</strong>：⓪→① 顶点0指出顶点1</li>
+<li><strong>出度</strong>：对于⓪→①→②  0和1 都各有一条出度</li>
+<li><strong>入度</strong>：1 和 2 都各有一条入度</li>
+<li><strong>头</strong>：一条有向边的第一个顶点</li>
+<li><strong>尾</strong>：与头相反</li>
+<li><strong>有向路径</strong>：由一系列顶点和有向边组成如⓪→①→②</li>
+<li><strong>简单有向环</strong>：除起点和终点其它各不相同</li>
+<li><strong>长度</strong>：包含的边数</li>
+<li><strong>达到</strong>：当有⓪→① 则 1能由0达到</li>
+<li><strong>强连通</strong>：对于⓪，①若存在⓪→① 的路径也存在①→⓪的路径，则称0，1强连通</li>
+<li><strong>强连通分量</strong>：对于同一强连通分量的顶点，任一两点都强连通</li>
+</ul>
+<h3 id="有向图基本API"><a href="#有向图基本API" class="headerlink" title="有向图基本API"></a>有向图基本API</h3><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Digraph(int v)</td>
+<td>创建一个含有V个点无边的无向图</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>V()</td>
+<td>查看顶点数</td>
+<td>int</td>
+</tr>
+<tr>
+<td>E()</td>
+<td>查看边数</td>
+<td>int</td>
+</tr>
+<tr>
+<td>addEdge(int v, int w)</td>
+<td>向图中添加一条v-w边</td>
+<td>int</td>
+</tr>
+<tr>
+<td>adj(int v)</td>
+<td>查看v的出度</td>
+<td>Bag<int></td>
+</tr>
+<tr>
+<td>reverse()</td>
+<td>该图的反向图</td>
+<td>Digraph</td>
+</tr>
+</tbody></table>
+<h4 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h4><p>有向图的基本api和无向图的区别在于有向图有reverse()函数用于生成一张反向图，其实现也十分简单。还有一点就是adj函数变成用于查询出度。这都是由于有向图的实现方式，有向图我们依旧使用邻接表数组，但是原来的边会记录两次，分别为该边连接的两点，但有向图为了体现边的有向性，将一条有向边只记录一次，记录在指出这条边的点。既然如此，reverse函数的实现也变得简单，只需要创建一个新有向图，遍历邻接表中的每一个点的出度（也就是遍历所有有向边）并将原本的有向边的尾记录为新的头。</p>
+<h4 id="Digraph头文件"><a href="#Digraph头文件" class="headerlink" title="Digraph头文件"></a>Digraph头文件</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Digraph</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Digraph</span>(<span class="type">int</span> v);</span><br><span class="line">    <span class="built_in">Digraph</span>(<span class="type">const</span> Digraph &amp;G);</span><br><span class="line">    ~<span class="built_in">Digraph</span>() &#123; <span class="keyword">delete</span>[] _adj; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">V</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> vertex_num; &#125;;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">E</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> edge_num; &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">addEdge</span><span class="params">(<span class="type">int</span> v, <span class="type">int</span> w)</span></span>;</span><br><span class="line">    <span class="function">Bag&lt;<span class="type">int</span>&gt; <span class="title">adj</span><span class="params">(<span class="type">int</span> v)</span> </span>&#123; <span class="keyword">return</span> _adj[v]; &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function">Digraph <span class="title">reverse</span><span class="params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    Digraph &amp;<span class="keyword">operator</span>=(<span class="type">const</span> Digraph &amp;G);</span><br><span class="line">    <span class="keyword">friend</span> std::ostream &amp;<span class="keyword">operator</span>&lt;&lt;(std::ostream &amp;os, <span class="type">const</span> Digraph &amp;G);</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="type">int</span> vertex_num;</span><br><span class="line">    <span class="type">int</span> edge_num;</span><br><span class="line">    Bag&lt;<span class="type">int</span>&gt; *_adj;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h4 id="addEdge的改变"><a href="#addEdge的改变" class="headerlink" title="addEdge的改变"></a>addEdge的改变</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">inline</span> <span class="type">void</span> <span class="title">Digraph::addEdge</span><span class="params">(<span class="type">int</span> v, <span class="type">int</span> w)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> temp : <span class="built_in">adj</span>(v))</span><br><span class="line">        <span class="keyword">if</span> (temp == w)</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">if</span> (v == w)</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    _adj[v].<span class="built_in">add</span>(w); <span class="comment">// 有向图只加一边</span></span><br><span class="line">    edge_num++;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="reverse的实现"><a href="#reverse的实现" class="headerlink" title="reverse的实现"></a>reverse的实现</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">Digraph <span class="title">Digraph::reverse</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">Digraph <span class="title">reverse_digraph</span><span class="params">(vertex_num)</span></span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; vertex_num; i++)</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> v : _adj[i])</span><br><span class="line">            reverse_digraph.<span class="built_in">addEdge</span>(v, i);</span><br><span class="line">    <span class="keyword">return</span> reverse_digraph;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="有向图算法"><a href="#有向图算法" class="headerlink" title="有向图算法"></a>有向图算法</h3><h4 id="有向图的可达性API"><a href="#有向图的可达性API" class="headerlink" title="有向图的可达性API"></a>有向图的可达性API</h4><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DirectedDFS(Digraph G, int s)</td>
+<td>找到和起点s连通的所有顶点</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>DirectedDFS(Digraph G, Bag<int> b)</td>
+<td>找到和一组起点连通的所有顶点</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>marked(int v)</td>
+<td>v和s(一组起点)是否连通</td>
+<td>bool</td>
+</tr>
+</tbody></table>
+<p>有向图的可达性也就是主要利用DFS和BFS的算法，会如同一下的有向图的寻路。</p>
+<h4 id="有向图的寻路API"><a href="#有向图的寻路API" class="headerlink" title="有向图的寻路API"></a>有向图的寻路API</h4><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Path(Digraph G, int s)</td>
+<td>创建一个含有V个点无边的无向图</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>hasPathTo(int v)</td>
+<td>是否存在从s到v 的路径</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>pathTo(int v)</td>
+<td>s到v的路径，如果不存在，返回空序列</td>
+<td>int</td>
+</tr>
+</tbody></table>
+<h4 id="DFS"><a href="#DFS" class="headerlink" title="DFS"></a>DFS</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">Path::<span class="built_in">Path</span>(Digraph G, <span class="type">int</span> s) : _marked(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()]&#123;<span class="literal">false</span>&#125;), <span class="built_in">edgeTo</span>(<span class="keyword">new</span> <span class="type">int</span>[G.<span class="built_in">V</span>()]), <span class="built_in">root_node</span>(s)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">dfs</span>(G, s);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Path::dfs</span><span class="params">(Digraph G, <span class="type">int</span> s)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    _marked[s] = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> v : G.<span class="built_in">adj</span>(s))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (!_marked[v])&#123;</span><br><span class="line">            edgeTo[v] = s;</span><br><span class="line">            _count++;</span><br><span class="line">            <span class="built_in">dfs</span>(G, v);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="BFS"><a href="#BFS" class="headerlink" title="BFS"></a>BFS</h4><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">Path::<span class="built_in">Path</span>(Digraph G, <span class="type">int</span> s) : _marked(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()]&#123;<span class="literal">false</span>&#125;), <span class="built_in">edgeTo</span>(<span class="keyword">new</span> <span class="type">int</span>[G.<span class="built_in">V</span>()]), <span class="built_in">root_node</span>(s)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">bfs</span>(G, s);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Path::bfs</span><span class="params">(Digraph G, <span class="type">int</span> s)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">using</span> <span class="keyword">namespace</span> std;</span><br><span class="line">    queue&lt;<span class="type">int</span>&gt; b_que;</span><br><span class="line">    _marked[s] = <span class="literal">true</span>;</span><br><span class="line">    b_que.<span class="built_in">push</span>(s);</span><br><span class="line">    <span class="keyword">while</span> (!b_que.<span class="built_in">empty</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">int</span> v = b_que.<span class="built_in">front</span>();</span><br><span class="line">        b_que.<span class="built_in">pop</span>();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> w : G.<span class="built_in">adj</span>(v))</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (!_marked[w])</span><br><span class="line">            &#123;</span><br><span class="line">                _marked[w] = <span class="literal">true</span>;</span><br><span class="line">                edgeTo[w] = v;</span><br><span class="line">                b_que.<span class="built_in">push</span>(w);</span><br><span class="line">                _count++;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>分析：BFS和DFS在有向图中依旧可以使用，甚至代码几乎没有什么变化，此处作为复习。同理只有BFS的实现才是最短路径。</p>
+<h4 id="拓扑排序"><a href="#拓扑排序" class="headerlink" title="拓扑排序"></a>拓扑排序</h4><p>情景：此时你需要为一些任务进行排序，而且，这些任务中的部分包含先后顺序的要求，例如存在任务ABCD其中D需要在A之后完成，C要在A之前完成，B要在A之后完成。此时如何排序就成为一种实际问题。</p>
+<p>对这种问题进行抽象化，将任务抽象化为一个顶点，之间的先后要求抽象成有向边此时我们可以得到</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">A((A))</span><br><span class="line">B((B))</span><br><span class="line">C((C))</span><br><span class="line">D((D))</span><br><span class="line"></span><br><span class="line">A --&gt; D</span><br><span class="line">C --&gt; A</span><br><span class="line">A --&gt; B</span><br></pre></td></tr></table></figure>
+
+<p>对于以上的描述，我们得到一张十分简单的有向图，虽然此时我们能一下分辨先后，但是如果有多个顶点，任务就复杂起来。我们需要一种算法，来解决这种问题。</p>
+<p>思考：为了确保任务的顺利完成，我们先要排除<strong>不可处理的情况</strong>。此时，对于可进行这种排序的有向图，它一定是无环的，若有环，例如对于任务ABC，如下图所示，根本无法进行排序。所以在解决问题之前，我们应该先排除有向环的存在。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">A((A))</span><br><span class="line">B((B))</span><br><span class="line">C((C))</span><br><span class="line">A --&gt; B</span><br><span class="line">B --&gt; C</span><br><span class="line">C --&gt; A</span><br></pre></td></tr></table></figure>
+
+<h4 id="寻找有向环API"><a href="#寻找有向环API" class="headerlink" title="寻找有向环API"></a>寻找有向环API</h4><h4 id="有向图的寻路API-1"><a href="#有向图的寻路API-1" class="headerlink" title="有向图的寻路API"></a>有向图的寻路API</h4><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DirectedCycle(Digraph G)</td>
+<td>寻找有向环构造函数</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>hasCycle()</td>
+<td>G是否存在有向环</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>cycle()</td>
+<td>有向环中的所有顶点（如果存在）</td>
+<td>Bag<int></td>
+</tr>
+</tbody></table>
+<p>头文件</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">DirectedCycle</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">DirectedCycle</span>(Digraph G);</span><br><span class="line">    ~<span class="built_in">DirectedCycle</span>()&#123; <span class="keyword">delete</span> [] onStack, edgeTo;&#125;</span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">hasCycle</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> !_cycle.<span class="built_in">isEmpty</span>(); &#125;;</span><br><span class="line">    <span class="function">Bag&lt;<span class="type">int</span>&gt; <span class="title">cycle</span><span class="params">()</span> </span>&#123; <span class="keyword">return</span> _cycle; &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dfs</span><span class="params">(Digraph G, <span class="type">int</span> s)</span></span>;</span><br><span class="line"></span><br><span class="line">    Bag&lt;<span class="type">int</span>&gt; _cycle;</span><br><span class="line">    <span class="type">bool</span> *marked;</span><br><span class="line">    <span class="type">bool</span> *onStack;</span><br><span class="line">    <span class="type">int</span> *edgeTo;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>思路：和无向图的搜索环类似，利用深度优先搜索，记录当前的路径，若出现重复顶点又不是根节点，即为环。此时要获取环，只需要利用edgeTo数组的链接即可。</p>
+<p>实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">DirectedCycle::<span class="built_in">DirectedCycle</span>(Digraph G) : <span class="built_in">marked</span>(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()]), <span class="built_in">onStack</span>(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()]), <span class="built_in">edgeTo</span>(<span class="keyword">new</span> <span class="type">int</span>[G.<span class="built_in">V</span>()])</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; G.<span class="built_in">V</span>(); i++)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (!marked[i])</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">dfs</span>(G, i);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">DirectedCycle::dfs</span><span class="params">(Digraph G, <span class="type">int</span> s)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    onStack[s] = <span class="literal">true</span>;</span><br><span class="line">    marked[s] = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> v : G.<span class="built_in">adj</span>(s))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">hasCycle</span>())</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (!marked[v])</span><br><span class="line">        &#123;</span><br><span class="line">            edgeTo[v] = s;</span><br><span class="line">            <span class="built_in">dfs</span>(G, v);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">else</span> <span class="keyword">if</span> (onStack[v])</span><br><span class="line">        &#123;</span><br><span class="line">            Bag&lt;<span class="type">int</span>&gt; cc;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> x = s; x != v; x = edgeTo[x])</span><br><span class="line">                cc.<span class="built_in">add</span>(x);</span><br><span class="line">            cc.<span class="built_in">add</span>(v);</span><br><span class="line">            cc.<span class="built_in">add</span>(s);</span><br><span class="line">            _cycle = cc;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    onStack[s] = <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="拓扑排序-1"><a href="#拓扑排序-1" class="headerlink" title="拓扑排序"></a>拓扑排序</h4><p>解决了环的判定，此时我们就可以进入正题了，这种排序的名称为<strong>拓扑排序</strong></p>
+<p>要求：给定一有向图，将所有的顶点排序，使所有顶点只能指向排在后面的点。</p>
+<p>示例：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">0((0))</span><br><span class="line">1((1));2((2));3((3));4((4));5((5));6((6));7((7));8((8));9((9));10((10))</span><br><span class="line">11((11));12((12))</span><br><span class="line"></span><br><span class="line">0 --&gt; 1; 0--&gt;6; 0--&gt;5;</span><br><span class="line">2 --&gt; 0; 2--&gt;3;</span><br><span class="line">3 --&gt; 5;</span><br><span class="line">5 --&gt; 4; 6--&gt;4;</span><br><span class="line">7 --&gt; 6; 6--&gt;9;</span><br><span class="line">9 --&gt; 10; 9--&gt;12; 11--&gt;12;</span><br><span class="line">9 --&gt; 11;</span><br><span class="line">8 --&gt;7 ; 7--&gt;6;</span><br></pre></td></tr></table></figure>
+
+<p>以上图的排序结果(理想)：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line">0((8))</span><br><span class="line">1((7));2((2));3((3));4((0));5((6));6((9));7((10));8((11));9((12));10((1))</span><br><span class="line">11((5));12((4))</span><br><span class="line">0 --&gt; 1;1 --&gt; 2;2 --&gt; 3;3 --&gt; 4;4 --&gt; 5;5 --&gt; 6;6 --&gt; 7;7 --&gt; 8;8 --&gt; 9;9 --&gt; 10;10 --&gt; 11;11 --&gt; 12;</span><br></pre></td></tr></table></figure>
+
+<h4 id="拓扑排序API"><a href="#拓扑排序API" class="headerlink" title="拓扑排序API"></a>拓扑排序API</h4><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Topological(WeightedDigraph G)</td>
+<td>对有向图G的节点进行拓扑排序</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>isDAG()</td>
+<td>图是否有环</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>order()</td>
+<td>返回拓扑排序的结果</td>
+<td>Bag<int></td>
+</tr>
+</tbody></table>
+<p>头文件</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Topological</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">Topological</span>(WeightedDigraph G);</span><br><span class="line">    ~<span class="built_in">Topological</span>() &#123; <span class="keyword">delete</span>[] marked, onStack; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">isDAG</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> !resOrder.<span class="built_in">isEmpty</span>(); &#125;;</span><br><span class="line">    <span class="function">Bag&lt;<span class="type">int</span>&gt; <span class="title">order</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> resOrder; &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="type">bool</span> *marked;</span><br><span class="line">    <span class="type">bool</span> *onStack;</span><br><span class="line">    Bag&lt;<span class="type">int</span>&gt; resOrder;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dfs</span><span class="params">(WeightedDigraph G, <span class="type">int</span> v)</span></span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>思路：</p>
+<p>1.根据拓扑排序遍历顶点</p>
+<p>2.每次dfs操作后将点加入栈</p>
+<p>3.遍历结束后栈的结果即为拓扑排序顺序</p>
+<p>实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Topological::<span class="built_in">Topological</span>(WeightedDigraph G) : <span class="built_in">marked</span>(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()]), <span class="built_in">onStack</span>(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()])</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">DirectedCycle <span class="title">dc</span><span class="params">(G)</span></span>;</span><br><span class="line">    <span class="keyword">if</span> (!dc.<span class="built_in">hasCycle</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="built_in">dfs</span>(G, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">Topological::dfs</span><span class="params">(WeightedDigraph G, <span class="type">int</span> v)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    marked[v] = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> w : G.<span class="built_in">adj</span>(v))</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span>(!marked[w])</span><br><span class="line">            <span class="built_in">dfs</span>(G, w);</span><br><span class="line">    &#125;</span><br><span class="line">    resOrder.<span class="built_in">add</span>(v);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>分析：主要的实现方法为DFS。首先，DFS会遍历所有的点，其次拓扑排序不一定只有一种结果。以下图为例。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">graph LR</span><br><span class="line"></span><br><span class="line">0((0));1((1));2((2));3((3));4((4));</span><br><span class="line">0 --&gt; 4; 1--&gt;0; 3--&gt;0; 2--&gt;3; 1--&gt;2; 2--&gt;4;</span><br></pre></td></tr></table></figure>
+
+<p><strong>当从0开始</strong>进行DFS(先0-&gt;4再1-&gt;2-&gt;3)被忽略的关系2 -&gt; 4 ; 3 -&gt; 0 ; 1 -&gt; 0;</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">0((0));1((1));2((2));3((3));4((4));</span><br><span class="line">1 --&gt; 2;</span><br><span class="line">2 --&gt; 3;</span><br><span class="line">0 --&gt; 4;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>当从1开始</strong>，被忽略的关系3 -&gt; 0; 2-&gt;4</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">0((0));1((1));2((2));3((3));4((4));</span><br><span class="line">1--&gt;0--&gt;4;1--&gt;2--&gt;3;</span><br></pre></td></tr></table></figure>
+
+<p><strong>当从2开始</strong>，被忽略的关系1 -&gt; 0; 1 -&gt; 2; 2 -&gt; 4</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">0((0));1((1));2((2));3((3));4((4));</span><br><span class="line">2--&gt;3--&gt;0--&gt;4;</span><br></pre></td></tr></table></figure>
+
+<p><strong>当从3开始</strong>，被忽略的关系1 -&gt; 0; 2 -&gt; 3; 2 -&gt; 4</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">graph TB</span><br><span class="line">0((0));1((1));2((2));3((3));4((4));</span><br><span class="line">3--&gt;0--&gt;4; 1--&gt;2;</span><br></pre></td></tr></table></figure>
+
+<p>分析：以上可发现被无视的有向边均为新节点指向旧树。也就是说<strong>旧节点不可能再指向新节点</strong>，它们应当被放在排序的最后端。</p>
+<p>原因：DFS保证生成的树已为最深，确保遍历了每个点的指向，以保证不会再有旧节点指向新的节点，不会被指向的节点作为排序尾理所应当，故不断排入尾即可。最后再利用stack逆序。</p>
+<h4 id="有向图强连通分量API"><a href="#有向图强连通分量API" class="headerlink" title="有向图强连通分量API"></a>有向图强连通分量API</h4><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SCC(WeightedDigraph G)</td>
+<td>查找G图中的</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>stronglyConnected(int v, int w)</td>
+<td>查看w，v点是否强连通</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>count()</td>
+<td>查看强连通分量的数量</td>
+<td>int</td>
+</tr>
+<tr>
+<td>id(int v)</td>
+<td>查看v点所在连通分量</td>
+<td>int</td>
+</tr>
+</tbody></table>
+<p>头文件</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">SCC</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="built_in">SCC</span>(WeightedDigraph G);</span><br><span class="line">    ~<span class="built_in">SCC</span>() &#123; <span class="keyword">delete</span>[] _id, marked; &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="type">bool</span> <span class="title">stronglyConnected</span><span class="params">(<span class="type">int</span> v, <span class="type">int</span> w)</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> _id[w] == _id[v]; &#125;;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">count</span><span class="params">()</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> _count; &#125;;</span><br><span class="line">    <span class="function"><span class="type">int</span> <span class="title">id</span><span class="params">(<span class="type">int</span> v)</span> <span class="type">const</span> </span>&#123; <span class="keyword">return</span> _id[v]; &#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">dfs</span><span class="params">(WeightedDigraph G, <span class="type">int</span> s)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">int</span> *_id;</span><br><span class="line">    <span class="type">bool</span> *marked;</span><br><span class="line">    <span class="type">int</span> _count = <span class="number">0</span>;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>有向图也存在连通性问题，但在有向图中，被称为<strong>强连通性</strong>。在一条有向环中，各个顶点都互相强连通。</p>
+<h5 id="Kosaraju算法"><a href="#Kosaraju算法" class="headerlink" title="Kosaraju算法"></a>Kosaraju算法</h5><p>思路：</p>
+<p>1.利用DFS的拓扑排序（DFO）对G的反向图进行排序</p>
+<p>2.按照1得到的顺序对G进行DFS</p>
+<p>3.其中同一个DFS中遇到的点都在同一个强连通分量中</p>
+<p>实现：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">SCC::<span class="built_in">SCC</span>(WeightedDigraph G) : _id(<span class="keyword">new</span> <span class="type">int</span>[G.<span class="built_in">V</span>()]), <span class="built_in">marked</span>(<span class="keyword">new</span> <span class="type">bool</span>[G.<span class="built_in">V</span>()])</span><br><span class="line">&#123;</span><br><span class="line">    <span class="function">Topological <span class="title">ts</span><span class="params">(G.reverse())</span></span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> s : ts.<span class="built_in">order</span>())</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">if</span> (!marked[s])</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="built_in">dfs</span>(G, s);</span><br><span class="line">            _count++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">void</span> <span class="title">SCC::dfs</span><span class="params">(WeightedDigraph G, <span class="type">int</span> v)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    marked[v] = <span class="literal">true</span>;</span><br><span class="line">    _id[v] = _count;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> w : G.<span class="built_in">adj</span>(v))</span><br><span class="line">        <span class="keyword">if</span> (!marked[w])</span><br><span class="line">            <span class="built_in">dfs</span>(G, w);</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>分析：<strong>Kosaraju算法</strong>简单但难以理解，首先要理解DFO在有环图中的排序行为。</p>
+<p>深入<strong>拓扑排序DFO</strong></p>
+<p>1.DFO一棵树内关系</p>
+<p>DFO对第一个起点进行DFS，即从起点生成一棵树。其中生成的第一颗树，我们可以发现起点为这个树的<strong>根</strong>，并且对于树的任一节点，都存在起点到节点的<strong>有向路径</strong>。</p>
+<p>2.DFO多颗树先后关系</p>
+<p>若生成多颗树，即为存在起点无法连接到的点，其中，由于第一颗树保证了深度最大，不会指向后面的节点，换句话说，后面生成的树中的任一节点不会被前面的旧节点指向。</p>
+<p>第一步：对G的反向图同样分析</p>
+<p>若逆后序为⑥|①|⓪⑤③②④|⑦⑧</p>
+<p>其中⑥①不会指向后面的节点⑤③②④有指向⓪的路径。则如果⓪有指向⑤③②④中的任一节点，那必成为一有向环，即为同一连通分量。且⓪⑤③②④中的任一节点不可能指向之后的节点。又⓪⑤③②④是拓扑排序保证了⑤③不可能指向②④，除非在同一树枝上。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">graph BT</span><br><span class="line">0((0));5((5));2((2));3((3));4((4));</span><br><span class="line">4--&gt;2--&gt;0;3--&gt;5--&gt;0;</span><br></pre></td></tr></table></figure>
+
+<p>例如②可以指向④，⑤可以指向③，这一点是DFO的特性，也保证了Kosaraju算法的正确性。</p>
+<p>第二步：</p>
+<p>当分析⑥的时候因⑥不可能被后面的任一节点指向。⑥自己成为一分量，分析①同理。</p>
+<p>当分析⓪的时候⓪ -&gt; ②则②⑥成为一分量，若就此结束，到⑤的时候，⑤不可能指向④（理由见上文）也不会导致问题。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/04/22/graph-algorithm-note1/">图算法笔记1 - 基础知识和DFS&BFS</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/03/19/pynote1/">python - 选择更高效的容器(一)</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/03/10/crawler-1/">爬虫学习(1) - 超基础篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/03/09/hello-world/">搭建博客ヾ(≧▽≦*)o</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2022 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
