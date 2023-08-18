@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/static/hingle.css">
 
     
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/FortAwesome/Font-Awesome/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
     <meta property="og:site_name" content="Mai Icy">
@@ -37,7 +37,7 @@
         <div class="has-child">
             <a>分类</a>
             <div class="sub-menu">
-                <a class="category-link" href="/categories/python/">python</a>
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
             </div>
         </div>
         
@@ -69,6 +69,190 @@
 
         </section>
         <section class="home-posts">
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a>
+        </h2>
+    
+        <p>C Primer Plus 笔记13.4.5 可移植类型：stdint.h 和 intypes.h3.4.6 浮点型常量默认情况下，编译器假定浮点型常量是double类型的精度，假设以下：
+fl...</p>
+    
+        <div class="post-meta">
+            <time class="date">2023.08.18</time>
+            
+                <span class="category"><a class="category-link" href="/categories/C/">C</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/C/" rel="tag">C</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a>
+        </h2>
+    
+        <p>requests源码阅读笔记requests的使用方面1可将Response实例直接置于条件判断中，转为bool为是否为200ok
+源码：
+def __bool__(self):
+    &#34;&#34;&#34;...</p>
+    
+        <div class="post-meta">
+            <time class="date">2023.02.09</time>
+            
+                <span class="category"><a class="category-link" href="/categories/python/">python</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/python-requests/" rel="tag">python requests</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a>
+        </h2>
+    
+        <p>requests源码阅读整理主要运行过程和思想程序目录（源码的代码内文件注释）：
+models.py: This module contains the primary objects that...</p>
+    
+        <div class="post-meta">
+            <time class="date">2023.02.09</time>
+            
+                <span class="category"><a class="category-link" href="/categories/python/">python</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/python-requests/" rel="tag">python requests</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a>
+        </h2>
+    
+        <p>加权图数据类型因为继承体系，我们将图分为有权图和无权图，又各自分为有向和无向。
+有权图依旧使用邻接表来实现。
+基类头文件
+class BaseGraph
+&amp;#123;
+public:
+    B...</p>
+    
+        <div class="post-meta">
+            <time class="date">2022.05.17</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a>
+        </h2>
+    
+        <p>有向图特点：每条边都是有方向的，从一个顶点到另一个顶点
+术语：
+
+指出：⓪→① 顶点0指出顶点1
+出度：对于⓪→①→②  0和1 都各有一条出度
+入度：1 和 2 都各有一条入度
+头：一条有向边...</p>
+    
+        <div class="post-meta">
+            <time class="date">2022.05.02</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a>
+        </h2>
+    
+        <p>探究：union-find算法连通分量：处于同一连通分量的点相互连通。
+算法API
+
+
+接口
+操作
+返回类型
+
+
+
+connect(int w, int v)
+连接 w，v点
+void
+
+
+fi...</p>
+    
+        <div class="post-meta">
+            <time class="date">2022.05.01</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2022/04/22/graph-algorithm-note1/">图算法笔记1 - 基础知识和DFS&amp;BFS</a>
+        </h2>
+    
+        <p>图算法无向图术语
+相邻：⓪-① 1与0相邻
+依附：⓪-① 该连接依附于0和1
+度数：⓪-①-② 1的度数为2(依附于它的边的总数)
+子图：一幅图所有边的子集
+路径：由边顺序连接的一系列节点
+(简...</p>
+    
+        <div class="post-meta">
+            <time class="date">2022.04.22</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
+            <a href="/2022/03/19/pynote1/">python - 选择更高效的容器(一)</a>
+        </h2>
+    
+        <p>python - 选择更高效的容器整理自fluent-python “当列表不是首选时”
+注：此文暂不包括字典类对象
+python的常用容器《fluent-python》一书把python容器以...</p>
+    
+        <div class="post-meta">
+            <time class="date">2022.03.19</time>
+            
+                <span class="category"><a class="category-link" href="/categories/python/">python</a></span>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/python/" rel="tag">python</a></span>
+            
+        </div>
+    </div>
     
     <div class="post-item">
         <h2>
@@ -120,20 +304,20 @@
             <div class="row">
                 <div class="col-m-4">
                     <h3 class="title-recent">最新文章：</h3>
-                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2022/03/10/crawler-1/">爬虫学习(1) - 超基础篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/03/09/hello-world/">搭建博客ヾ(≧▽≦*)o</a></li></ul>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-date">时光机：</h3>
-                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-tags">标签云：</h3>
-                    <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
                 </div>
             </div>
         </section>
         <section class="sub-footer">
-            <p>© 2022 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
         </section>
     </div>
 </footer>

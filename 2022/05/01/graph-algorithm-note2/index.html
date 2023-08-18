@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>图算法笔记2 - 连通分量算法union-find - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="图算法笔记2 - 连通分量算法union-find"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>图算法笔记2 - 连通分量算法union-find</h2>
+            <div class="post-meta">
+                <time class="date">2022.05.01</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <blockquote>这篇文章上次修改于 475 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+        
+            <h3 id="探究：union-find算法"><a href="#探究：union-find算法" class="headerlink" title="探究：union-find算法"></a>探究：union-find算法</h3><p>连通分量：处于同一连通分量的点相互连通。</p>
+<h3 id="算法API"><a href="#算法API" class="headerlink" title="算法API"></a>算法API</h3><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>connect(int w, int v)</td>
+<td>连接 w，v点</td>
+<td>void</td>
+</tr>
+<tr>
+<td>find(int v)</td>
+<td>查看v点的连通分量</td>
+<td>int</td>
+</tr>
+<tr>
+<td>connected(int w, int v)</td>
+<td>查看w和v是否连通</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>count()</td>
+<td>查看连通分量的数量</td>
+<td>int</td>
+</tr>
+</tbody></table>
+<h4 id="UF头文件"><a href="#UF头文件" class="headerlink" title="UF头文件"></a>UF头文件</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class UF
+&#123;
+public:
+    UF(int n);
+    UF(const UF &amp;uf);
+    ~UF() &#123; delete[] id; &#125;
+
+    virtual void connect(int w, int v);
+    virtual int find(int v) const;
+    bool connected(int w, int v) const &#123; return find(w) &#x3D;&#x3D; find(v); &#125;;
+    int count() const &#123; return _count; &#125;;
+
+    UF &amp;operator&#x3D;(const UF &amp;uf);
+    friend std::ostream &amp;operator&lt;&lt;(std::ostream &amp;os, const UF &amp;uf);
+
+protected:
+    int size;
+    int _count;
+    int *id &#x3D; nullptr;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="quick-find算法："><a href="#quick-find算法：" class="headerlink" title="quick-find算法："></a>quick-find算法：</h4><p>目的：实现find的高效</p>
+<p>实现：维护数组id，点在id对应的值即为改点的连通分量。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">inline int UF::find(int v) const &#123; return id[v]; &#125;
+
+void UF::connect(int w, int v)
+&#123;
+    int w_id &#x3D; id[w];
+    int v_id &#x3D; id[v];
+    if (w_id &#x3D;&#x3D; v_id)
+        return;
+    for (int i &#x3D; 0; i &lt; size; i++)
+    &#123;
+        if (id[i] &#x3D;&#x3D; w_id)
+            id[i] &#x3D; v;
+        _count--;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>connect操作为找到两点的连通分量，遍历数组，将两个连通分量的元素值统一。</p>
+<p>分析：实现find的高效会导致connect函数的连接操作变的复杂。find操作的时间复杂度成功降到O(1)，但connect的操作由于要遍历一遍数组，时间复杂度也达到O(N)。</p>
+<h4 id="quick-union算法"><a href="#quick-union算法" class="headerlink" title="quick-union算法"></a>quick-union算法</h4><p>目的：实现connect的高效</p>
+<p>实现：维护数组id，整个数据结构成为树状，每个连通分量为一颗树，每颗树的根节点即为该树的连通分量值，同理，若id数组中该点的下标和值一样，这个点就是根节点。此时若要connect，只需要把连接的一点连向另一点即可（连接之前确保两点不在同一连通分量）</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int UF::find(int v) const
+&#123;
+    while (v !&#x3D; id[v])
+        v &#x3D; id[v];
+    return v;
+&#125;
+
+void UF::connect(int w, int v)
+&#123;
+    int w_id &#x3D; find(w);
+    int v_id &#x3D; find(v);
+    if (w_id &#x3D;&#x3D; v_id)
+        return;
+    id[w] &#x3D; v;
+    _count--;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：同样，为了实现connect的高效，find操作的效率也有所牺牲。在一些最坏情况下，一棵树可能深度很大，就会导致效率很低。为了优化，提出了加权quick-union算法，在两个连通分量连接的时候，为了避免造出一颗深度很大的树，加权quick-union算法确保小树添加在大树上。</p>
+<h4 id="加权quick-union算法"><a href="#加权quick-union算法" class="headerlink" title="加权quick-union算法"></a>加权quick-union算法</h4><p>目的：quick-union算法在坏情况下的低效率</p>
+<p>实现：额外维护数组size，size存放了每个连通分量对应的树的深度，并以此为依据，保证两树连接的时候，深度小的树连接在深度大的树上。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int WUF::find(int v) const
+&#123;
+    int ori_p &#x3D; v;
+    while (v !&#x3D; id[v])
+        v &#x3D; id[v];
+    return v;
+&#125;
+
+void WUF::connect(int w, int v)
+&#123;
+    int w_id &#x3D; find(w);
+    int v_id &#x3D; find(v);
+    if (w_id &#x3D;&#x3D; v_id)
+        return;
+    if (sz[w] &lt; sz[v])
+    &#123;
+        id[w] &#x3D; v;
+        sz[v] +&#x3D; sz[w];
+    &#125;
+    else
+    &#123;
+        id[v] &#x3D; w;
+        sz[w] +&#x3D; sz[v];
+    &#125;
+    _count--;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：维护了数组sz，用额外的空间复杂度换取了时间复杂度的降低。但加权quick-union算法仍然有进步空间。加权任一节点深度最大为log(N)。</p>
+<h4 id="路径压缩的加权quick-union算法"><a href="#路径压缩的加权quick-union算法" class="headerlink" title="路径压缩的加权quick-union算法"></a>路径压缩的加权quick-union算法</h4><p>目的：更加优化加权quick-union算法</p>
+<p>实现：实现及其简单，在确保connect高效的情况下，提高find的效率，只需要在每次find的时候，将被搜索的点直接连接到其树的根节点，在多次find之后便可以减小树的深度。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int WUF::find(int v) const
+&#123;
+    int ori_p &#x3D; v;
+    while (v !&#x3D; id[v])
+        v &#x3D; id[v];
+    id[ori_p] &#x3D; v; &#x2F;&#x2F; 路径压缩
+    return v;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：虽然看起来十分简单粗暴，但是在实际测试使用中，确实会达到更加高效的效果。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li>
+                
+                
+                    <li>下一篇: <a href="/2022/04/22/graph-algorithm-note1/">图算法笔记1 - 基础知识和DFS&amp;BFS</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>

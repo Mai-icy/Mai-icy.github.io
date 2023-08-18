@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>图算法笔记1 - 基础知识和DFS&amp;BFS - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="图算法笔记1 - 基础知识和DFS&amp;BFS"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>图算法笔记1 - 基础知识和DFS&amp;BFS</h2>
+            <div class="post-meta">
+                <time class="date">2022.04.22</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <blockquote>这篇文章上次修改于 483 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+        
+            <h1 id="图算法"><a href="#图算法" class="headerlink" title="图算法"></a>图算法</h1><h2 id="无向图"><a href="#无向图" class="headerlink" title="无向图"></a>无向图</h2><h3 id="术语"><a href="#术语" class="headerlink" title="术语"></a>术语</h3><ul>
+<li><strong>相邻</strong>：⓪-① 1与0相邻</li>
+<li><strong>依附</strong>：⓪-① 该连接依附于0和1</li>
+<li><strong>度数</strong>：⓪-①-② 1的度数为2(依附于它的边的总数)</li>
+<li><strong>子图</strong>：一幅图所有边的子集</li>
+<li><strong>路径</strong>：由边顺序连接的一系列节点</li>
+<li><strong>(简单)路径</strong>：一条没有重复节点的路径</li>
+<li><strong>环</strong>：至少包含一条起点终点相投的路径</li>
+<li><strong>(简单)环</strong>：起点和终点相同其他节点不同，环的长度等于边的个数</li>
+<li><strong>连通</strong>：⓪-① 1与0连通</li>
+<li><strong>连通图</strong>：可以从任一顶点到达任一其他点</li>
+<li><strong>极大连通子图</strong>：非连通图有多个连通图构成</li>
+<li><strong>无环图</strong>：没有环的图</li>
+<li><strong>树</strong>：一种无环图(连通图,去掉任意一边便不全连,加任一边便产生环,任一两点只有一种路径)</li>
+<li><strong>森林</strong>：互不相连的数组成的集合</li>
+<li><strong>生成树</strong>：连通图的生成树是它的一副子图，含有所有的顶点</li>
+<li><strong>生成树森林</strong>：同理</li>
+<li><strong>密度</strong>：已经连通的点占所有点对的比例（分为稠密图和稀疏图）</li>
+<li><strong>二分图</strong>：将所有的节点分为两部分，每条边的两个节点都能属于不同部分</li>
+</ul>
+<h3 id="无向图基本API"><a href="#无向图基本API" class="headerlink" title="无向图基本API"></a>无向图基本API</h3><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Graph(int v)</td>
+<td>创建一个含有V个点无边的无向图</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>V()</td>
+<td>查看顶点数</td>
+<td>int</td>
+</tr>
+<tr>
+<td>E()</td>
+<td>查看边数</td>
+<td>int</td>
+</tr>
+<tr>
+<td>addEdge(int v, int w)</td>
+<td>向图中添加一条v-w边</td>
+<td>int</td>
+</tr>
+<tr>
+<td>adj(int v)</td>
+<td>查看v相邻的点</td>
+<td>Bag<int></td>
+</tr>
+</tbody></table>
+<h4 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h4><p>对于无向图的数据类型，我们选用邻接表数组。邻接表数组即一个数组内的每个元素维护一个bag对象，由于c++没有Bag对象，我们将进行定义。Bag对象的特点类似于链表，可以不断添加，但Bag不能删除元素，因为基本api并不要求删除，若要求，可以换个类型例如链表。</p>
+<h4 id="Undigraph头文件"><a href="#Undigraph头文件" class="headerlink" title="Undigraph头文件"></a>Undigraph头文件</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">&#x2F;&#x2F; 代码中Undigraph显示为Graph
+class Graph
+&#123;
+public:
+    Graph(int v);
+    Graph(const Graph &amp;G);
+    ~Graph() &#123; delete[] _adj; &#125;
+
+    int V() &#123; return vertex_num; &#125;;
+    int E() &#123; return edge_num; &#125;;
+
+    void addEdge(int v, int w);
+    Bag&lt;int&gt; adj(int v) &#123;return _adj[v];&#125; ;
+ 
+    Graph &amp;operator&#x3D;(const Graph &amp;G);
+    friend std::ostream &amp;operator&lt;&lt;(std::ostream &amp;os, const Graph &amp;G);
+
+private:
+    int vertex_num;
+    int edge_num;
+    Bag&lt;int&gt; *_adj;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：</p>
+<p>而对于无向图的实现，我们还可以使用<strong>邻接矩阵</strong>，使用V*V的布尔值二维数组，但是将要花费V平方级别的内存空间，百万个点的图也是很常见的，这样的花销十分不值得。</p>
+<p>我们还可以使用<strong>边的数组</strong>，使用一个Edge类，有两个int成员变量来代表连接的两个点，但是对于adj()的实现，便要遍历整个边的数组，时间花费成本高达O(E)。</p>
+<p>对于<strong>邻接表数组</strong>，添加边的操作，时间复杂度为O(1)。adj()函数实现也只需要查看对应数组内的Bag内容即可。优点：性能好 缺点：内存占用大(但是相对于邻接矩阵，可以省下相当的空间大小)。</p>
+<h3 id="图连接查找-API"><a href="#图连接查找-API" class="headerlink" title="图连接查找 API"></a>图连接查找 API</h3><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Search(Graph G, int s)</td>
+<td>找到和起点s连通的所有顶点</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>marked(int v)</td>
+<td>v和s是否连通</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>count()</td>
+<td>与s连通的顶点总数</td>
+<td>int</td>
+</tr>
+</tbody></table>
+<h4 id="寻找路径算法-API"><a href="#寻找路径算法-API" class="headerlink" title="寻找路径算法 API"></a>寻找路径算法 API</h4><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Path(Graph G, int s)</td>
+<td>创建一个含有V个点无边的无向图</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>hasPathTo(int v)</td>
+<td>是否存在从s到v 的路径</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>pathTo(int v)</td>
+<td>s到v的路径，如果不存在，返回空序列</td>
+<td>int</td>
+</tr>
+</tbody></table>
+<h4 id="Search-头文件"><a href="#Search-头文件" class="headerlink" title="Search 头文件"></a>Search 头文件</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class Search
+&#123;
+public:
+    Search(Graph G, int s);
+    bool marked(int v) &#123; return _marked[v]; &#125;;
+    int count() const &#123; return _count; &#125;;
+    ~Search() &#123; delete[] _marked; &#125;
+
+private:
+    void dfs(Graph G, int s);
+    void bfs(Graph G, int s);
+
+    bool *_marked &#x3D; nullptr;
+    int _count &#x3D; 0;
+    int root_node;
+&#125;;
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="Path头文件"><a href="#Path头文件" class="headerlink" title="Path头文件"></a>Path头文件</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class Path
+&#123;
+public:
+    Path(Graph G, int s);
+    ~Path() &#123; delete[] _marked; &#125;
+
+    Bag&lt;int&gt; pathTo(int v);
+    bool hasPathTo(int v) &#123; return _marked[v]; &#125;;
+    bool marked(int v) &#123; return _marked[v]; &#125;;
+    int count() const &#123; return _count; &#125;;
+
+private:
+    void dfs(Graph G, int s);
+    void bfs(Graph G, int s);
+
+    bool *_marked &#x3D; nullptr;
+    int *edgeTo &#x3D; nullptr;
+    int _count &#x3D; 0;
+    int root_node;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这里我们将会介绍图算法中最基本的两种算法，以用来解决上面两种问题，由于上面的两种问题具有共通性，于是放在一起介绍。</p>
+<p>关于路径搜索</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Bag&lt;int&gt; Path::pathTo(int v)
+&#123;
+    if (!hasPathTo(v))
+        return Bag&lt;int&gt;();
+    Bag&lt;int&gt; path;
+    for (int x &#x3D; v; x !&#x3D; root_node; x &#x3D; edgeTo[x])
+    &#123;
+        path.add(x);
+    &#125;
+    path.add(root_node);
+    Bag&lt;int&gt; reserve(path);
+    return reserve;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们在Search的基础上进行修改即可，Search需要遍历起点连通的所有点。Path也需要遍历所有点。对于路径搜索，只需要在遍历到点的时候，将该点连接到上一个点即上面的edgeTo[v] &#x3D; s;这一句。路径搜索需要额外维护一个数组edgeTo，以用来保存每个点指向根节点的路径，以便在pathTo函数中，输出点的路径。</p>
+<p>当查找点v到s的路径时，若v在以s为根节点的树内，则_marked[v]应当为true(v点在遍历中被标记)，此时，寻找关于点v到s的路径，只需要按照树的连接，从子节点不断输出到根节点。</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((3))</span>
+D<span class="token text string">((2))</span>
+E<span class="token text string">((4))</span>
+F<span class="token text string">((5))</span>
+
+A <span class="token arrow operator">---</span> B
+A <span class="token arrow operator">---</span> C
+B <span class="token arrow operator">---</span> D
+B <span class="token arrow operator">---</span> E
+C <span class="token arrow operator">---</span> F
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>以上图为例此时edgeTo数组为（第一行为数组下标，第二行为其值）</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+A<span class="token text string">[0]</span>
+B<span class="token text string">[1]</span>
+C<span class="token text string">[2]</span>
+D<span class="token text string">[3]</span>
+E<span class="token text string">[4]</span>
+F<span class="token text string">[5]</span>
+
+a<span class="token text string">[0]</span>
+b<span class="token text string">[0]</span>
+c<span class="token text string">[1]</span>
+d<span class="token text string">[0]</span>
+e<span class="token text string">[1]</span>
+f<span class="token text string">[3]</span>
+
+A <span class="token arrow operator">--></span>a
+B <span class="token arrow operator">--></span>b
+C <span class="token arrow operator">--></span>c
+D <span class="token arrow operator">--></span>d
+E <span class="token arrow operator">--></span>e
+F <span class="token arrow operator">--></span>f
+
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="Search-amp-Path实现一：DFS深度优先搜索（Deep-First-Search）"><a href="#Search-amp-Path实现一：DFS深度优先搜索（Deep-First-Search）" class="headerlink" title="Search&amp;Path实现一：DFS深度优先搜索（Deep First Search）"></a>Search&amp;Path实现一：DFS深度优先搜索（Deep First Search）</h4><p>思路：</p>
+<p>1.访问一个顶点时，将其标记为已访问。</p>
+<p>2.递归地访问没有被标记的邻接顶点。</p>
+<p>实现：</p>
+<h4 id="Search"><a href="#Search" class="headerlink" title="Search"></a>Search</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Search::Search(Graph G, int s) : _marked(new bool[G.V()]&#123;false&#125;),  root_node(s)
+&#123;
+    dfs(G, s);
+&#125;
+
+void Search::dfs(Graph G, int s)
+&#123;
+    _marked[s] &#x3D; true;
+    for (int v : G.adj(s))
+    &#123;
+        if (!_marked[v])
+        &#123;
+            dfs(G, v);
+            _count++;
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="Path"><a href="#Path" class="headerlink" title="Path"></a>Path</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Path::Path(Graph G, int s) : _marked(new bool[G.V()]&#123;false&#125;), edgeTo(new int[G.V()]), root_node(s)
+&#123;
+    dfs(G, s);
+&#125;
+
+void Path::dfs(Graph G, int s)
+&#123;
+    _marked[s] &#x3D; true;
+    for (int v : G.adj(s))
+    &#123;
+        if (!_marked[v])
+        &#123;
+            edgeTo[v] &#x3D; s;
+            dfs(G, v);
+            _count++;
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：DFS的核心思路是广度优先，也因此主要实现方法就是递归</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((4))</span>
+D<span class="token text string">((2))</span>
+E<span class="token text string">((3))</span>
+F<span class="token text string">((5))</span>
+G<span class="token text string">((6))</span>
+A <span class="token arrow operator">---</span> B
+A <span class="token arrow operator">---</span> C
+B <span class="token arrow operator">---</span> D
+B <span class="token arrow operator">---</span> E
+C <span class="token arrow operator">---</span> F
+C <span class="token arrow operator">---</span> G<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>DFS的搜索顺序如上图的序号，从0-6。主要操作的函数是dfs，在对点进行dfs操作时，标记这个点并遍历它邻接的每一个点，若接下来的点没有被标记（没有dfs过）就对其进行dfs。并且在寻找路径算法的实现中也多添加了edgeTo[v] &#x3D; s;以用来连接点而记录路径。然而，当我们需要找到最短路径的时候，DFS并不能达到其效果</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((2))</span>
+D<span class="token text string">((3))</span>
+
+A <span class="token arrow operator">---</span> B
+B <span class="token arrow operator">---</span> C
+C <span class="token arrow operator">---</span> D
+D <span class="token arrow operator">---</span> A<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>对于以上图，当使用DFS的广度优先搜索时，输出3-0的路径，可能为3 -&gt; 2 -&gt; 1 -&gt; 0 而并不是最短路径 3 -&gt; 0</p>
+<p>此时，我们提出BFS广度优先搜索。</p>
+<h4 id="Search-amp-Path实现二：BFS广度优先搜索（Breadth-First-Search）"><a href="#Search-amp-Path实现二：BFS广度优先搜索（Breadth-First-Search）" class="headerlink" title="Search&amp;Path实现二：BFS广度优先搜索（Breadth First Search）"></a>Search&amp;Path实现二：BFS广度优先搜索（Breadth First Search）</h4><p>目的：为了实现最短路径搜索，我们希望图按照以下0-6的顺序搜索，这样便可达到目的，若存在短的路径，将会先被记录进edgeTo数组。实现BFS广度优先搜索就不能使用递归的方法。</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((2))</span>
+D<span class="token text string">((3))</span>
+E<span class="token text string">((4))</span>
+F<span class="token text string">((5))</span>
+G<span class="token text string">((6))</span>
+A <span class="token arrow operator">---</span> B
+A <span class="token arrow operator">---</span> C
+B <span class="token arrow operator">---</span> D
+B <span class="token arrow operator">---</span> E
+C <span class="token arrow operator">---</span> F
+C <span class="token arrow operator">---</span> G<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>思路：</p>
+<p>1.维护一个队列queue，用来储存即将被查找的点。</p>
+<p>2.从队列中取出一个点，对其进行操作，并将其邻接的没有被记录过的点全部加入队列。</p>
+<p>3.重复2的操作直至队列为空。</p>
+<p>实现：</p>
+<h4 id="Search-1"><a href="#Search-1" class="headerlink" title="Search"></a>Search</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Search::Search(Graph G, int s) : _marked(new bool[G.V()]&#123;false&#125;), root_node(s)
+&#123;
+    bfs(G, s);
+&#125;
+
+void Search::bfs(Graph G, int s)
+&#123;
+    std::queue&lt;int&gt; que_marked;
+    _marked[s] &#x3D; true;
+    que_marked.push(s);
+    while (!que_marked.empty())
+    &#123;
+        int v &#x3D; que_marked.front();
+        que_marked.pop();
+        for (int w : G.adj(v))
+        &#123;
+            if (!_marked[w])
+            &#123;
+                _marked[w] &#x3D; true;
+                que_marked.push(w);
+                _count++;
+            &#125;
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="Path-1"><a href="#Path-1" class="headerlink" title="Path"></a>Path</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void Search::bfs(Graph G, int s)
+&#123;
+    std::queue&lt;int&gt; que_marked;
+    _marked[s] &#x3D; true;
+    que_marked.push(s);
+    while (!que_marked.empty())
+    &#123;
+        int v &#x3D; que_marked.front();
+        que_marked.pop();
+        for (int w : G.adj(v))
+        &#123;
+            if (!_marked[w])
+            &#123;
+                _marked[w] &#x3D; true;
+                que_marked.push(w);
+                _count++;
+            &#125;
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：BFS也即是广度优先，以广度（和起点最近）为优先。借此我们也能解决最短路径的问题。</p>
+<h3 id="对比DFS和BFS"><a href="#对比DFS和BFS" class="headerlink" title="对比DFS和BFS"></a>对比DFS和BFS</h3><p>我们将对以下这幅图分别进行DFS和BFS的搜索，并记录结果</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((2))</span>
+D<span class="token text string">((3))</span>
+E<span class="token text string">((4))</span>
+F<span class="token text string">((5))</span>
+G<span class="token text string">((6))</span>
+A <span class="token arrow operator">---</span> B
+A <span class="token arrow operator">---</span> C
+B <span class="token arrow operator">---</span> D
+D <span class="token arrow operator">---</span> E
+D <span class="token arrow operator">---</span> F
+C <span class="token arrow operator">---</span> F
+C <span class="token arrow operator">---</span> G<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="DFS"><a href="#DFS" class="headerlink" title="DFS"></a>DFS</h4><pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> BT
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((2))</span>
+D<span class="token text string">((3))</span>
+E<span class="token text string">((4))</span>
+F<span class="token text string">((5))</span>
+G<span class="token text string">((6))</span>
+
+E <span class="token arrow operator">--></span> D
+F <span class="token arrow operator">--></span> D
+D <span class="token arrow operator">--></span> B
+B <span class="token arrow operator">--></span> A
+G <span class="token arrow operator">--></span> C
+C <span class="token arrow operator">--></span> A<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="BFS"><a href="#BFS" class="headerlink" title="BFS"></a>BFS</h4><pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> BT
+A<span class="token text string">((0))</span>
+B<span class="token text string">((1))</span>
+C<span class="token text string">((2))</span>
+D<span class="token text string">((3))</span>
+E<span class="token text string">((4))</span>
+F<span class="token text string">((5))</span>
+G<span class="token text string">((6))</span>
+
+E <span class="token arrow operator">--></span> D
+F <span class="token arrow operator">--></span> C
+D <span class="token arrow operator">--></span> B
+B <span class="token arrow operator">--></span> A
+G <span class="token arrow operator">--></span> C
+C <span class="token arrow operator">--></span> A<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：由上图的对比可见 DFS忽略边5-2 而BFS忽略 5-3， 此时对5进行路径查找</p>
+<p>DFS的路径将会是5 -&gt; 3 -&gt; 1 -&gt; 0, BFS的路径将会是5 -&gt; 2 -&gt; 0</p>
+<p>由上可得，BFS生成的树深度会最小，而DFS不能保证，但为了实现BFS，我们需要额外维护一个队列。</p>
+<h3 id="拓展"><a href="#拓展" class="headerlink" title="拓展"></a>拓展</h3><p>两者的用途：</p>
+<p>BFS：找到最小路径</p>
+<p>DFS：找到目标，判断是否有环，判断是否为二分图</p>
+<h4 id="判断是否有环"><a href="#判断是否有环" class="headerlink" title="判断是否有环"></a>判断是否有环</h4><p>思路：利用无环图在DFS中不会出现重复遍历的特点，若出现了重复遍历，需要判断其是否为根节点，若不是，则包含环</p>
+<h4 id="判断是否为二分图"><a href="#判断是否为二分图" class="headerlink" title="判断是否为二分图"></a>判断是否为二分图</h4><p>思路：用color来标识两种集合，已知无环图必为二分图，所以只需要查看有环部分是否成立即可。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li>
+                
+                
+                    <li>下一篇: <a href="/2022/03/19/pynote1/">python - 选择更高效的容器(一)</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>

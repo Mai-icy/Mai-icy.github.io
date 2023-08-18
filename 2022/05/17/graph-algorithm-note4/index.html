@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>图算法笔记4 - 加权图 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="图算法笔记4 - 加权图"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>图算法笔记4 - 加权图</h2>
+            <div class="post-meta">
+                <time class="date">2022.05.17</time>
+            
+                <span class="category"><a class="category-link" href="/categories/algorithm/">algorithm</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <blockquote>这篇文章上次修改于 459 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+        
+            <h1 id="加权图"><a href="#加权图" class="headerlink" title="加权图"></a>加权图</h1><h2 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h2><p>因为继承体系，我们将图分为有权图和无权图，又各自分为有向和无向。</p>
+<h3 id="有权图"><a href="#有权图" class="headerlink" title="有权图"></a>有权图</h3><p>依旧使用邻接表来实现。</p>
+<p>基类头文件</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class BaseGraph
+&#123;
+public:
+    BaseGraph(int v) : vertex_num(v)&#123;&#125;;
+    int V() const &#123; return vertex_num; &#125;;
+    int E() const &#123; return edge_num; &#125;;
+
+protected:
+    int vertex_num;
+    int edge_num &#x3D; 0;
+&#125;;
+
+class BaseWeightedGraph : public BaseGraph
+&#123;
+public:
+    BaseWeightedGraph(int v) : BaseGraph(v) &#123;&#125;
+    virtual void addEdge(int v, int w, double weight) &#x3D; 0;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="有权边"><a href="#有权边" class="headerlink" title="有权边"></a>有权边</h3><p>将原来的边变为一个新的类型。</p>
+<p>基类头文件</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class BaseEdge
+&#123;
+public:
+    BaseEdge() : v(-1), w(-1), weight_(0)&#123;&#125;;
+    BaseEdge(int v, int w, double wei) : v(v), w(w), weight_(wei)&#123;&#125;;
+    double weight() const &#123; return weight_; &#125;;
+    bool operator&gt;(const BaseEdge &amp;e) const &#123; return e.weight() &lt; this-&gt;weight_; &#125;
+    bool operator&lt;(const BaseEdge &amp;e) const &#123; return e.weight() &gt; this-&gt;weight_; &#125;
+    bool operator&gt;&#x3D;(const BaseEdge &amp;e) const &#123; return !(e &gt; *this); &#125;
+    bool operator&lt;&#x3D;(const BaseEdge &amp;e) const &#123; return !(e &lt; *this); &#125;
+
+protected:
+    int v;
+    int w;
+    double weight_;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<h2 id="最小生成树（MST）"><a href="#最小生成树（MST）" class="headerlink" title="最小生成树（MST）"></a>最小生成树（MST）</h2><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MST(WeightedGraph G)</td>
+<td>找到图G的最小生成树</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>edges()</td>
+<td>返回最小生成树的所有边</td>
+<td>Bag<Edge></td>
+</tr>
+<tr>
+<td>weight()</td>
+<td>返回最小生成树的边的权值和</td>
+<td>double</td>
+</tr>
+</tbody></table>
+<p>输入：一幅加权无向图</p>
+<p>输出：一颗最小生成树</p>
+<h4 id="前提："><a href="#前提：" class="headerlink" title="前提："></a>前提：</h4><ul>
+<li><p>只考虑连通图（如果一幅图非连通，则只能有最小生成森林）</p>
+</li>
+<li><p>边的权重不一定是距离</p>
+</li>
+<li><p>边的权重可能是0或者负数</p>
+</li>
+<li><p>所有边的权重各不相同（若相同，最小生成树的结果将不唯一，还要外加以证明）</p>
+</li>
+</ul>
+<h4 id="树的特性："><a href="#树的特性：" class="headerlink" title="树的特性："></a>树的特性：</h4><ul>
+<li>删去任一一边都会使树变为两颗</li>
+<li>加一边必出环</li>
+</ul>
+<h3 id="预备理论"><a href="#预备理论" class="headerlink" title="预备理论"></a>预备理论</h3><h4 id="切分定理"><a href="#切分定理" class="headerlink" title="切分定理"></a>切分定理</h4><p>术语：</p>
+<p>切分：将图的所有顶点分为两非空不重复集合</p>
+<p>横切边：一条连接两个属于不同集合的两个点的边</p>
+<p>内容：对一图的任一切分，横切边的最小权重必被最小生成树包含。</p>
+<p>证明：反证法（略）</p>
+<h4 id="数据类型-1"><a href="#数据类型-1" class="headerlink" title="数据类型"></a>数据类型</h4><p>这里用到的是有权无向图和有权无向边</p>
+<h5 id="有权无向图"><a href="#有权无向图" class="headerlink" title="有权无向图"></a>有权无向图</h5><p>头文件</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class WeightedGraph : public BaseWeightedGraph
+&#123;
+public:
+    WeightedGraph(int v) : BaseWeightedGraph(v), _adj(new Bag&lt;Edge&gt;[v])&#123;&#125;;
+    WeightedGraph(const WeightedGraph &amp;G);
+    ~WeightedGraph() &#123; delete[] _adj; &#125;
+
+    void addEdge(int v, int w, double weight);
+    void addEdge(const Edge &amp;e);
+    Bag&lt;Edge&gt; adj(int v) const &#123; return _adj[v]; &#125;;
+    Bag&lt;Edge&gt; edges() const;
+
+    WeightedGraph &amp;operator&#x3D;(const WeightedGraph &amp;G);
+    friend std::ostream &amp;operator&lt;&lt;(std::ostream &amp;os, const WeightedGraph &amp;G);
+
+private:
+    Bag&lt;Edge&gt; *_adj;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h5 id="有权边-1"><a href="#有权边-1" class="headerlink" title="有权边"></a>有权边</h5><p>将原来的边变为一个新的类型。</p>
+<p>基类头文件</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class Edge : public BaseEdge
+&#123;
+public:
+    Edge() : BaseEdge()&#123;&#125;;
+    Edge(int v, int w, double wei) : BaseEdge(v, w, wei)&#123;&#125;;
+    int either() const &#123; return v; &#125;
+    int other(int ver) const;
+
+    bool operator&#x3D;&#x3D;(const Edge &amp;edge) const &#123; return edge.weight() &#x3D;&#x3D; this-&gt;weight(); &#125;
+
+    friend std::ostream &amp;operator&lt;&lt;(std::ostream &amp;os, const Edge &amp;edge);
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="Prim算法"><a href="#Prim算法" class="headerlink" title="Prim算法"></a>Prim算法</h3><p>思路：</p>
+<p>1.从树的第一个节点开始，将起点和其他点作为两类利用<strong>切分定理</strong>找到第一处连接</p>
+<p>2.再将新连接的点加入原来起点的那一类。对新的两个类的<strong>横切边</strong>进行<strong>切分定理</strong>判断</p>
+<p>3.以此类推</p>
+<p>分析：由此我们可以发现算法的实现体现了对横切边容器的处理上。对此Prim算法就出现了两种版本，<strong>Prim延时算法</strong>和<strong>Prim即时算法</strong>。两者都利用<strong>优先队列</strong>。</p>
+<h4 id="Prim延时算法"><a href="#Prim延时算法" class="headerlink" title="Prim延时算法"></a>Prim延时算法</h4><p>此时的优先队列维护<strong>边</strong>和<strong>边的权值</strong>，以边的权值作为优先标准。</p>
+<p>思路：</p>
+<p>1.以一个起点开始，在优先队列中加入其相邻的边。</p>
+<p>2.生长出其中权值最小的边，在优先队列中继续添加新增点的相邻边。</p>
+<p>3.同上，以此类推。</p>
+<p>实现：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class LazyPrimMST
+&#123;
+public:
+    LazyPrimMST(WeightedGraph G);
+    ~LazyPrimMST() &#123; delete[] marked; &#125;
+    Bag&lt;Edge&gt; edges() const &#123; return mst; &#125;
+    double weight() const;
+
+private:
+    edge_pq pq;
+    bool *marked;
+    Bag&lt;Edge&gt; mst;
+
+    void visit(WeightedGraph G, int v);
+&#125;;
+
+LazyPrimMST::LazyPrimMST(WeightedGraph G) : marked(new bool[G.V()])
+&#123;
+    visit(G, 0);
+    while (!pq.empty())
+    &#123;
+        Edge e &#x3D; pq.top();
+        pq.pop();
+        int v &#x3D; e.either(), w &#x3D; e.other(v);
+        if (marked[v] &amp;&amp; marked[w])
+            continue;
+        mst.add(e);
+        if (!marked[v])
+            visit(G, v);
+        if (!marked[w])
+            visit(G, w);
+    &#125;
+&#125;
+
+void LazyPrimMST::visit(WeightedGraph G, int v)
+&#123;
+    marked[v] &#x3D; true;
+    for (Edge e : G.adj(v))
+        if (!marked[e.other(v)])
+            pq.push(e);
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：其中，按照思路进行时，我们会遇到一些问题。例如以下</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>5<span class="token text string">((5))</span><span class="token punctuation">;</span>6<span class="token text string">((6))</span><span class="token punctuation">;</span>7<span class="token text string">((7))</span><span class="token punctuation">;</span>8<span class="token text string">((8))</span><span class="token punctuation">;</span>
+
+5 <span class="token arrow operator">---</span> 4<span class="token punctuation">;</span>5 <span class="token arrow operator">---</span> 1<span class="token punctuation">;</span>5 <span class="token arrow operator">---</span> 6<span class="token punctuation">;</span>
+6 <span class="token arrow operator">---</span> 1<span class="token punctuation">;</span>6 <span class="token arrow operator">---</span> 2<span class="token punctuation">;</span>6 <span class="token arrow operator">---</span> 8<span class="token punctuation">;</span>
+8 <span class="token arrow operator">---</span> 2<span class="token punctuation">;</span>8 <span class="token arrow operator">---</span> 3<span class="token punctuation">;</span>8 <span class="token arrow operator">---</span> 7<span class="token punctuation">;</span>
+7 <span class="token arrow operator">---</span> 4<span class="token punctuation">;</span>7 <span class="token arrow operator">---</span> 3<span class="token punctuation">;</span>
+1 <span class="token arrow operator">---</span> 3<span class="token punctuation">;</span>1 <span class="token arrow operator">---</span> 2 <span class="token arrow operator">---</span> 3<span class="token punctuation">;</span> <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>问题：对如上图，其中重复边的问题，当2-1-3为当前树的时候，由于加入2节点的时候，优先队列中已经有2-3的边直到依次加入1，3，2-3边依旧存在于优先队列，若此时2-3边出列，然后在树中2，3已经连接了，故会成环出错。</p>
+<p>解决：仅需要维护一个布尔值数组marked即可，marked用于标记已经在树内的点，当我们要添加无效边2-3的时候，若23已在树内则不会添加。</p>
+<p>分析：也因此特性，在部分边无效的时候，它还存在于队列中，只有在出队的时候才会被删除，故成为Prim延时算法。</p>
+<h4 id="Prim即时算法"><a href="#Prim即时算法" class="headerlink" title="Prim即时算法"></a>Prim即时算法</h4><p>此时的优先队列维护<strong>边</strong>和<strong>边的权值</strong>，以边的权值作为优先标准。</p>
+<p>思路：</p>
+<p>1.以一个起点开始，将这个点周边的点和它们到起点的边的权值加入队列</p>
+<p>2.在增长新的节点后，将新点周边的点和它们到新点的边的权值“设置”入队列</p>
+<p>“设置”是指若队列中已存在该点，比较新权值和旧权值，小的留下。若不存在则直接加入</p>
+<p>3.以此类推</p>
+<p>实现：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &quot;MST.hpp&quot;
+
+class PrimMST
+&#123;
+public:
+    PrimMST(WeightedGraph G);
+    ~PrimMST() &#123; delete[] marked, distTo; &#125;
+    Bag&lt;Edge&gt; edges() const &#123; return mst; &#125;
+    double weight() const;
+
+private:
+    point_pq pq;
+    bool *marked;
+    double *distTo;
+    Edge *edgeTo;
+    Bag&lt;Edge&gt; mst;
+
+    void visit(WeightedGraph G, int v);
+&#125;;
+
+PrimMST::PrimMST(WeightedGraph G) : marked(new bool[G.V()]), distTo(new double[G.V()])
+&#123;
+&#125;
+
+void PrimMST::visit(WeightedGraph G, int v)
+&#123;
+    marked[v] &#x3D; true;
+    for (Edge e : G.adj(v))
+    &#123;
+        int w &#x3D; e.other(v);
+        if (marked[w])
+            continue;
+        if (e.weight() &lt; distTo[w])
+        &#123;
+            edgeTo[w] &#x3D; e;
+
+            distTo[w] &#x3D; e.weight();
+            ele new_ele(w, distTo[w]);
+            pq_update(pq,  new_ele);
+        &#125;
+    &#125;
+&#125;
+
+void pq_update(point_pq &amp;pq, const ele &amp;new_data)
+&#123;
+    point_pq temp;
+    temp.swap(pq);
+    while (!temp.empty())
+    &#123;
+        ele top_edge &#x3D; temp.top();
+        temp.pop();
+        if (new_data.first &#x3D;&#x3D; top_edge.first)
+        &#123;
+            pq.push(new_data);
+            break;
+        &#125;
+        else
+            pq.push(top_edge);
+    &#125;
+    while (!temp.empty())
+    &#123;
+        ele top_edge &#x3D; temp.top();
+        temp.pop();
+        pq.push(top_edge);
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：树增加节点的方式和延时版相同，从队列中取出最小权值的点，这个时候，我们仅获取了点，不知道是哪条边，故我们应额外维护一个数组edgeTo用来记录各个点的指向。</p>
+<p>特点：</p>
+<p>1.相比于延时版本，即时版本的特点就在“即时性”，指无效边会被即使删除。</p>
+<p>2.需要额外维护数组edgeTo以及数组distTo；edgeTo表示了最小的生成树的边，distTo表示了对应点的边的权值默认全为INF（无穷大）。</p>
+<p>3.可以不用marked数组判断是否被记录，因为它和判断distTo是否为INF同理。</p>
+<p>4.空间上限变为原来的常数因子。</p>
+<h3 id="KrusKal算法"><a href="#KrusKal算法" class="headerlink" title="KrusKal算法"></a>KrusKal算法</h3><p>思路：</p>
+<p>1.将所有的边加入优先队列</p>
+<p>2.移出最小（权值）的边，加入最小生成树</p>
+<p>3.加入生成树时判断边的两点是否已被连接（已在树内）</p>
+<p>4.直至MST的数量达到V-1</p>
+<p>实现：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class KurskaiMST
+&#123;
+public:
+    KurskaiMST(WeightedGraph G);
+    Bag&lt;Edge&gt; edges() const &#123; return mst; &#125;
+    double weight() const;
+
+private:
+    Bag&lt;Edge&gt; mst;
+&#125;;
+
+KurskaiMST::KurskaiMST(WeightedGraph G)
+&#123;
+    edge_pq pq;
+    for (Edge e : G.edges())
+        pq.push(e);
+
+    UF uf(G.V());
+    while (!pq.empty() and mst.size() &lt; G.V() - 1)
+    &#123;
+        Edge e &#x3D; pq.top();
+        pq.pop();
+        int v &#x3D; e.either(), w &#x3D; e.other(v);
+        if (uf.connected(w, v))
+            continue;
+        uf.connect(w, v);
+        mst.add(e);
+    &#125;
+&#125;
+
+double KurskaiMST::weight() const
+&#123;
+    double total &#x3D; 0.0;
+    for (Edge e : mst)
+    &#123;
+        total +&#x3D; e.weight();
+    &#125;
+    return total;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>特点：</p>
+<p>1.KrusKal算法是由森林最后结合成一棵树</p>
+<p>2.会储存所有的边一同进行排序</p>
+<p>分析：</p>
+<p>需要耗费Edge优先队列，union-find结构</p>
+<p>对于使用UF是为了检测w和v是否连通，Kruskal算法在一幅图开始时是分散的，产生多颗树，这对于UF对象来说，很有使用价值。</p>
+<h2 id="最短路径（SP）"><a href="#最短路径（SP）" class="headerlink" title="最短路径（SP）"></a>最短路径（SP）</h2><table>
+<thead>
+<tr>
+<th>接口</th>
+<th>操作</th>
+<th>返回类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SP</td>
+<td>创建一个含有V个点无边的无向图</td>
+<td>构造函数</td>
+</tr>
+<tr>
+<td>distTo(int v)</td>
+<td>从s点到v的距离（权值和）</td>
+<td>double</td>
+</tr>
+<tr>
+<td>hasPathTo(int v)</td>
+<td>查看是否存在s到v的路径</td>
+<td>bool</td>
+</tr>
+<tr>
+<td>pathTo(int v)</td>
+<td>从s点到v的路径</td>
+<td>bag<DirectedEdge></td>
+</tr>
+</tbody></table>
+<p>头文件</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class SP
+&#123;
+public:
+    SP(WeightedDigraph G, int s);
+    double distTo(int v) &#123; return distTo_[v]; &#125;
+    bool hasPathTo(int v) &#123; return distTo_[v] &lt; INFINITY; &#125;
+    Bag&lt;DirectedEdge&gt; pathTo(int v);
+
+private:
+    int *distTo_;
+    DirectedEdge *edgeTo_;
+&#125;;
+
+Bag&lt;DirectedEdge&gt; SP::pathTo(int v)
+&#123;
+    Bag&lt;DirectedEdge&gt; res_bag;
+    if (!hasPathTo(v))
+        return res_bag;
+    for (DirectedEdge e &#x3D; edgeTo_[v]; e.from() !&#x3D; -1; e &#x3D; edgeTo_[e.from()])
+        res_bag.add(e);
+    return res_bag;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="前提：-1"><a href="#前提：-1" class="headerlink" title="前提："></a>前提：</h3><p>松弛：一种基本操作</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void relax(WeightedDigraph G, Edge e)
+&#123;
+    int w &#x3D; e.to();
+    if (distTo_[w] &gt; distTo_[v] + e.weight())
+    &#123;
+        distTo_[w] &#x3D; distTo_[v] + e.weight();
+        edgeTo_[w] &#x3D; e;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>点的松弛：和我们上面所描述的，是对于改点指出的所有边进行松弛</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void relax(WeightedDigraph G, int v)
+&#123;
+    for (DirectedEdge e : G.adj(v))
+    &#123;
+        int w &#x3D; e.to();
+        if (distTo_[w] &gt; distTo_[v] + e.weight())
+        &#123;
+            distTo_[w] &#x3D; distTo_[v] + e.weight();
+            edgeTo_[w] &#x3D; e;
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>理论补充：</p>
+<p>最优性条件，对于松弛上例若为最小路径数时，则满足</p>
+<p>distTo[w] &lt;&#x3D; distTo[v] + e.weight()</p>
+<p>通用路径最短算法：</p>
+<p>起点为s将distTo[s]初始化为0，其他为inf，edgeTo[s]为空，edgeTo[v]为指向v的最小路径树上的边。</p>
+<h3 id="Dijkstra算法"><a href="#Dijkstra算法" class="headerlink" title="Dijkstra算法"></a>Dijkstra算法</h3><p>思路：类似于Prim，需要维护一个优先队列(同Prim即时算法)</p>
+<p>不同点：</p>
+<p>1.distTo数组存放值为点到起点的权值和，而并不是新点到邻树点的权值</p>
+<p>原因：Prim只存放边的权值，因为无向图的切分定理。而在有向图中，切分定理虽然有效，但是我们难以得到所有的横切边，由于边的有向，我们仅能获取每个点的指出边。Dijkstra算法利用“放松”点的方法，以确保最短的路径。</p>
+<p>对于下例：</p>
+<p>当树为012，仅能获得1-&gt;3, 2-&gt;5，故无法使用切分定理</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>5<span class="token text string">((5))</span><span class="token punctuation">;</span>
+
+1<span class="token arrow operator">--></span>0<span class="token punctuation">;</span>1<span class="token arrow operator">--></span>3<span class="token arrow operator">--></span>4<span class="token arrow operator">--></span>0<span class="token punctuation">;</span>2<span class="token arrow operator">--></span>0<span class="token punctuation">;</span>2<span class="token arrow operator">--></span>5<span class="token arrow operator">--></span>4<span class="token punctuation">;</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>2.marked数组不被使用，因为relax操作的特点。例如上图，已经有1-&gt;3-&gt;4时，2-&gt;5-&gt;4仍需要被考虑，需要得到多种指向一点的多条路径，就要多次访问4顶点，这都是因为4不知道指向它的点。</p>
+<p>实现：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class DijkstraSP
+&#123;
+public:
+    DijkstraSP(WeightedDigraph G, int s);
+    ~DijkstraSP() &#123; delete[] distTo_, edgeTo_; &#125;
+
+    double distTo(int v) const &#123; return distTo_[v]; &#125;
+    bool hasPathTo(int v) const &#123; return distTo_[v] &lt; INFINITY; &#125;
+    Bag&lt;DirectedEdge&gt; pathTo(int v);
+
+private:
+    void relax(WeightedDigraph G, int v);
+    double *distTo_;
+    DirectedEdge *edgeTo_;
+    edge_pq pq;
+&#125;;
+
+void DijkstraSP::relax(WeightedDigraph G, int v)
+&#123;
+    for (DirectedEdge e : G.adj(v))
+    &#123;
+        int w &#x3D; e.to();
+        if (distTo_[w] &gt; distTo_[v] + e.weight())
+        &#123;
+            distTo_[w] &#x3D; distTo_[v] + e.weight();
+            edgeTo_[w] &#x3D; e;
+            pq_update(pq, ele(w, distTo_[w]));
+        &#125;
+    &#125;
+&#125;
+
+DijkstraSP::DijkstraSP(WeightedDigraph G, int s) : distTo_(new double[G.V()]), edgeTo_(new DirectedEdge[G.V()])
+&#123;
+    for (int i &#x3D; 0; i &lt; G.V(); i++)
+        distTo_[i] &#x3D; INFINITY;
+    distTo_[s] &#x3D; 0;
+    pq.push(ele(s, 0.0));
+    while (!pq.empty())
+    &#123;
+        relax(G, pq.top().first);
+        pq.pop();
+    &#125;
+&#125;
+
+Bag&lt;DirectedEdge&gt; DijkstraSP::pathTo(int v)
+&#123;
+    Bag&lt;DirectedEdge&gt; res;
+    if (!hasPathTo(v))
+        return res;
+    for (DirectedEdge e &#x3D; edgeTo_[v]; e.from() !&#x3D; -1; e &#x3D; edgeTo_[e.from()])
+        res.add(e);
+    return res;
+&#125;
+
+void pq_update(edge_pq &amp;pq, const ele &amp;new_data)
+&#123;
+    edge_pq temp;
+    temp.swap(pq);
+    bool has_new &#x3D; false;
+    while (!temp.empty())
+    &#123;
+        ele top_ele &#x3D; temp.top();
+        temp.pop();
+        if (top_ele.first &#x3D;&#x3D; new_data.first)
+        &#123;
+            pq.push(new_data);
+            has_new &#x3D; true;
+        &#125;
+        else
+            pq.push(top_ele);
+    &#125;
+    if (has_new)
+    &#123;
+        pq.push(new_data);
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：若是求解两点之间的最短路径，只需要在优先队列中取到t截止即可。</p>
+<p>对于欧拉图来说，Dijkstra有优化的解法。</p>
+<p>Dijkstra并不高效，但是可以解决问题，同样缺点还有不能解决负权重加权有向图问题</p>
+<h3 id="无环加权有向图中的最短路径算法"><a href="#无环加权有向图中的最短路径算法" class="headerlink" title="无环加权有向图中的最短路径算法"></a>无环加权有向图中的最短路径算法</h3><p>思路：</p>
+<p>1.distTo[s]初始化为0其他初始化为INF</p>
+<p>2.按照拓扑排序顺序对所有点进行relax操作</p>
+<p>特点：</p>
+<p>1.更快，更方便</p>
+<p>2.能够处理负权重有权图的问题</p>
+<p>3.还能解决额外的相关问题，比如最长路径</p>
+<p>4.是拓扑排序的拓展</p>
+<p>实现：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class AcyclicSP
+&#123;
+public:
+    AcyclicSP(WeightedDigraph G, int s);
+    ~AcyclicSP() &#123; delete[] distTo_, edgeTo_; &#125;
+    double distTo(int v) const &#123; return distTo_[v]; &#125;
+    bool hasPathTo(int v) const &#123; return distTo_[v] &lt; INFINITY; &#125;
+    Bag&lt;DirectedEdge&gt; pathTo(int v);
+
+private:
+    void relax(WeightedDigraph G, int v);
+
+    double *distTo_;
+    DirectedEdge *edgeTo_;
+&#125;;
+void AcyclicSP::relax(WeightedDigraph G, int v)
+&#123;
+    for (DirectedEdge e : G.adj(v))
+    &#123;
+        int w &#x3D; e.to();
+        if (distTo_[w] &gt; distTo_[v] + e.weight())
+        &#123;
+            distTo_[w] &#x3D; distTo_[v] + e.weight();
+            edgeTo_[w] &#x3D; e;
+        &#125;
+    &#125;
+&#125;
+
+AcyclicSP::AcyclicSP(WeightedDigraph G, int s) : distTo_(new double[G.V()]), edgeTo_(new DirectedEdge[G.V()])
+&#123;
+    for (int i &#x3D; 0; i &lt; G.V(); i++)
+        distTo_[i] &#x3D; INFINITY;
+    distTo_[s] &#x3D; 0.0;
+    Topological top(remove_weight(G));
+    for (int v : top.order())
+    &#123;
+        relax(G, v);
+    &#125;
+&#125;
+
+Digraph remove_weight(const WeightedDigraph &amp;G)
+&#123;
+    Digraph res(G.V());
+    for (DirectedEdge e:G.edges())
+        res.addEdge(e.from(), e.to());
+    return res;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>分析：</p>
+<p>对于加权有向图，对点的松弛需要有一定的顺序。无顺序的松弛，不能达到真正效果。</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
+0 <span class="token arrow operator">--></span>1<span class="token arrow operator">--></span>2<span class="token arrow operator">--></span>4<span class="token punctuation">;</span>0<span class="token arrow operator">--></span>3<span class="token arrow operator">--></span>4<span class="token punctuation">;</span>2<span class="token arrow operator">--></span>3<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>例如上图，如果relax的顺序是03412，那么此时，放松34后，进行12，放松2的时候对2-&gt;3边进行松弛，若此时0-&gt;3变为0-&gt;1-&gt;2-&gt;3那么dist[3]的值会被修改，但4的distTo值也应该被修改，改为distTo[4] &#x3D; distTo[3] + e.weight()。但在松弛中没有这样操作，会导致在对2-&gt;4边进行松弛出现问题。</p>
+<p>总结以上就是，已经确定了4的距离，若3的距离减小，4应该同步更新。</p>
+<p>为了避免这样的情况，我们得出的结论就是松弛边时的指向点不能有已经被记录的点，也就是按照顺序，后面的点不能指向前面的点，也就是拓扑排序的顺序。</p>
+<p>总结以上就是，先松弛的点只能指向后松弛的点。</p>
+<p>最长路径实现：将distTo都初始化为0，改变relax函数中不等式的方向。</p>
+<h4 id="平行任务调度"><a href="#平行任务调度" class="headerlink" title="平行任务调度"></a>平行任务调度</h4><p>添加一条关于这个算法的应用</p>
+<p>要求：</p>
+<p>给定一组特定任务，以及任务各有不同的耗时，并且有先后要求，再加上在若干相同处理器上运行，安排任务在最短时间内完成。</p>
+<p>思路：</p>
+<p>1.创建无环加权有向图，包含起点和终点，任务和任务耗时用任务点以及它的指出边的权值来表示</p>
+<p>2.一个任务指出的边的权值，是其任务的费时</p>
+<p>3.一个任务必须在一个任务指向的任务之前完成</p>
+<p>4.设置起点s和终止点t，st之间的最长路径即为总耗时</p>
+<p>解决：使用最长路径的无环加权有向图中的最短路径算法实现即可。</p>
+<h3 id="Bellman-Ford算法（基于队列优化）"><a href="#Bellman-Ford算法（基于队列优化）" class="headerlink" title="Bellman-Ford算法（基于队列优化）"></a>Bellman-Ford算法（基于队列优化）</h3><h4 id="Bellman-Ford算法"><a href="#Bellman-Ford算法" class="headerlink" title="Bellman-Ford算法"></a>Bellman-Ford算法</h4><p>在做出队列优化之前，先简单介绍一下Bellman-Ford算法的原版</p>
+<p>其操作描述十分简单，即对图G的所有边进行V次松弛，时间复杂度高达O(VE)。使用基于队列优化的类似于BFS广度优先搜索，可以大大减少松弛次数，从而大大减少时间。</p>
+<p>至于为什么要反复松弛点，正如无环加权有向图中的最短路径算法的解析所示。</p>
+<p>思路：</p>
+<p>1.利用队列放松点，将起点加入队列</p>
+<p>2.取出队列里的点进行放松，并且将其指向的点加入队列，</p>
+<p>3.每放松了V次，进行负有向环检测</p>
+<p>实现：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &quot;SP.hpp&quot;
+
+class BellmanFordSP
+&#123;
+public:
+    BellmanFordSP(WeightedDigraph G, int s);
+    ~BellmanFordSP() &#123; delete[] onQ, distTo_, edgeTo_; &#125;
+
+    double distTo(int v) const &#123; return distTo_[v]; &#125;
+    bool hasPathTo(int v) const &#123; return distTo_[v] &lt; INFINITY; &#125;
+    Bag&lt;DirectedEdge&gt; pathTo(int v);
+
+private:
+    void relax(WeightedDigraph G, int v);
+    bool hasNegativeCycle();
+    void findNegativeCycle();
+    Bag&lt;DirectedEdge&gt; negativeCycle() &#123; return cycle;&#125;;
+
+    int size;
+    int cost &#x3D; 0;
+    bool *onQ;
+    double *distTo_;
+    DirectedEdge *edgeTo_;
+    std::queue&lt;int&gt; que;
+    Bag&lt;DirectedEdge&gt; cycle;
+&#125;;
+
+BellmanFordSP::BellmanFordSP(WeightedDigraph G, int s) : size(G.V()), onQ(new bool[G.V()]), distTo_(new double[G.V()]), edgeTo_(new DirectedEdge[G.V()])
+&#123;
+    for (int i &#x3D; 0; i &lt; G.V(); i++)
+        distTo_[i] &#x3D; INFINITY;
+    distTo_[s] &#x3D; 0.0;
+    que.push(s);
+    onQ[s] &#x3D; true;
+    while (!que.empty() and !this-&gt;hasNegativeCycle())
+    &#123;
+        int v &#x3D; que.front();
+        que.pop();
+        onQ[v] &#x3D; false;
+        relax(G, v);
+    &#125;
+&#125;
+
+void BellmanFordSP::relax(WeightedDigraph G, int v)
+&#123;
+    for (DirectedEdge e : G.adj(v))
+    &#123;
+        int w &#x3D; e.to();
+        if (distTo_[w] &gt; distTo_[v] + e.weight())
+        &#123;
+            distTo_[w] &#x3D; distTo_[v] + e.weight();
+            edgeTo_[w] &#x3D; e;
+            if (!onQ[w])
+            &#123;
+                que.push(w);
+                onQ[w] &#x3D; true;
+            &#125;
+        &#125;
+        if (cost++ % G.V() &#x3D;&#x3D; 0)
+        &#123;
+            findNegativeCycle();
+        &#125;
+    &#125;
+&#125;
+void BellmanFordSP::findNegativeCycle()
+&#123;
+    WeightedDigraph spt(size);
+    for (int v &#x3D; 0; v &lt; size; v++)
+        if (edgeTo_[v].from() !&#x3D; -1)
+            spt.addEdge(edgeTo_[v]);
+    &#x2F;&#x2F; 寻找有向环判断是否负权重
+&#125;
+
+bool BellmanFordSP::hasNegativeCycle()
+&#123;
+    return !cycle.isEmpty();
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>关于Dijkstra的局限性：</p>
+<p>Dijkstra无法处理负有向环，例如以下有权图所示，环1-2-3的值为-0.5。</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
+0<span class="token arrow operator">--</span>0.1<span class="token arrow operator">--></span>1<span class="token arrow operator">--</span>0.2<span class="token arrow operator">--></span>2<span class="token arrow operator">--</span>0.3<span class="token arrow operator">--></span>3<span class="token punctuation">;</span>3<span class="token inter-arrow-label"><span class="token arrow-head arrow operator">--</span><span class="token label property">"-1"</span><span class="token arrow operator">--></span></span>1<span class="token punctuation">;</span>0<span class="token arrow operator">--</span>0.8<span class="token arrow operator">--></span>4<span class="token arrow operator">--</span>0.1<span class="token arrow operator">--></span>3<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>根据Dijkstra的步骤以0为起点，当全正权值的时候，Dijkstra的一大特点就是已连接的边不会变化，又由于权值为正，故新点指向已在树中的点时，此边不可能优于已经在树中的边。对于两点，Dijkstra在处理负权值就无法解决：</p>
+<p>1.0-&gt;1首先被连接，但0-&gt;4-&gt;3-&gt;1由于存在负权值而优先于0-&gt;1，但0-&gt;1已经被设置</p>
+<p>2.当存在负权重环的时候，由0-&gt;1-&gt;2-&gt;3处理到3时，3指向1，此时dist[1]为0.1，dist[3] + e.weight()的值就为-0.4，此时便无法再连接到根节点也就是我们的起点。并变化了树中的0-&gt;1</p>
+<p>Bellmen-Ford优化分析：</p>
+<p>Bellmen-Ford队列优化类似于BFS，回到之前的问题</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
+0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>0 <span class="token arrow operator">--></span>1<span class="token arrow operator">--></span>2<span class="token arrow operator">--></span>4<span class="token punctuation">;</span>0<span class="token arrow operator">--></span>3<span class="token arrow operator">--></span>4<span class="token punctuation">;</span>2<span class="token arrow operator">--></span>3<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>根据BFS，先1后2再3，此时原本dist[4]的值为0-&gt;2-&gt;4的权值。在处理3后，若2变为dist[2]为0-&gt;1-&gt;3-&gt;2,那么dist[4]的值也应该被更新，故2又被加入队列，进行重复的放松。也正因为如此，将所有边放松一次并不能达成目标，最坏的情况下将时间复杂度高达O(VE)。</p>
+<p>负权环的检测：</p>
+<p>我们可以发现，当此算法遇到负权环的时候，将会进入无限的循环，此时，我们就需要定期检查该图是否有负权重环的存在。我们以relax的次数作为标准，每当进行了V次relax，就进行一次检测（当然，这个值也可以小于V，并且每次检测并不代表该图中有负权重环），当存在负权重环，算法应当结束。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li>
+                
+                
+                    <li>下一篇: <a href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" rel="tag">图算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>

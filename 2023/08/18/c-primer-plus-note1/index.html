@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>C Primer Plus 笔记1 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="C Primer Plus 笔记1"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>C Primer Plus 笔记1</h2>
+            <div class="post-meta">
+                <time class="date">2023.08.18</time>
+            
+                <span class="category"><a class="category-link" href="/categories/C/">C</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="C-Primer-Plus-笔记1"><a href="#C-Primer-Plus-笔记1" class="headerlink" title="C Primer Plus 笔记1"></a>C Primer Plus 笔记1</h1><h3 id="3-4-5-可移植类型：stdint-h-和-intypes-h"><a href="#3-4-5-可移植类型：stdint-h-和-intypes-h" class="headerlink" title="3.4.5 可移植类型：stdint.h 和 intypes.h"></a>3.4.5 可移植类型：stdint.h 和 intypes.h</h3><h3 id="3-4-6-浮点型常量"><a href="#3-4-6-浮点型常量" class="headerlink" title="3.4.6 浮点型常量"></a>3.4.6 浮点型常量</h3><p>默认情况下，编译器假定浮点型常量是double类型的精度，假设以下：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">float sum;
+sum &#x3D; 4.0 * 2.0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>4.0和2.0均被认定为更高精度的<code>double</code>，相乘的结果也会是<code>double</code>，于是这里进行了截断损失精度，减慢程序的运行速度。</p>
+<p>但是可以在常量后面加上<code>F</code>或者<code>f</code>来代表常量的类型是<code>float</code>，同理在后面加上<code>L</code>或者<code>l</code>即可代表常量的类型是<code>long double</code>（没有 <code>long float</code>所以不用想太多 ）。</p>
+<p>常量还可以以<code>0X</code>或者<code>0x</code>再用<strong>p计数法</strong>，例如<code>0xa.1fp10</code></p>
+<p>%e代表以指数计数法格式化成字符串，%a代表格式化成16进制的指数计数法</p>
+<p>%Lf或者%La或者%Le</p>
+<p>关于一个常规的单精度浮点数<code>float</code>在IEEE 754标准中使用32位表示</p>
+<p>最小正规范化数（smallest normalized positive value）：约为 1.175494e-38</p>
+<p>最大正规化数（largest normalized positive value）：约为 3.402823e38</p>
+<p>浮点值的上溢会变成无穷大，<code>C99</code>定义了上溢的结果<code>INF</code></p>
+<p>浮点值的下溢会导致精度的损失，具体原因是因为指数部分的位数已经不够了，它将会占用表示精度部分的位来表示指数，此时精度就损失了</p>
+<h3 id="4-4-3-printf-的转换说明修饰符"><a href="#4-4-3-printf-的转换说明修饰符" class="headerlink" title="4.4.3 printf() 的转换说明修饰符"></a>4.4.3 printf() 的转换说明修饰符</h3><p><code>%zd</code> 是用来格式化输出 <code>size_t</code> 类型的值</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">printf(&quot;Type int has a size of %zd bytes.\n&quot;, sizeof(int));<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>其他见表</p>
+<h3 id="4-4-4-转换说明的意义"><a href="#4-4-4-转换说明的意义" class="headerlink" title="4.4.4 转换说明的意义"></a>4.4.4 转换说明的意义</h3><p>float类型的值作为printf的参数时会被转换成double类型。</p>
+<p>printf如果有不正确的转换说明，会导致其他的转换声明异常</p>
+<p>printf的返回值是它输出字符的个数，如果失败则是负数</p>
+<h3 id="4-4-5-使用scanf"><a href="#4-4-5-使用scanf" class="headerlink" title="4.4.5 使用scanf()"></a>4.4.5 使用scanf()</h3><p>scanf的转换说明(转换说明修饰符)见表</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">scanf(&quot;%c&quot;, &amp;ch)      &#x2F;&#x2F;从输入的第一个字符开始读取
+scanf(&quot; %c&quot;, &amp;ch)     &#x2F;&#x2F;从输入的第一个非空白字符开始读取<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>scanf()的返回值是它成功读取的项数，当遇到文件结尾时会返回<code>EOF</code> （通常被预处理为-1）</p>
+<h3 id="4-4-6-printf-和-scanf-的-修饰符"><a href="#4-4-6-printf-和-scanf-的-修饰符" class="headerlink" title="4.4.6 printf() 和 scanf() 的 * 修饰符"></a>4.4.6 printf() 和 scanf() 的 * 修饰符</h3><p>printf() 的 * 修饰符</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int precision &#x3D; 3;
+printf(&quot;%.*f\n&quot;, precision, 3.14159);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>上述代码将打印浮点数3.14159，并将其精度设置为3，即打印小数点后3位。在这种情况下，<code>precision</code>变量的值会用于指定浮点数的精度。这是用于动态设置精度的。</p>
+<p>scanf() 的 * 修饰符</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int num1;
+scanf(&quot;%d %*d&quot;, &amp;num1);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>在这个例子中，<code>scanf</code>会读取两个整数，但第二个整数前面的<code>*</code>修饰符会将它忽略，不赋给任何变量。用于忽略读取的部分值。</p>
+<h3 id="5-3-3-递增运算符"><a href="#5-3-3-递增运算符" class="headerlink" title="5.3.3 递增运算符"></a>5.3.3 递增运算符</h3><p>说到底 i++ 和 ++i 都属于右值，以下为个人理解：</p>
+<p>i++ 和 ++i 让我联想到了python新的象牙运算符，即在表达式中对左值变量进行赋值。</p>
+<p>++i就是在得出表达式的值之前进行递增，i++相反。并且++i 和 i++ 的表达式值都是i</p>
+<p>于是我看到了这个</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int main(void)
+&#123;
+    int j &#x3D; 3, m;
+    m &#x3D; (++j) + (++j) + (j++);
+
+    printf(&quot;m:%d\n&quot;, m);
+    printf(&quot;j:%d\n&quot;, j);
+    return 0;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>最后发现不同编译器给出来的结果是不一样的。即未定义的行为。</p>
+<p>应该是没有给出对应的规范，所以应该完全避免<strong>对同一个变量进行多次修改并在同一表达式中使用</strong></p>
+<p>书中给出建议：</p>
+<ul>
+<li>如果一个变量出现在一个函数的多个参数中，不要对该变量使用递增或者递减运算符</li>
+<li>如果一个变量多次出现在一个表达式中，不要对该变量使用递增或者递减运算符</li>
+</ul>
+<h3 id="5-4-表达式和语句"><a href="#5-4-表达式和语句" class="headerlink" title="5.4 表达式和语句"></a>5.4 表达式和语句</h3><p>译者注了两句话：</p>
+<blockquote>
+<p>根据C标准，声明不是语句。这与C++有所不同。</p>
+<p>在C语言中，赋值和函数调用都是表达式。没有所谓的“赋值语句”和“函数调用语句”，这些语句实际上都是表达式语句。</p>
+</blockquote>
+<h3 id="副作用和序列点"><a href="#副作用和序列点" class="headerlink" title="副作用和序列点"></a>副作用和序列点</h3><h4 id="副作用"><a href="#副作用" class="headerlink" title="副作用"></a>副作用</h4><p>从C语言的角度，主要的目的是对表达式求知，但如果途中有变量的值变化，那这种变化就是副作用，除了主要目的之外的就是副作用。例如，在调用<code>printf()</code>函数的时候，它显示的信息就是副作用（因为它的返回值是待显示的字符的个数）</p>
+<h4 id="序列点"><a href="#序列点" class="headerlink" title="序列点"></a>序列点</h4><p>是程序执行的点，在该点上，所有的副作用都在进入下一步之前发生，在C语言中，语句中的分号标记了一个序列点。意思是，在一个语句中，赋值运算符、递增运算符和递减运算符对运算对象做的改变必须在程序执行下一条语句之前完成。</p>
+<h4 id="完整表达式"><a href="#完整表达式" class="headerlink" title="完整表达式"></a>完整表达式</h4><p>指一个表达式不是另一个更大表达式的子表达式，并且一个完整表达式的结尾就是一个序列点。</p>
+<p>现在我们来看这个语句</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">y &#x3D; (4 + x++) + (6 + x++);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>表达式<code>4 + x++</code>并不是一个完整表达式，所以C语言无法保证x在子表达式上求值之后立即递增x。这里分号标记了我们的序列点，所以在下一句语句之前，我们要保证所有的副作用也就是递增行为完成，但是C没有指明是在对子表达式求值完后递增，还是整个求完之后递增</p>
+<h3 id="类型转换"><a href="#类型转换" class="headerlink" title="类型转换"></a>类型转换</h3><ul>
+<li>当类型转换出现在表达式时都是从较小类型转换为较大类型</li>
+<li>设计两种类型的运算，两个值会被分辨转换为两种类型的更高级别</li>
+<li>类型的级别从高到低依次是 long double &gt; double &gt; float &gt; unsigned long long &gt; long long &gt;unsigned long &gt; long &gt; unsigned int &gt; int .</li>
+</ul>
+<p>运用强制类型转换可以明确表达转换类型的意图，保护程序免受不同版本的编译器的影响。</p>
+<h3 id="6-1-2-C风格读取循环"><a href="#6-1-2-C风格读取循环" class="headerlink" title="6.1.2 C风格读取循环"></a>6.1.2 C风格读取循环</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">while(scanf(&quot;%ld&quot;, &amp;num) &#x3D;&#x3D; 1)&#123;
+    &#x2F;*循环行为*&#x2F;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="6-3-4-新的bool类型"><a href="#6-3-4-新的bool类型" class="headerlink" title="6.3.4 新的bool类型"></a>6.3.4 新的bool类型</h3><p>C99在头文件<code>stdbool.h</code>的头文件里面将bool作为_Bool的别名，并且把true和false定义为1和0。</p>
+<h3 id="6-7-逗号运算符"><a href="#6-7-逗号运算符" class="headerlink" title="6.7 逗号运算符"></a>6.7 逗号运算符</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">ounces++, cost &#x3D; ounces * FIRST_OZ<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>作为逗号的序列点保证了在左侧递增完成之后再进行右侧的运算和赋值。</p>
+<p>其次，整个逗号表达式的值是右侧项的值，例如</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">x &#x3D; (y &#x3D; 3, (z &#x3D; ++y + 2) + 5) &#x2F;&#x2F; x的值为11
+    
+h &#x3D; 249, 500;   &#x2F;&#x2F; h的值是249
+h &#x3D; (249, 500); &#x2F;&#x2F; h的值是500<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其他地方的逗号一般是逗号分隔符而并非运算符。</p>
+<h3 id="7-2-1-介绍-getchar-和-putchar"><a href="#7-2-1-介绍-getchar-和-putchar" class="headerlink" title="7.2.1 介绍 getchar() 和 putchar()"></a>7.2.1 介绍 getchar() 和 putchar()</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">ch &#x3D; getchar();
+scanf(&quot;%c&quot;, &amp;ch);
+&#x2F;&#x2F;两者相同
+putchar(ch);
+printf(&quot;%c&quot;, ch);
+&#x2F;&#x2F;两者相同<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>它们运行更快，而且它们通常是预处理宏，而不是真正的函数。</p>
+<p>C特有的编程风格——把两个行为合并成一个表达式</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">while((ch &#x3D; getchat()) !&#x3D; &quot;\n&quot;)&#123;
+    &#x2F;*循环行为*&#x2F;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="7-3-1-备选拼写：iso646-h头文件"><a href="#7-3-1-备选拼写：iso646-h头文件" class="headerlink" title="7.3.1 备选拼写：iso646.h头文件"></a>7.3.1 备选拼写：iso646.h头文件</h3><p>里面可以使and,or,not对应逻辑关系符</p>
+<h3 id="缓冲区"><a href="#缓冲区" class="headerlink" title="缓冲区"></a>缓冲区</h3><p>缓冲分为两类：<code>完全缓冲I/O</code>和<code>行缓冲I/O</code>。完全缓冲输入指的是当缓冲区被填满才刷新缓冲区（内容被发送至目的地），通常出现在文件输入中。缓冲区的大小取决于系统，常见的大小是512字节和4096字节。行缓冲指的是再出现换行符的时候才会刷新缓冲区。键盘输入通常是行缓冲输入。</p>
+<h3 id="8-3-2-文件尾"><a href="#8-3-2-文件尾" class="headerlink" title="8.3.2 文件尾"></a>8.3.2 文件尾</h3><p>在<code>&quot;stdio.h&quot;</code>中定义了文件尾EOF的值（通常为-1）</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int ch;
+while((ch &#x3D; getchar()) !&#x3D; EOF)
+    putchar(ch);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p><code>getchar()</code>返回的类型是int，如果定义char将会无法接收EOF。</p>
+<h3 id="8-5-1-使用缓冲输入"><a href="#8-5-1-使用缓冲输入" class="headerlink" title="8.5.1 使用缓冲输入"></a>8.5.1 使用缓冲输入</h3><p>直接放两块代码自己对比</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">while(getchar() !&#x3D; &#39;y&#39;)&#123;
+    &#x2F;*show something*&#x2F;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">while(getchar() !&#x3D; &#39;y&#39;)&#123;
+    &#x2F;*show something*&#x2F;
+    while(getchar() !&#x3D; &quot;\n&quot;)&#123;
+        continue;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="10-1-2-指定初始化器"><a href="#10-1-2-指定初始化器" class="headerlink" title="10.1.2 指定初始化器"></a>10.1.2 指定初始化器</h3><p>例1：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int arr[6] &#x3D; &#123;0, 0, 0, 0, 0, 212&#125;; &#x2F;&#x2F; 两式含义一致
+int arr[6] &#x3D; &#123;[5] &#x3D; 212&#125;; &#x2F;&#x2F; 未被赋值的默认为 0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>例2：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int arr[12] &#x3D; &#123;31, 28, [4] &#x3D; 31, 30, 31, [1] &#x3D; 29&#125;;
+int arr[12] &#x3D; &#123;31, 29, 0, 0, 31, 30, 31, 0, 0, 0, 0, 0&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>如果指定初始化器后面有更多的值，如该例中的初始化列表片段<code>[4] = 31, 30, 31</code>嘛，那么后面的这些值将被用于初始化指定元素后面的元素。</p>
+<p>如果指定初始化指定了已经初始化的元素，将覆盖原来的值。</p>
+<p>例3：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int stuff[] &#x3D; &#123;1, [6] &#x3D; 23&#125;; &#x2F;&#x2F; 将被初始化为7个元素
+int stuff[] &#x3D; &#123;1, [6] &#x3D; 4, 9, 10&#125;; &#x2F;&#x2F; 将被初始化为9个元素<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="10-6-2-const的其他内容"><a href="#10-6-2-const的其他内容" class="headerlink" title="10.6.2 const的其他内容"></a>10.6.2 const的其他内容</h3><p>把const数据或非const数据的地址初始化为指向const的指针或为其赋值是合法的，然而只能把非const数据的地址赋给普通指针。使用非const标识符修改const数据是未定义的。</p>
+<p>const指针和指向const数据的指针</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">const double * pc &#x3D; &#x2F;&#x2F; 指向const数据
+double * const pc &#x3D; &#x2F;&#x2F; 指针本身const<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h3 id="10-7-指针与多维数组"><a href="#10-7-指针与多维数组" class="headerlink" title="10.7 指针与多维数组"></a>10.7 指针与多维数组</h3><p>储存方法，多维数组按照一维顺序储存例如一个三维数组a(假设3x3x3)，储存顺序为a[0][0][0], a[0][0][1], a[0][0][2], a[0][1][0]等等顺序储存。</p>
+<p>假设有以下情况</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int zippo[3][3] &#x3D; &#123;&#123;1, 2, 3&#125;, 
+                   &#123;4, 5, 6&#125;, 
+                   &#123;7, 8, 9&#125;&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>zippo即第一组元素的地址，它身为指针类型为 <code>int (*)[3]</code>意思为指向有三个值的<code>int</code>数组，同时，它的递增代表往后3个<code>int</code>类型的字节大小。</p>
+<p>zippo[0]即第一组元素第一个元素的指针，它的类型为<code>int *</code>即一个int指针，它的递增代表往后一个<code>int</code>类型的字节大小。</p>
+<p>zippo[0][0]即第一组第一个元素的值，它的类型为<code>int</code>，不是一个指针。</p>
+<p>按照该原理<code>zippo[0][0] == *(zippo[0])</code>同样<code>*zippo == &amp;zippo[0][0]</code>同理</p>
+<p><code>*&amp;zippo[0][0] == **zippo </code>这些例子只是为了深刻理解。</p>
+<p>与<code>zippo[m][n]</code>等价的指针表示法就是<code>*(*(zippo + m) + n)</code></p>
+<h3 id="10-7-1-指向多维数组的指针"><a href="#10-7-1-指向多维数组的指针" class="headerlink" title="10.7.1 指向多维数组的指针"></a>10.7.1 指向多维数组的指针</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">int *arr1; 	       &#x2F;&#x2F;指向一维数组的指针
+int (*arr2)[4];    &#x2F;&#x2F; 指向具有4列的二维数组的指针
+int (*arr3)[3][4]; &#x2F;&#x2F; 指向具有3行4列的三维数组的指针<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="10-7-2-指针的兼容性"><a href="#10-7-2-指针的兼容性" class="headerlink" title="10.7.2 指针的兼容性"></a>10.7.2 指针的兼容性</h3><p>把非const指针赋给const指针没问题，前提是只进行一次解引用。</p>
+<p>下面这个例子解释了使用两次解引用可能会发生的问题：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">const int **pp2;
+int *p1;
+const int n &#x3D; 13;
+pp2 &#x3D; &amp;p1;
+*pp2 &#x3D; &amp;n;
+*p1 &#x3D; 10<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<p>C const 和 C++ const</p>
+<p>c++允许在声明数组大小的时候使用const整数，而C不允许（这里不考虑变长数组即C99之前）</p>
+<p>C++不允许把const指针赋给非const指针，而C允许但未定义</p>
+<h3 id="10-8-变长数组（VLA）"><a href="#10-8-变长数组（VLA）" class="headerlink" title="10.8 变长数组（VLA）"></a>10.8 变长数组（VLA）</h3><p>变长数组就是指用变量定义数组的长度，但是定义之后数组长度还是不能改变。</p>
+<p>需要注意的是，变长数组的长度不能是负数或者是零。另外，变长数组只能在其定义的作用域内使用，并且不可以作为静态数组或全局数组。</p>
+<p>于是我们可以利用变长数组声明以下函数</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int sum2d(int rows, int cols, int arr[rows][cols]);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<blockquote>
+<p>注意：rows 和 cols需要定义在使用它们之前</p>
+</blockquote>
+<p>C99&#x2F;C11 标准规定，可以省略声明中的参数名，但是在这种情况下，必须用星号代替省略的维度</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int sum2d(int, int, int arr[*][*]);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<h3 id="10-9-复合字面量"><a href="#10-9-复合字面量" class="headerlink" title="10.9 复合字面量"></a>10.9 复合字面量</h3><p>复合字面量（Compound Literals）是C语言中的一种特性，它允许在代码中创建一个匿名的复合数据类型（例如数组或结构体）并为其初始化，而无需先定义一个具名的变量。例如5是<code>int</code>的复合字面量，’Y’是<code>char</code>的复合字面量。</p>
+<p>复合字面量的语法形式是在一对括号内指定数据类型，并在括号内使用初始化列表来为复合类型的元素赋值。它的基本形式如下：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">(type) &#123; initializer_list &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>其中，<code>type</code>是指定的数据类型，可以是数组类型、结构体类型或联合体类型，<code>initializer_list</code>是初始化列表，用于为复合类型的元素赋初值。</p>
+<p>这里主要说明的是创建数组和结构内容的复合字面量</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">(int [2])&#123;10, 20&#125; &#x2F;&#x2F; 复合字面量，它相当于一个匿名的变量，必须在创建的时候使用它
+
+int *arr &#x3D; (int[]) &#123;1, 2, 3, 4, 5&#125;; &#x2F;&#x2F; 你可以省略掉数字<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="11-1-在程序中定义字符串"><a href="#11-1-在程序中定义字符串" class="headerlink" title="11.1 在程序中定义字符串"></a>11.1 在程序中定义字符串</h3><p>用双引号括起来的内容就是字符串的复合字面量例如<code>&quot;hello world!&quot;</code></p>
+<p>字符串的复合字面量被视为指向该字符串的指针，即<code>*&quot;hello&quot; == &#39;h&#39;</code></p>
+<p>可以省略数组初始化声明的大小让它自动计算字符串大小或者使用指针</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">const char m2[] &#x3D; &quot;hello world!&quot;;
+const char * m2 &#x3D; &quot;hello world!&quot;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>但这两个行为看似一致，实则有区别：</p>
+<p>首先会将该字符串存入静态储存区(程序的二进制文件也载入该字符串)</p>
+<p>数组形式：在运行时，拷贝静态储存区的数组，分配在栈上，属于是一份完整的副本，在不带const的情况下可以修改字符串。</p>
+<p>指针形式：将静态储存区的字符串地址交给指针，并不会拷贝内容，但需要注意的是，无论是否使用了const，m2都将指向一个字符串常量，其内容不可修改，所以正确的方式是使用 <code>const char*</code> 来声明指向字符串字面量的指针，以表明你不会修改字符串内容。</p>
+<p>另外，数组名虽然是一个指向第一个元素的指针，但它也是一个常量地址，不可更改其地址，例如：<code>arr++</code>。对比之下，指针就可以自递增并且修改。</p>
+<h4 id="字符串数组"><a href="#字符串数组" class="headerlink" title="字符串数组"></a>字符串数组</h4><p>对于建立字符串数组，同样有两种方式</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">char strArray[][10] &#x3D; &#123;&quot;Hello&quot;, &quot;Hi&quot;, &quot;Greetings&quot;&#125;;
+char * strArray[] &#x3D; &#123;&quot;Hello&quot;, &quot;Hi&quot;, &quot;Greetings&quot;&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>同样含义也是不同的，对于数组形式，必须设置最大的字符串的长度+1作为宽度，同样是从静态储存区拷贝。对于指针形式，相当于是包含三个指针的指针数组。</p>
+<p>请使用指针数组，因为它比二维字符数组的效率高，但它也有缺点，它内部的指针指向的字符串不能修改，而另一者可以修改。所以还是按照你是否需要修改的需求来判断哪个作为选择。</p>
+<h3 id="11-2-字符串输入"><a href="#11-2-字符串输入" class="headerlink" title="11.2 字符串输入"></a>11.2 字符串输入</h3><p><code>get()</code>函数读取整行输入，直到遇到换行符，然后丢弃换行符，将读取的字符后加上空字符成为字符串，储存其余字符。</p>
+<p>其参数是用来储存读取数据的地址，它的问题出在只知道数组的开始处，而如果输入的字符串过长会导致缓冲区溢出，发生不确定的行为。</p>
+<blockquote>
+<p>C11在标准中废弃了这个函数</p>
+</blockquote>
+<h4 id="gets-的替代品"><a href="#gets-的替代品" class="headerlink" title="gets()的替代品"></a>gets()的替代品</h4><ol>
+<li>fgets()函数（和fput()）</li>
+</ol>
+<p>它有三个参数，分别是<code>储存的开始地址</code>,  <code>最大读取数量</code>, <code>要读入的流</code>(例如stdin)。</p>
+<p>它返回第一个参数，但是一旦读取到文件尾，它将会返回空指针（在代码中可以用NULL来代替）</p>
+<p>fput() 有两个参数，第二个参数指明它要写入的流(例如stdout)</p>
+<p>注意：fget()会读取换行符，可以通过判断最后一个字符是否为换行符来判断是否读取一整行。</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">while (words[i] !&#x3D; &#39;\n&#39; &amp;&amp; words[i] !&#x3D; &#39;\0&#39;)
+    i++
+if(words[i] &#x3D;&#x3D; &#39;\n&#39;)
+	words[i] &#x3D; &#39;\0&#39; &#x2F;&#x2F; 替换掉结尾的换行符
+else
+    while (getchar() !&#x3D; &#39;\n&#39;)
+    	continue; &#x2F;&#x2F; 丢弃多余的未读取到的字符<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ol start="2">
+<li>gets_s() 函数</li>
+</ol>
+<p>C++11新增的函数</p>
+<p>它只有两个参数，因为它只读取标准输入，其他与fgets()相同</p>
+<p>如果读到换行符，将会丢弃而不是储存。</p>
+<p>如果读到最大字符没有读到换行符，会先把目标数组的首字符设置为空字符，读取并丢弃随后的输入直至读到换行·符或者文件结尾，然后返回空指针。</p>
+<p>scanf() 输入函数</p>
+<p>可指定字符宽度读取字符串</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">count &#x3D; scanf(&quot;%5s %10s&quot;, name1, name2);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>scanf会读取到指定个数或者遇到空字符完成一个输入，剩余部分将保留。</p>
+<h3 id="11-3-字符串输出"><a href="#11-3-字符串输出" class="headerlink" title="11.3 字符串输出"></a>11.3 字符串输出</h3><ol>
+<li>puts() 函数</li>
+</ol>
+<p>把字符串的地址作为参数输出字符直至遇到空字符并在结尾放置一个<code>\n</code></p>
+<ol start="2">
+<li>fputs() 函数</li>
+</ol>
+<p>多一个输出流的参数，并且它不会在结尾放置<code>\n</code></p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">char line[81];
+while(gets(line))
+    puts(line);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h3 id=""><a href="#" class="headerlink" title=""></a></h3>
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/C/" rel="tag">C</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>

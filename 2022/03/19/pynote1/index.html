@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>python - 选择更高效的容器(一) - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="python - 选择更高效的容器(一)"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>python - 选择更高效的容器(一)</h2>
+            <div class="post-meta">
+                <time class="date">2022.03.19</time>
+            
+                <span class="category"><a class="category-link" href="/categories/python/">python</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <blockquote>这篇文章上次修改于 518 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+        
+            <h1 id="python-选择更高效的容器"><a href="#python-选择更高效的容器" class="headerlink" title="python - 选择更高效的容器"></a>python - 选择更高效的容器</h1><p>整理自fluent-python “当列表不是首选时”</p>
+<p>注：此文暂不包括字典类对象</p>
+<h2 id="python的常用容器"><a href="#python的常用容器" class="headerlink" title="python的常用容器"></a>python的常用容器</h2><p>《fluent-python》一书把python容器以两种方式区别，分别为<strong>元素是否可以不同类</strong>和<strong>容器是否不可变</strong>。</p>
+<p>python 常用的容器有 list，tuple，collection.deque，str， bytes，bytearray，memoryview，array.array等等</p>
+<table>
+<thead>
+<tr>
+<th>容器类型</th>
+<th>元素可以不同类</th>
+<th>可变类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>list</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>tuple</td>
+<td>✔</td>
+<td>✖</td>
+</tr>
+<tr>
+<td>collection.deque</td>
+<td>✔</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>str</td>
+<td>✖</td>
+<td>✖</td>
+</tr>
+<tr>
+<td>bytes</td>
+<td>✖</td>
+<td>✖</td>
+</tr>
+<tr>
+<td>bytearray</td>
+<td>✖</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>memoryview</td>
+<td>✖</td>
+<td>✔</td>
+</tr>
+<tr>
+<td>array.array</td>
+<td>✖</td>
+<td>✔</td>
+</tr>
+</tbody></table>
+<p>list就不过多赘述，已经是非常常见的类型了</p>
+<h2 id="array-—-高效的数值数组"><a href="#array-—-高效的数值数组" class="headerlink" title="array — 高效的数值数组"></a>array — 高效的数值数组</h2><p><a target="_blank" rel="noopener" href="https://docs.python.org/zh-cn/3/library/array.html#module-array">官方文档</a></p>
+<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p>array类似于C 语言数组，相较于list有着快速的处理速度和较小的内存占用。如果需要储存的数据都属于数字类型，array是一个不错的选择，正如上面所述，array属于可变类型但它只能包含一定范围内数字的元素。</p>
+<p>创建array需要指定类型码</p>
+<h3 id="类型码"><a href="#类型码" class="headerlink" title="类型码"></a>类型码</h3><p> 已定义的类型码如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">类型码</th>
+<th align="left">C 类型</th>
+<th align="left">Python 类型</th>
+<th align="left">以字节表示的最小尺寸</th>
+<th align="left">备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>&#39;b&#39;</code></td>
+<td align="left">signed char</td>
+<td align="left">int</td>
+<td align="left">1  (-128～127)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;B&#39;</code></td>
+<td align="left">unsigned char</td>
+<td align="left">int</td>
+<td align="left">1  (0～255)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;u&#39;</code></td>
+<td align="left">wchar_t</td>
+<td align="left">Unicode 字符</td>
+<td align="left">2</td>
+<td align="left">(1)</td>
+</tr>
+<tr>
+<td align="left"><code>&#39;h&#39;</code></td>
+<td align="left">signed short</td>
+<td align="left">int</td>
+<td align="left">2  (-32767 ~ 32768)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;H&#39;</code></td>
+<td align="left">unsigned short</td>
+<td align="left">int</td>
+<td align="left">2  (0 ~ 65536)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;i&#39;</code></td>
+<td align="left">signed int</td>
+<td align="left">int</td>
+<td align="left">2  (-2<sup>31</sup> ~ 2<sup>31</sup> - 1)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;I&#39;</code></td>
+<td align="left">unsigned int</td>
+<td align="left">int</td>
+<td align="left">2  (0 ~ 2<sup>32</sup> - 1)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;l&#39;</code></td>
+<td align="left">signed long</td>
+<td align="left">int</td>
+<td align="left">4  (- 2<sup>63</sup>～2<sup>63</sup> - 1)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;L&#39;</code></td>
+<td align="left">unsigned long</td>
+<td align="left">int</td>
+<td align="left">4  (0～2<sup>64</sup> - 1)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;q&#39;</code></td>
+<td align="left">signed long long</td>
+<td align="left">int</td>
+<td align="left">8  (-2<sup>127</sup>～2<sup>127</sup> - 1)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;Q&#39;</code></td>
+<td align="left">unsigned long long</td>
+<td align="left">int</td>
+<td align="left">8  (0～2<sup>128</sup> - 1)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;f&#39;</code></td>
+<td align="left">float</td>
+<td align="left">float</td>
+<td align="left">4  (-3.4E+38～3.4E+38)</td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left"><code>&#39;d&#39;</code></td>
+<td align="left">double</td>
+<td align="left">float</td>
+<td align="left">8  (-1.7E-308～1.7E+308)</td>
+<td align="left"></td>
+</tr>
+</tbody></table>
+<p>注释：</p>
+<ol>
+<li><p>由于平台的不同它可能为 16 位或 32 位。</p>
+<p><em>在 3.9 版更改:</em> <code>array(&#39;u&#39;)</code> 现在使用 <code>wchar_t</code> 作为 C 类型而不再是已弃用的 <code>Py_UNICODE</code>。 这个改变不会影响其行为，因为 <code>Py_UNICODE</code> 自 Python 3.3 起就是 <code>wchar_t</code> 的别名。</p>
+<p><em>Deprecated since version 3.3, will be removed in version 4.0.</em></p>
+</li>
+</ol>
+<p>创建的方法是 </p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># arr_1 = array.array(typecode[, initializer])</span>
+floats <span class="token operator">=</span> array<span class="token punctuation">(</span><span class="token string">'d'</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>random<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">10</span><span class="token operator">**</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># 例：利用推导式</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>在创建出数组对象后可以访问其<strong>typecode</strong>属性获取类型码</p>
+<h3 id="和列表的区别"><a href="#和列表的区别" class="headerlink" title="和列表的区别"></a>和列表的区别</h3><h4 id="1-不支持-clear-函数清空"><a href="#1-不支持-clear-函数清空" class="headerlink" title="1.不支持.clear()函数清空"></a>1.不支持.clear()函数清空</h4><p>如果是list等对象，可以用过list1.clear()将列表置空，在array类型会提示无该对象</p>
+<h4 id="2-不支持-copy-的浅复制"><a href="#2-不支持-copy-的浅复制" class="headerlink" title="2.不支持.copy()的浅复制"></a>2.不支持.copy()的浅复制</h4><p>虽然不支持.copy()但是支持 copy包的copy和deepcopy</p>
+<h4 id="3-不支持-sort-的数据整理"><a href="#3-不支持-sort-的数据整理" class="headerlink" title="3.不支持.sort()的数据整理"></a>3.不支持.sort()的数据整理</h4><p>可以使用sort函数对象例如</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">a <span class="token operator">=</span> array<span class="token punctuation">.</span>array<span class="token punctuation">(</span>a<span class="token punctuation">.</span>typecode<span class="token punctuation">,</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+
+
+<h2 id="deque-—-双向队列"><a href="#deque-—-双向队列" class="headerlink" title="deque — 双向队列"></a>deque — 双向队列</h2><p><a target="_blank" rel="noopener" href="https://docs.python.org/zh-cn/3/library/collections.html#collections.deque">官方文档</a></p>
+<h3 id="简介-1"><a href="#简介-1" class="headerlink" title="简介"></a>简介</h3><p>双向队列正如其名，该容器可以在两端进行非常快速的操作，如果向注重时效性，deque也是个不错的选择。</p>
+<p>deque更多应用于多线程操作，它是一个<strong>线程安全</strong>的容器，即多数操作为<strong>原子操作</strong>，在多线程中不会出现多个线程同时操作一个资源造成的惨案。</p>
+<h3 id="插播：原子操作"><a href="#插播：原子操作" class="headerlink" title="插播：原子操作"></a>插播：原子操作</h3><p>由于多线程可能同时操作一个资源，而导致不好的结果，于是提出了线程锁，线程可以在操作资源的时候打开锁而在操作完资源后关闭锁来避免悲剧的发生。<strong>原子操作</strong>是指不会被线程调度机制打断的操作，线程运行不可能同时在该操作上导致冲突，总的来说就是在<strong>多线程</strong>对资源使用<strong>原子操作</strong>可以避免问题，并且不需要引入线程锁。</p>
+<p>python官方文档指出</p>
+<p>以下操作为原子操作</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">L<span class="token punctuation">.</span>append<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+L1<span class="token punctuation">.</span>extend<span class="token punctuation">(</span>L2<span class="token punctuation">)</span>
+x <span class="token operator">=</span> L<span class="token punctuation">[</span>i<span class="token punctuation">]</span>
+x <span class="token operator">=</span> L<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+L1<span class="token punctuation">[</span>i<span class="token punctuation">:</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> L2
+L<span class="token punctuation">.</span>sort<span class="token punctuation">(</span><span class="token punctuation">)</span>
+x <span class="token operator">=</span> y
+x<span class="token punctuation">.</span>field <span class="token operator">=</span> y
+D<span class="token punctuation">[</span>x<span class="token punctuation">]</span> <span class="token operator">=</span> y
+D1<span class="token punctuation">.</span>update<span class="token punctuation">(</span>D2<span class="token punctuation">)</span>
+D<span class="token punctuation">.</span>keys<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这些不是：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">i <span class="token operator">=</span> i<span class="token operator">+</span><span class="token number">1</span>
+L<span class="token punctuation">.</span>append<span class="token punctuation">(</span>L<span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+L<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> L<span class="token punctuation">[</span>j<span class="token punctuation">]</span>
+D<span class="token punctuation">[</span>x<span class="token punctuation">]</span> <span class="token operator">=</span> D<span class="token punctuation">[</span>x<span class="token punctuation">]</span> <span class="token operator">+</span> <span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="和列表的区别-1"><a href="#和列表的区别-1" class="headerlink" title="和列表的区别"></a>和列表的区别</h3><h4 id="1-maxlen最大长度"><a href="#1-maxlen最大长度" class="headerlink" title="1.maxlen最大长度"></a>1.maxlen最大长度</h4><p>deque相比list，在创建的时候可以添加最大长度的参数，当队列达到最大长度后，新添加元素的操作将会从另一端删去元素。</p>
+<h4 id="2-retate-函数操作"><a href="#2-retate-函数操作" class="headerlink" title="2.retate()函数操作"></a>2.retate()函数操作</h4><p>deque还支持向左或向右移动元素，最左或最右的元素被移出后将被补充到另一端。例如：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">a <span class="token operator">=</span> deque<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># deque([1, 2, 3, 4])</span>
+a<span class="token punctuation">.</span>rotate<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>  <span class="token comment"># deque([4, 1, 2, 3])</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p>当然移动的参数可以为负数，即为反方向移动。</p>
+<h4 id="3-多数操作为原子操作"><a href="#3-多数操作为原子操作" class="headerlink" title="3.多数操作为原子操作"></a>3.多数操作为原子操作</h4><p>deque对于多线程十分友好，append和pop都为原子操作。</p>
+<h4 id="4-双向特性"><a href="#4-双向特性" class="headerlink" title="4.双向特性"></a>4.双向特性</h4><p>deque支持双向操作例如append()和appendleft()，pop()和popleft()，a.extend()和a.extendleft()</p>
+<p>但要注意的是.extendleft()是逐个加入，例如：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">a <span class="token operator">=</span> deque<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+a<span class="token punctuation">.</span>extendleft<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">,</span> <span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># deque([7, 6, 5, 4, 1, 2, 3, 4])</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<h4 id="5-不支持-copy-的浅复制"><a href="#5-不支持-copy-的浅复制" class="headerlink" title="5.不支持.copy()的浅复制"></a>5.不支持.copy()的浅复制</h4><p>虽然不支持.copy()但是支持 copy包的copy和deepcopy</p>
+<h4 id="6-不支持切片"><a href="#6-不支持切片" class="headerlink" title="6.不支持切片"></a>6.不支持切片</h4><p>要实现 deque切片， 使用一个类似的方法，应用rotate()将目标元素放到左边。通过 popleft() 移去老的条目（entries），通过 extend()添加新的条目， 然后反向 rotate。</p>
+<h4 id="7-不支持-sort-的数据整理"><a href="#7-不支持-sort-的数据整理" class="headerlink" title="7.不支持.sort()的数据整理"></a>7.不支持.sort()的数据整理</h4><p>同理支持sort函数</p>
+<h2 id="memoryview-—-内存视图"><a href="#memoryview-—-内存视图" class="headerlink" title="memoryview — 内存视图"></a>memoryview — 内存视图</h2><p><a target="_blank" rel="noopener" href="https://docs.python.org/zh-cn/3/library/stdtypes.html#memoryview">官方文档</a></p>
+<h3 id="简介-2"><a href="#简介-2" class="headerlink" title="简介"></a>简介</h3><p>内存视图是对<strong>bytes-like</strong>对象使用的，可以对其进行字节处理。它的特性在于不会拷贝内容，而是创建一个类似指针功能的对象。可以把memoryview 理解为一个放大镜或是一种工具，它可以处理bytes类型对象，例如<strong>open</strong>函数打开文件读取字节。</p>
+<h3 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h3><p>和列表性质都不一样，此处不做比较</p>
+<h4 id="1-切片创建视图而非复制"><a href="#1-切片创建视图而非复制" class="headerlink" title="1.切片创建视图而非复制"></a>1.切片创建视图而非复制</h4><p>若a &#x3D; list1[1:2]那么a显然是list1切片出来的对象的副本，即内存进行了复制。memoryview 也支持切片，但其切片创建的对象不会进行复制。</p>
+<h4 id="2-可操作数组对象"><a href="#2-可操作数组对象" class="headerlink" title="2.可操作数组对象"></a>2.可操作数组对象</h4><pre class="line-numbers language-python" data-language="python"><code class="language-python">numbers <span class="token operator">=</span> array<span class="token punctuation">.</span>array<span class="token punctuation">(</span><span class="token string">'h'</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+memv <span class="token operator">=</span> <span class="token builtin">memoryview</span><span class="token punctuation">(</span>numbers<span class="token punctuation">)</span>
+memv_oct <span class="token operator">=</span> memv<span class="token punctuation">.</span>cast<span class="token punctuation">(</span><span class="token string">'B'</span><span class="token punctuation">)</span>
+memv_oct<span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># [254, 255, 255, 255, 0, 0, 1, 0, 2, 0]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2022/04/22/graph-algorithm-note1/">图算法笔记1 - 基础知识和DFS&amp;BFS</a></li>
+                
+                
+                    <li>下一篇: <a href="/2022/03/10/crawler-1/">爬虫学习(1) - 超基础篇</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/python/" rel="tag">python</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>

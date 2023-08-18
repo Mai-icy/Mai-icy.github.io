@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>Python库requests源码阅读笔记 - 结构篇 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="Python库requests源码阅读笔记 - 结构篇"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Python库requests源码阅读笔记 - 结构篇</h2>
+            <div class="post-meta">
+                <time class="date">2023.02.09</time>
+            
+                <span class="category"><a class="category-link" href="/categories/python/">python</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <blockquote>这篇文章上次修改于 191 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+        
+            <h1 id="requests源码阅读整理"><a href="#requests源码阅读整理" class="headerlink" title="requests源码阅读整理"></a>requests源码阅读整理</h1><h2 id="主要运行过程和思想"><a href="#主要运行过程和思想" class="headerlink" title="主要运行过程和思想"></a>主要运行过程和思想</h2><p>程序目录（源码的代码内文件注释）：</p>
+<p><code>models.py</code>: This module contains the primary objects that power Requests.</p>
+<p><code>session.py</code>: This module provides a Session object to manage and persist settings across<br>requests (cookies, auth, proxies).</p>
+<p><code>adapters.py</code>: This module contains the transport adapters that Requests uses to define<br>and maintain connections.</p>
+<p><code>api.py</code>: This module implements the Requests API.</p>
+<h3 id="在models-py文件中"><a href="#在models-py文件中" class="headerlink" title="在models.py文件中"></a>在<code>models.py</code>文件中</h3><h4 id="Requests-和-PreparedRequest"><a href="#Requests-和-PreparedRequest" class="headerlink" title="Requests 和 PreparedRequest"></a>Requests 和 PreparedRequest</h4><p>将 请求 <code>Request</code>作为一个类，内部包含了请求的各种参数，请求类并不包含请求功能。它的功能只有储存相关参数和检查相关参数的合法性，以及扩大参数适应性。同时具有和其他类的适配性。</p>
+<p>同时，请求分为<code>Request</code>类和<code>PreparedRequest</code>类。</p>
+<p><code>Request</code>类用于接收和储存数据，并不检查数据合法性</p>
+<p>通过<code>prepare()</code>操作，即检查请求参数合法性。<code>Request</code>类将生成合法的可用的<code>PreparedRequest</code>类，见以下源码</p>
+<p><code>Request</code>类的<code>prepare</code>操作</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Request</span><span class="token punctuation">(</span>RequestHooksMixin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	<span class="token keyword">def</span> <span class="token function">prepare</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Constructs a :class:`PreparedRequest &lt;PreparedRequest>` for transmission and returns it."""</span>
+        p <span class="token operator">=</span> PreparedRequest<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        p<span class="token punctuation">.</span>prepare<span class="token punctuation">(</span>
+            method<span class="token operator">=</span>self<span class="token punctuation">.</span>method<span class="token punctuation">,</span>
+            url<span class="token operator">=</span>self<span class="token punctuation">.</span>url<span class="token punctuation">,</span>
+            headers<span class="token operator">=</span>self<span class="token punctuation">.</span>headers<span class="token punctuation">,</span>
+            files<span class="token operator">=</span>self<span class="token punctuation">.</span>files<span class="token punctuation">,</span>
+            data<span class="token operator">=</span>self<span class="token punctuation">.</span>data<span class="token punctuation">,</span>
+            json<span class="token operator">=</span>self<span class="token punctuation">.</span>json<span class="token punctuation">,</span>
+            params<span class="token operator">=</span>self<span class="token punctuation">.</span>params<span class="token punctuation">,</span>
+            auth<span class="token operator">=</span>self<span class="token punctuation">.</span>auth<span class="token punctuation">,</span>
+            cookies<span class="token operator">=</span>self<span class="token punctuation">.</span>cookies<span class="token punctuation">,</span>
+            hooks<span class="token operator">=</span>self<span class="token punctuation">.</span>hooks<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+        <span class="token keyword">return</span> p
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p><code>Request</code>类调用<code>PreparedRequest</code>的<code>prepare()</code></p>
+<p>检查合法性的过程：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">PreparedRequest</span><span class="token punctuation">(</span>RequestEncodingMixin<span class="token punctuation">,</span> RequestHooksMixin<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+	<span class="token keyword">def</span> <span class="token function">prepare</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span>
+        method<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        url<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        headers<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        files<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        data<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        params<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        auth<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        cookies<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        hooks<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+        json<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""Prepares the entire request with the given parameters."""</span>
+
+        self<span class="token punctuation">.</span>prepare_method<span class="token punctuation">(</span>method<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>prepare_url<span class="token punctuation">(</span>url<span class="token punctuation">,</span> params<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>prepare_headers<span class="token punctuation">(</span>headers<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>prepare_cookies<span class="token punctuation">(</span>cookies<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>prepare_body<span class="token punctuation">(</span>data<span class="token punctuation">,</span> files<span class="token punctuation">,</span> json<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>prepare_auth<span class="token punctuation">(</span>auth<span class="token punctuation">,</span> url<span class="token punctuation">)</span>
+
+        <span class="token comment"># Note that prepare_auth must be last to enable authentication schemes</span>
+        <span class="token comment"># such as OAuth to work on a fully prepared request.</span>
+
+        <span class="token comment"># This MUST go after prepare_auth. Authenticators could add a hook</span>
+        self<span class="token punctuation">.</span>prepare_hooks<span class="token punctuation">(</span>hooks<span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>结构严密，可观性相当。</p>
+<p>利用了<code>Mixin</code>类的组合，增加了代码复用性。</p>
+<p>由于<code>Request</code>类并不检查编码，故不使用<code>RequestEncodingMixin</code>。</p>
+<p><code>RequestEncodingMixin</code>虽然只被使用了一次，应当可以直接并入<code>PreparedRequest</code>类中，但是同时可以发现，移出的<code>RequestEncodingMixin</code>内容仅和很复杂的编码关系有关，为了利于测试，单独出来是合理的，并且增进了代码的可读性。</p>
+<h4 id="Response"><a href="#Response" class="headerlink" title="Response"></a>Response</h4><p><code>Response</code>类的思想相似，将回复作为一个类，装填回复的内容并返回给用户以便操作。<code>Response</code>类额外提供了一个序列化功能，可以序列化回复类进行保存。</p>
+<p><code>Response</code>类提供了一个<code>close()</code>函数，是因为考虑到回复的数据量可能较大，可主动调用<code>close()</code>用于释放<code>raw</code>对象即内容的空间。又由于<code>Response</code>类提供了上下文管理器<code>with</code>关键词的功能，可这样使用：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">with</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"https://www.baidu.com"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> response<span class="token punctuation">:</span>
+	data <span class="token operator">=</span> response<span class="token punctuation">.</span>status_code
+    <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>  <span class="token comment"># get the data you want</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>  <span class="token comment"># use the data</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在需要的数据远小于收到数据大小的时候可以使用。</p>
+<h3 id="在session-py文件中"><a href="#在session-py文件中" class="headerlink" title="在session.py文件中"></a>在<code>session.py</code>文件中</h3><p>其中包含了类<code>Session</code>，这也是用户直接操作的对象，该对象负责处理上面讲的<code>Request</code>和<code>Response</code>类，<code>Session</code>管理他们并且发送他们以及装填他们。为了使用的便利，<code>Request</code>一般并不会被用户使用。例如以下代码：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> requests
+
+session <span class="token operator">=</span> requests<span class="token punctuation">.</span>Session<span class="token punctuation">(</span><span class="token punctuation">)</span>
+response <span class="token operator">=</span> session<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"https://www.baidu.com"</span><span class="token punctuation">)</span>
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<blockquote>
+<p><code>requests.Session()</code>和<code>requests.session()</code>没有什么区别，<code>session()</code>只是<code>session.py</code>文件中的一个函数，源码如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">def session():
+ &quot;&quot;&quot;
+ Returns a :class:&#96;Session&#96; for context-management.
+
+ .. deprecated:: 1.0.0
+
+     This method has been deprecated since version 1.0.0 and is only kept for
+     backwards compatibility. New code should use :class:&#96;~requests.sessions.Session&#96;
+     to create a session. This may be removed at a future date.
+
+ :rtype: Session
+ &quot;&quot;&quot;
+ return Session()<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中也写道可能会在未来被删除，实际上就是实例化一个<code>Session</code>类。</p>
+</blockquote>
+<p>用户只写了<code>session.get(&quot;https://www.baidu.com&quot;)</code>因为一般的访问，不考虑多的东西，就只要<code>url</code>就好了，其中的过程为创建一个<code>Request</code>对象，塞入<code>url</code>以及其他的参数的默认（因为我们没有给出），再将<code>Request</code>对象进行<code>prepare()</code>即参数合法性检查得到一个<code>PreparedRequest</code>，发送它，得到<code>Response</code>对象，并且返回。</p>
+<p>简单来说是这样，但复杂上来说，请求由于是<code>urllib</code>库来实现，所以写了一个<code>adapters.py</code>内部包含了对<code>urllib</code>的封装和适配，属于适配器模式。session获取对应的适配器<code>Adapter</code>，将请求传入，得到回复，此时由于网站跳转的特例，需要再有处理。</p>
+<p>见<code>Session.send()</code>源码：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">send</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> request<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Send a given PreparedRequest.
+
+    :rtype: requests.Response
+    """</span>
+    <span class="token comment"># Set defaults that the hooks can utilize to ensure they always have</span>
+    <span class="token comment"># the correct parameters to reproduce the previous request.</span>
+    kwargs<span class="token punctuation">.</span>setdefault<span class="token punctuation">(</span><span class="token string">"stream"</span><span class="token punctuation">,</span> self<span class="token punctuation">.</span>stream<span class="token punctuation">)</span>
+    kwargs<span class="token punctuation">.</span>setdefault<span class="token punctuation">(</span><span class="token string">"verify"</span><span class="token punctuation">,</span> self<span class="token punctuation">.</span>verify<span class="token punctuation">)</span>
+    kwargs<span class="token punctuation">.</span>setdefault<span class="token punctuation">(</span><span class="token string">"cert"</span><span class="token punctuation">,</span> self<span class="token punctuation">.</span>cert<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token string">"proxies"</span> <span class="token keyword">not</span> <span class="token keyword">in</span> kwargs<span class="token punctuation">:</span>
+        kwargs<span class="token punctuation">[</span><span class="token string">"proxies"</span><span class="token punctuation">]</span> <span class="token operator">=</span> resolve_proxies<span class="token punctuation">(</span>request<span class="token punctuation">,</span> self<span class="token punctuation">.</span>proxies<span class="token punctuation">,</span> self<span class="token punctuation">.</span>trust_env<span class="token punctuation">)</span>
+
+    <span class="token comment"># It's possible that users might accidentally send a Request object.</span>
+    <span class="token comment"># Guard against that specific failure case.</span>
+    <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> Request<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"You can only send PreparedRequests."</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Set up variables needed for resolve_redirects and dispatching of hooks</span>
+    allow_redirects <span class="token operator">=</span> kwargs<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">"allow_redirects"</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">)</span>
+    stream <span class="token operator">=</span> kwargs<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"stream"</span><span class="token punctuation">)</span>
+    hooks <span class="token operator">=</span> request<span class="token punctuation">.</span>hooks
+
+    <span class="token comment"># Get the appropriate adapter to use</span>
+    adapter <span class="token operator">=</span> self<span class="token punctuation">.</span>get_adapter<span class="token punctuation">(</span>url<span class="token operator">=</span>request<span class="token punctuation">.</span>url<span class="token punctuation">)</span>
+
+    <span class="token comment"># Start time (approximately) of the request</span>
+    start <span class="token operator">=</span> preferred_clock<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Send the request</span>
+    r <span class="token operator">=</span> adapter<span class="token punctuation">.</span>send<span class="token punctuation">(</span>request<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+
+    <span class="token comment"># Total elapsed time of the request (approximately)</span>
+    elapsed <span class="token operator">=</span> preferred_clock<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> start
+    r<span class="token punctuation">.</span>elapsed <span class="token operator">=</span> timedelta<span class="token punctuation">(</span>seconds<span class="token operator">=</span>elapsed<span class="token punctuation">)</span>
+
+    <span class="token comment"># Response manipulation hooks</span>
+    r <span class="token operator">=</span> dispatch_hook<span class="token punctuation">(</span><span class="token string">"response"</span><span class="token punctuation">,</span> hooks<span class="token punctuation">,</span> r<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+
+    <span class="token comment"># Persist cookies</span>
+    <span class="token keyword">if</span> r<span class="token punctuation">.</span>history<span class="token punctuation">:</span>
+
+        <span class="token comment"># If the hooks create history then we want those cookies too</span>
+        <span class="token keyword">for</span> resp <span class="token keyword">in</span> r<span class="token punctuation">.</span>history<span class="token punctuation">:</span>
+            extract_cookies_to_jar<span class="token punctuation">(</span>self<span class="token punctuation">.</span>cookies<span class="token punctuation">,</span> resp<span class="token punctuation">.</span>request<span class="token punctuation">,</span> resp<span class="token punctuation">.</span>raw<span class="token punctuation">)</span>
+
+    extract_cookies_to_jar<span class="token punctuation">(</span>self<span class="token punctuation">.</span>cookies<span class="token punctuation">,</span> request<span class="token punctuation">,</span> r<span class="token punctuation">.</span>raw<span class="token punctuation">)</span>
+
+    <span class="token comment"># Resolve redirects if allowed.</span>
+    <span class="token keyword">if</span> allow_redirects<span class="token punctuation">:</span>
+        <span class="token comment"># Redirect resolving generator.</span>
+        gen <span class="token operator">=</span> self<span class="token punctuation">.</span>resolve_redirects<span class="token punctuation">(</span>r<span class="token punctuation">,</span> request<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+        history <span class="token operator">=</span> <span class="token punctuation">[</span>resp <span class="token keyword">for</span> resp <span class="token keyword">in</span> gen<span class="token punctuation">]</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        history <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+
+    <span class="token comment"># Shuffle things around if there's history.</span>
+    <span class="token keyword">if</span> history<span class="token punctuation">:</span>
+        <span class="token comment"># Insert the first (original) request at the start</span>
+        history<span class="token punctuation">.</span>insert<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> r<span class="token punctuation">)</span>
+        <span class="token comment"># Get the last request made</span>
+        r <span class="token operator">=</span> history<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        r<span class="token punctuation">.</span>history <span class="token operator">=</span> history
+
+    <span class="token comment"># If redirects aren't being followed, store the response on the Request for Response.next().</span>
+    <span class="token keyword">if</span> <span class="token keyword">not</span> allow_redirects<span class="token punctuation">:</span>
+        <span class="token keyword">try</span><span class="token punctuation">:</span>
+            r<span class="token punctuation">.</span>_next <span class="token operator">=</span> <span class="token builtin">next</span><span class="token punctuation">(</span>
+                self<span class="token punctuation">.</span>resolve_redirects<span class="token punctuation">(</span>r<span class="token punctuation">,</span> request<span class="token punctuation">,</span> yield_requests<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>
+        <span class="token keyword">except</span> StopIteration<span class="token punctuation">:</span>
+            <span class="token keyword">pass</span>
+
+    <span class="token keyword">if</span> <span class="token keyword">not</span> stream<span class="token punctuation">:</span>
+        r<span class="token punctuation">.</span>content
+
+    <span class="token keyword">return</span> r<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中还包含了<code>hook</code>函数的使用，以及cookies的延续和保存。关于cookies的延续，由于类名为Session即会话，是多次连接的窗口，可以想象做浏览器帮助用户和网站之间的连接，保存cookies也符合设计目的。</p>
+<p>其他：</p>
+<p>该文件内还包含了<code>merge_setting</code>,<code>merge_hooks</code>函数以及<code>SessionRedirectMixin</code>类。</p>
+<blockquote>
+<p><code>Session</code>也支持序列化</p>
+</blockquote>
+<h3 id="在adapters-py文件中"><a href="#在adapters-py文件中" class="headerlink" title="在adapters.py文件中"></a>在<code>adapters.py</code>文件中</h3><p>只定义了<code>BaseAdapter</code>和<code>HTTPAdapter</code>，很显然他们是继承关系，其作用为适配了<code>urllib</code>的库。</p>
+<p>请求利用了连接池，<code>urllib</code>的<code>PoolManager</code>类</p>
+<p>代理利用<code>urllib</code>的<code>ProxyManager</code>类</p>
+<p>证书认证也是<code>urllib</code>内包含的，做的仅是绑定证书</p>
+<p>对于一般用户（仅使用<code>Session</code>或者直接使用<code>requests.get</code>等）<code>Adapter</code>仅使用了<code>send</code>函数。</p>
+<p><code>Adapter</code>包含了多项设置内容</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">   <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+       self<span class="token punctuation">,</span>
+       pool_connections<span class="token operator">=</span>DEFAULT_POOLSIZE<span class="token punctuation">,</span>
+       pool_maxsize<span class="token operator">=</span>DEFAULT_POOLSIZE<span class="token punctuation">,</span>
+       max_retries<span class="token operator">=</span>DEFAULT_RETRIES<span class="token punctuation">,</span>
+       pool_block<span class="token operator">=</span>DEFAULT_POOLBLOCK<span class="token punctuation">,</span>
+   <span class="token punctuation">)</span><span class="token punctuation">:</span>
+   <span class="token triple-quoted-string string">"""
+:param pool_connections: The number of urllib3 connection pools to cache.
+   :param pool_maxsize: The maximum number of connections to save in the pool.
+   :param max_retries: The maximum number of retries each connection
+       should attempt. Note, this applies only to failed DNS lookups, socket
+       connections and connection timeouts, never to requests where data has
+       made it to the server. By default, Requests does not retry failed
+       connections. If you need granular control over the conditions under
+       which we retry a request, import urllib3's ``Retry`` class and pass
+       that instead.
+   :param pool_block: Whether the connection pool should block for connections.
+   """</span>
+   <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中默认参数为以下</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">DEFAULT_POOLBLOCK <span class="token operator">=</span> <span class="token boolean">False</span>
+DEFAULT_POOLSIZE <span class="token operator">=</span> <span class="token number">10</span>
+DEFAULT_RETRIES <span class="token operator">=</span> <span class="token number">0</span>
+DEFAULT_POOL_TIMEOUT <span class="token operator">=</span> <span class="token boolean">None</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>如果有需求，可以按照以下设置以上参数</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> requests
+s <span class="token operator">=</span> requests<span class="token punctuation">.</span>Session<span class="token punctuation">(</span><span class="token punctuation">)</span>
+a <span class="token operator">=</span> requests<span class="token punctuation">.</span>adapters<span class="token punctuation">.</span>HTTPAdapter<span class="token punctuation">(</span>max_retries<span class="token operator">=</span><span class="token number">3</span><span class="token punctuation">)</span>  <span class="token comment"># 输入对应参数</span>
+s<span class="token punctuation">.</span>mount<span class="token punctuation">(</span><span class="token string">'http://'</span><span class="token punctuation">,</span> a<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>其中关于<code>Session</code>包含的<code>mount()</code>函数，一个<code>Session</code>对象仅包含两个<code>Adapter</code>对象，一个用于连接<code>http</code>请求一个用于连接<code>https</code>请求</p>
+<p><code>mount()</code>函数影响<code>get_adapter()</code>函数，可把<code>mount()</code>理解为<code>set_adapter</code></p>
+<p>以下源码助于理解，也是<code>Session</code>对象和<code>Adapter</code>对象之间的组合方法</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span>
+   	<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>
+       
+       <span class="token comment"># Default connection adapters.</span>
+    self<span class="token punctuation">.</span>adapters <span class="token operator">=</span> OrderedDict<span class="token punctuation">(</span><span class="token punctuation">)</span>
+       self<span class="token punctuation">.</span>mount<span class="token punctuation">(</span><span class="token string">"https://"</span><span class="token punctuation">,</span> HTTPAdapter<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+       self<span class="token punctuation">.</span>mount<span class="token punctuation">(</span><span class="token string">"http://"</span><span class="token punctuation">,</span> HTTPAdapter<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">mount</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> prefix<span class="token punctuation">,</span> adapter<span class="token punctuation">)</span><span class="token punctuation">:</span>
+       <span class="token triple-quoted-string string">"""Registers a connection adapter to a prefix.
+
+       Adapters are sorted in descending order by prefix length.
+       """</span>
+       self<span class="token punctuation">.</span>adapters<span class="token punctuation">[</span>prefix<span class="token punctuation">]</span> <span class="token operator">=</span> adapter
+       keys_to_move <span class="token operator">=</span> <span class="token punctuation">[</span>k <span class="token keyword">for</span> k <span class="token keyword">in</span> self<span class="token punctuation">.</span>adapters <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>k<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token builtin">len</span><span class="token punctuation">(</span>prefix<span class="token punctuation">)</span><span class="token punctuation">]</span>
+
+       <span class="token keyword">for</span> key <span class="token keyword">in</span> keys_to_move<span class="token punctuation">:</span>
+           self<span class="token punctuation">.</span>adapters<span class="token punctuation">[</span>key<span class="token punctuation">]</span> <span class="token operator">=</span> self<span class="token punctuation">.</span>adapters<span class="token punctuation">.</span>pop<span class="token punctuation">(</span>key<span class="token punctuation">)</span>
+           
+   <span class="token keyword">def</span> <span class="token function">get_adapter</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> url<span class="token punctuation">)</span><span class="token punctuation">:</span>
+       <span class="token triple-quoted-string string">"""
+       Returns the appropriate connection adapter for the given URL.
+
+       :rtype: requests.adapters.BaseAdapter
+       """</span>
+       <span class="token keyword">for</span> <span class="token punctuation">(</span>prefix<span class="token punctuation">,</span> adapter<span class="token punctuation">)</span> <span class="token keyword">in</span> self<span class="token punctuation">.</span>adapters<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+
+           <span class="token keyword">if</span> url<span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>startswith<span class="token punctuation">(</span>prefix<span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+               <span class="token keyword">return</span> adapter
+
+       <span class="token comment"># Nothing matches :-/</span>
+       <span class="token keyword">raise</span> InvalidSchema<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"No connection adapters were found for </span><span class="token interpolation"><span class="token punctuation">&#123;</span>url<span class="token conversion-option punctuation">!r</span><span class="token punctuation">&#125;</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>以上就说明了<code>requests</code>库中的类之间的关系</p>
+<p>再说明最简单的<code>requests.get(&quot;https://www.baidu.com&quot;)</code>的情况</p>
+<p>这些函数的操作被放入<code>api.py</code></p>
+<h3 id="在api-py文件中"><a href="#在api-py文件中" class="headerlink" title="在api.py文件中"></a>在<code>api.py</code>文件中</h3><p>其中包含的函数都是及其简化用户使用<code>requests</code>库</p>
+<p>包含了<code>get</code>,<code>options</code>,<code>head</code>,<code>post</code>,<code>put</code>,<code>patch</code>,<code>delete</code>多种用于请求的请求方法函数</p>
+<p>以及<code>request(method, url, **kwargs)</code>函数这种通用函数</p>
+<p>去掉注释它的源码为：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">request</span><span class="token punctuation">(</span>method<span class="token punctuation">,</span> url<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">with</span> sessions<span class="token punctuation">.</span>Session<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">as</span> session<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> session<span class="token punctuation">.</span>request<span class="token punctuation">(</span>method<span class="token operator">=</span>method<span class="token punctuation">,</span> url<span class="token operator">=</span>url<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+    
+<span class="token keyword">def</span> <span class="token function">get</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> params<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> request<span class="token punctuation">(</span><span class="token string">"get"</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> params<span class="token operator">=</span>params<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">head</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    kwargs<span class="token punctuation">.</span>setdefault<span class="token punctuation">(</span><span class="token string">"allow_redirects"</span><span class="token punctuation">,</span> <span class="token boolean">False</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> request<span class="token punctuation">(</span><span class="token string">"head"</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">post</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> data<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> json<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">return</span> request<span class="token punctuation">(</span><span class="token string">"post"</span><span class="token punctuation">,</span> url<span class="token punctuation">,</span> data<span class="token operator">=</span>data<span class="token punctuation">,</span> json<span class="token operator">=</span>json<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
+<span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>  <span class="token comment"># 其他省略</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>给用户一个低门槛的使用，考虑到请求有时就图一个网址填进去，其他的都不想考虑，此处就在实例化<code>Session</code>中默认了用户没有设置的所有参数。</p>
+<h2 id="数据结构的使用"><a href="#数据结构的使用" class="headerlink" title="数据结构的使用"></a>数据结构的使用</h2><h3 id="在structures-py文件中"><a href="#在structures-py文件中" class="headerlink" title="在structures.py文件中"></a>在<code>structures.py</code>文件中</h3><p>其设计了两个数据结构<code>CaseInsensitiveDict</code> 和<code>LookupDict</code></p>
+<h4 id="CaseInsensitiveDict"><a href="#CaseInsensitiveDict" class="headerlink" title="CaseInsensitiveDict"></a><code>CaseInsensitiveDict</code></h4><p>功能：</p>
+<ul>
+<li>不区分键的大小写，大小写不敏感</li>
+<li>对于相同字母不同大小写的键会保留最后一次的键，覆盖之前的键</li>
+<li>基于有序字典</li>
+</ul>
+<p>使用组合的方式使用了<code>OrderedDict</code>，并继承了<code>MutableMapping</code></p>
+<p>重载了</p>
+<p><code>__setitem__</code>,<code>__getitem__</code>,<code>__delitem__</code>, <code>__iter__</code>, <code>__len__</code>,<code>__eq__</code>, <code>__repr__</code></p>
+<p>仅使用于请求回复中的<code>headers</code></p>
+<p><code>headers</code>是不区分大小写的，在输入对应<code>header</code>会遇到多种不同大小写的键，使用该类保证输入兼容性。</p>
+<h4 id="LookupDict"><a href="#LookupDict" class="headerlink" title="LookupDict"></a><code>LookupDict</code></h4><p>功能：</p>
+<ul>
+<li>有名字<code>name</code>的成员变量</li>
+<li>使用方括号获取等价于<code>.get()</code>，是安全的不会报错</li>
+</ul>
+<p>继承了<code>dict</code></p>
+<p>重载了</p>
+<p><code>__repr__</code>,<code>__getitem__</code>,<code>get</code></p>
+<p>仅用于对应状态码和错误的消息、情况的<code>status_codes.py</code>文件，但仅用于编辑<code>__doc__</code>文档环境变量</p>
+<h2 id="为python2和python3的兼容性"><a href="#为python2和python3的兼容性" class="headerlink" title="为python2和python3的兼容性"></a>为python2和python3的兼容性</h2><h3 id="在compat-py文件中"><a href="#在compat-py文件中" class="headerlink" title="在compat.py文件中"></a>在<code>compat.py</code>文件中</h3><p>判断python版本</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># Syntax sugar.</span>
+_ver <span class="token operator">=</span> sys<span class="token punctuation">.</span>version_info
+
+<span class="token comment">#: Python 2.x?</span>
+is_py2 <span class="token operator">=</span> _ver<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">2</span>
+
+<span class="token comment">#: Python 3.x?</span>
+is_py3 <span class="token operator">=</span> _ver<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">3</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>试探引用</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">has_simplejson <span class="token operator">=</span> <span class="token boolean">False</span>
+<span class="token keyword">try</span><span class="token punctuation">:</span>
+    <span class="token keyword">import</span> simplejson <span class="token keyword">as</span> json
+
+    has_simplejson <span class="token operator">=</span> <span class="token boolean">True</span>
+<span class="token keyword">except</span> ImportError<span class="token punctuation">:</span>
+    <span class="token keyword">import</span> json
+
+<span class="token keyword">if</span> has_simplejson<span class="token punctuation">:</span>
+    <span class="token keyword">from</span> simplejson <span class="token keyword">import</span> JSONDecodeError
+<span class="token keyword">else</span><span class="token punctuation">:</span>
+    <span class="token keyword">from</span> json <span class="token keyword">import</span> JSONDecodeError<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">try</span><span class="token punctuation">:</span>
+    <span class="token keyword">import</span> chardet
+<span class="token keyword">except</span> ImportError<span class="token punctuation">:</span>
+    <span class="token keyword">import</span> charset_normalizer <span class="token keyword">as</span> chardet<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="在packages-py文件中"><a href="#在packages-py文件中" class="headerlink" title="在packages.py文件中"></a>在<code>packages.py</code>文件中</h3><p>略</p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><h2 id="其他文件"><a href="#其他文件" class="headerlink" title="其他文件"></a>其他文件</h2><p>关于请求的参数：</p>
+<p><code>auth.py</code>, <code>cookies.py</code> , <code>hooks.py</code>, <code>certs.py</code></p>
+<p>关于项目信息：</p>
+<p><code>__version__.py</code>, <code>status_codes.py</code> , <code>help.py</code></p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li>
+                
+                
+                    <li>下一篇: <a href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/python-requests/" rel="tag">python requests</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 10px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
