@@ -111,12 +111,13 @@
             <span class="token number">32</span> LOAD_CONST               <span class="token number">0</span> <span class="token punctuation">(</span><span class="token boolean">None</span><span class="token punctuation">)</span>
             <span class="token number">34</span> RETURN_VALUE<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
-<p>先看看<code>GET_AWAITABLE</code></p>
+<p>说明遇到<code>await</code>的时候，运行了<code>GET_AWAITABLE</code>字节码到<code>YIELD_FROM</code>字节码</p>
+<h4 id="关于字节码GET-AWAITABLE"><a href="#关于字节码GET-AWAITABLE" class="headerlink" title="关于字节码GET_AWAITABLE"></a>关于字节码<code>GET_AWAITABLE</code></h4><p>先看看<code>GET_AWAITABLE</code>的源码</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">case TARGET(GET_AWAITABLE): &#123;
     PREDICTED(GET_AWAITABLE);
     PyObject *iterable &#x3D; TOP();
     PyObject *iter &#x3D; _PyCoro_GetAwaitableIter(iterable);
-
+	&#x2F;&#x2F; 如果参数是一个&#96;coroutine&#96;，返回coro本身，如果不是则运行并返回&#96;__await__()&#96;函数的值
     if (iter &#x3D;&#x3D; NULL) &#123;
         int opcode_at_minus_3 &#x3D; 0;
         if ((next_instr - first_instr) &gt; 2) &#123;
@@ -154,51 +155,9 @@
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <p>其中的关键函数<code>_PyCoro_GetAwaitableIter</code>的注释说明了：</p>
-<p>如果参数是一个<code>coroutine</code>，返回它本身，如果不是则运行并返回<code>__await__</code>函数的值</p>
-<p>现在开始具体分析<code>YIELD_FROM</code></p>
-<pre class="line-numbers language-C" data-language="C"><code class="language-C">case TARGET(YIELD_FROM): &#123;
-    PyObject *v &#x3D; POP();
-    PyObject *receiver &#x3D; TOP();
-    int err;
-    if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) &#123;
-        &#x2F;&#x2F; PyGen_CheckExact判断是否是生成器，PyCoro_CheckExact判断是否是coroutine
-        retval &#x3D; _PyGen_Send((PyGenObject *)receiver, v);
-        &#x2F;&#x2F; 发送一个send，并将yield返回得到的值存入retval
-    &#125; else &#123;
-        _Py_IDENTIFIER(send);
-        if (v &#x3D;&#x3D; Py_None)
-            retval &#x3D; Py_TYPE(receiver)-&gt;tp_iternext(receiver);
-        else
-            retval &#x3D; _PyObject_CallMethodIdOneArg(receiver, &amp;PyId_send, v);
-    &#125;
-    Py_DECREF(v);
-    if (retval &#x3D;&#x3D; NULL) &#123;
-        &#x2F;&#x2F; retval在结束或者出现StopIteration异常就会为NULL
-        PyObject *val;
-        if (tstate-&gt;c_tracefunc !&#x3D; NULL
-            &amp;&amp; _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
-            call_exc_trace(tstate-&gt;c_tracefunc, tstate-&gt;c_traceobj, tstate, f);
-        &#x2F;&#x2F; 获取StopIteration内容的值
-        err &#x3D; _PyGen_FetchStopIterationValue(&amp;val);
-        if (err &lt; 0)
-            goto error;
-        Py_DECREF(receiver);
-        SET_TOP(val);
-        DISPATCH();
-    &#125;
-    &#x2F;&#x2F; retval 并非NULL，说明生成了一个值现在存在retval中
-    
-    &#x2F;* receiver remains on stack, retval is value to be yielded *&#x2F;
-    f-&gt;f_stacktop &#x3D; stack_pointer;
-    &#x2F;* and repeat... *&#x2F;
-    assert(f-&gt;f_lasti &gt;&#x3D; (int)sizeof(_Py_CODEUNIT)); &#x2F;&#x2F; 此时的counter应当还没有结束
-    f-&gt;f_lasti -&#x3D; sizeof(_Py_CODEUNIT); &#x2F;&#x2F; 调整counter回到上一句指令，下次调用还会从推出位置开始
-    goto exiting; &#x2F;&#x2F; 把yield出来得到的值 返回回去
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>以上说明了一个<code>coroutine</code>是如何让程序在运行到一半的时候停住，实际上和生成器的原理是一样的</p>
-<p>并且有个需要注意的语法糖，在协程函数和生成器函数中出现的<code>return</code>的实际原理是raise了一个<code>StopIteration</code>并且把return的值存入这个异常的内容。</p>
-<h4 id="await时发生的行为"><a href="#await时发生的行为" class="headerlink" title="await时发生的行为"></a>await时发生的行为</h4><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Future</span><span class="token punctuation">:</span>
+<p>如果参数是一个<code>coroutine</code>，返回它本身，如果不是则运行并返回<code>__await__</code>函数的值存入<code>iter</code></p>
+<p>然后使用了<code>SET_TOP(iter);</code>将其放在了栈顶，以便下次使用。</p>
+<h4 id="什么是-await-函数"><a href="#什么是-await-函数" class="headerlink" title="什么是__await__函数"></a>什么是<code>__await__</code>函数</h4><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Future</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""其他代码略"""</span>
     <span class="token keyword">def</span> <span class="token function">__await__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
         <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>done<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -215,6 +174,51 @@
 <li>一旦Future对象完成，协程将从之前的挂起点继续执行。在这个时候，Future对象已经完成，<code>self.done()</code>返回True，因此代码将继续执行。</li>
 <li>最后，它返回Future对象的结果，如果有的话。</li>
 </ol>
+<p>可见，<code>__await__</code>可以保证已经完成的任务不再被执行，总之就是做了一个前置的检查，查看任务是否已经完成。</p>
+<h4 id="关于字节码YIELD-FROM"><a href="#关于字节码YIELD-FROM" class="headerlink" title="关于字节码YIELD_FROM"></a>关于字节码<code>YIELD_FROM</code></h4><p>现在开始具体分析<code>YIELD_FROM</code>（已手动添加注释）</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">case TARGET(YIELD_FROM): &#123;
+    PyObject *v &#x3D; POP();
+    PyObject *receiver &#x3D; TOP(); &#x2F;&#x2F; 上次GET_AWAITABLE获取的coro
+    int err;
+    if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) &#123;
+        &#x2F;&#x2F; PyGen_CheckExact判断是否是生成器，PyCoro_CheckExact判断是否是coroutine
+        retval &#x3D; _PyGen_Send((PyGenObject *)receiver, v);
+        &#x2F;&#x2F; 发送一个send，并将yield返回得到的值存入retval
+    &#125; else &#123;
+        _Py_IDENTIFIER(send);
+        if (v &#x3D;&#x3D; Py_None)
+            retval &#x3D; Py_TYPE(receiver)-&gt;tp_iternext(receiver);
+        else
+            retval &#x3D; _PyObject_CallMethodIdOneArg(receiver, &amp;PyId_send, v);
+    &#125;
+    &#x2F;&#x2F; retval在结束或者出现StopIteration异常就会为NULL
+    Py_DECREF(v);
+    if (retval &#x3D;&#x3D; NULL) &#123;
+        &#x2F;&#x2F; 此处为该coro结束了或者是该coro进行了return
+        PyObject *val;
+        if (tstate-&gt;c_tracefunc !&#x3D; NULL
+            &amp;&amp; _PyErr_ExceptionMatches(tstate, PyExc_StopIteration))
+            call_exc_trace(tstate-&gt;c_tracefunc, tstate-&gt;c_traceobj, tstate, f);
+        err &#x3D; _PyGen_FetchStopIterationValue(&amp;val); &#x2F;&#x2F; 获取StopIteration内容的值
+        if (err &lt; 0)
+            goto error;
+        Py_DECREF(receiver);
+        SET_TOP(val);
+        DISPATCH(); &#x2F;&#x2F; 结束这个字节码
+    &#125;
+    &#x2F;&#x2F; retval 并非NULL，说明生成了一个值现在存在retval中
+    
+    &#x2F;* receiver remains on stack, retval is value to be yielded *&#x2F;
+    f-&gt;f_stacktop &#x3D; stack_pointer;
+    &#x2F;* and repeat... *&#x2F;
+    assert(f-&gt;f_lasti &gt;&#x3D; (int)sizeof(_Py_CODEUNIT)); &#x2F;&#x2F; 此时的counter应当还没有结束
+    f-&gt;f_lasti -&#x3D; sizeof(_Py_CODEUNIT); &#x2F;&#x2F; 调整counter回到上一句指令，下次调用还会从推出位置开始
+    goto exiting; &#x2F;&#x2F; 后面的代码省略，大致就是把yield出来得到的值 返回回去
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>以上说明了一个<code>coroutine</code>是如何让程序在运行到一半的时候停住，实际上和生成器的原理是一样的</p>
+<p>并且有个需要注意的语法糖，在协程函数和生成器函数中出现的<code>return</code>的实际原理是raise了一个<code>StopIteration</code>并且把return的值存入这个异常的内容。</p>
+<p>这里具体讲述了当await时，发生的具体行为</p>
 <h3 id="如何做到并行和相互依赖"><a href="#如何做到并行和相互依赖" class="headerlink" title="如何做到并行和相互依赖"></a>如何做到并行和相互依赖</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Task</span><span class="token punctuation">(</span>futures<span class="token punctuation">.</span>_PyFuture<span class="token punctuation">)</span><span class="token punctuation">:</span>
     _log_destroy_pending <span class="token operator">=</span> <span class="token boolean">True</span>
 
