@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>IO多路复用——Linux - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="IO多路复用——Linux"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>IO多路复用——Linux</h2>
+            <div class="post-meta">
+                <time class="date">2023.10.18</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="IO多路复用——linux"><a href="#IO多路复用——linux" class="headerlink" title="IO多路复用——linux"></a>IO多路复用——linux</h1><h2 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h2><p>我们需要创建一个服务器，用于处理多方请求和回复，应用程序需要处理来自多个客户端的并发连接或通信。这可以是一个网络服务器，如Web服务器、聊天服务器、游戏服务器等，或者是一个文件服务器，需要同时处理多个文件读写请求。</p>
+<p>核心函数</p>
+<pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+ssize_t recv(int sockfd, void *buf, size_t len, int flags);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<p><code>accept</code>函数用于接收来自<code>fd</code>套接字的连接，当连接产生时，将会输出一个新<code>fd</code>用于接收数据。</p>
+<p><code>recv</code>函数用于接收来自<code>fd</code>套接字的数据，当数据存在时，将会读取出来。</p>
+<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>这两个函数可以很好的完成TCP连接和数据传输，但是这两个函数也有<strong>堵塞</strong>问题:</p>
+<ul>
+<li><p><code>accept</code>当没有连接的时候，将一直等待到出现连接，此时函数堵塞，程序堵塞。</p>
+</li>
+<li><p><code>recv</code>当这个<code>fd</code>的缓存区没有内容，将会堵塞，一直等待到出现传输的数据内容。</p>
+</li>
+</ul>
+<p>一旦程序发生堵塞，将无法处理其他的连接问题，无法顾及到其他<code>fd</code>的数据。</p>
+<p>为了一个程序同时处理多个I&#x2F;O操作，而不会阻塞整个程序，提出了<strong>I&#x2F;O多路复用</strong></p>
+<p>我们的主要需求就是解决<code>accept</code>和<code>recv</code>的堵塞情况</p>
+<p>例如：</p>
+<ol>
+<li><p>当<code>accept</code>在接受新的连接时堵塞，无法去<code>recv</code>已经建立连接传输过来的消息</p>
+</li>
+<li><p>当<code>recv</code>在等待接收新的传输时堵塞，无法去<code>accept</code>其他的新连接</p>
+</li>
+</ol>
+<p>可以使用多线程进行解决，但是多个<code>fd</code>需要多个线程，而且每次的检查都需要内核态和用户态的切换，需要很大的开销</p>
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>I&#x2F;O多路复用（Input&#x2F;Output Multiplexing）是一种用于同时监视多个I&#x2F;O操作的技术，以提高系统的资源利用率和响应性能。它允许一个单一的线程或进程管理多个I&#x2F;O通道（如套接字、文件句柄等），而不需要为每个通道创建一个独立的线程。</p>
+<p>对于不同的系统，他们给出了不同的系统调用用于支持不堵塞的方法</p>
+<h2 id="Linux下的I-x2F-O多路复用"><a href="#Linux下的I-x2F-O多路复用" class="headerlink" title="Linux下的I&#x2F;O多路复用"></a>Linux下的I&#x2F;O多路复用</h2><p>Linux下提供了以下系统调用用于处理多路复用问题</p>
+<p><code>select</code>、<code>poll</code> 、 <code>epoll</code></p>
+<h3 id="select"><a href="#select" class="headerlink" title="select"></a>select</h3><p><code>select</code> 系统调用最早出现在早期的Unix操作系统中。Unix 操作系统的历史可以追溯到 1960 年代末和 1970 年代初，而 <code>select</code> 系统调用首次出现在那个时期。具体来说，<code>select</code> 的最早版本可以追溯到 BSD Unix，即伯克利软件分发版本的 Unix，这是一个常见的 Unix 衍生版本。它于 1983 年发布，包括了 <code>select</code> 系统调用。<code>select</code> 最初用于实现套接字（socket）编程，以支持多客户端服务器应用程序的开发。</p>
+<h4 id="解决问题的原理"><a href="#解决问题的原理" class="headerlink" title="解决问题的原理"></a>解决问题的原理</h4><p>通过一次性检查多个<code>fd</code>，一次性返回有产生事件的<code>fd</code>，再集中处理这些<code>fd</code>。</p>
+<p>为了提高检查<code>fd</code>的效率，我们将检查<code>fd</code>这项任务交给内核态来完成。</p>
+<p>多个<code>fd</code>包含了用于<code>accept</code>的<code>fd</code> 也包含了已经建立连接后的<code>fd</code>，这确保了他们不会因为等待某一个而使其他无法判断，一旦产生对应事件，则记录，否则则不记录。</p>
+<h4 id="提供的系统调用"><a href="#提供的系统调用" class="headerlink" title="提供的系统调用"></a>提供的系统调用</h4><p><code>select</code> 的基本语法如下：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;sys&#x2F;select.h&gt;
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li><code>nfds</code> 是要监听的最大文件描述符值加一，在select到这个位置就会结束</li>
+<li><code>readfds</code>  用于记录 需要监听 读事件 的多个<code>fd</code></li>
+<li><code>writefds</code> 用于记录 需要监听 写事件 的多个<code>fd</code></li>
+<li><code>exceptfds</code> 用于记录 需要监听 异常事件 的多个<code>fd</code></li>
+<li><code>timeout</code> 是一个指定超时时间的结构，如果为 NULL，<code>select</code> 将一直阻塞直到有事件发生。</li>
+</ul>
+<p><code>select</code> 返回后，对应的传入为参数的<code>fds</code>会根据情况被修改，根据被修改的<code>fds</code>可以找到对应的，有事件的<code>fd</code>，运用相应函数进行处理。</p>
+<h4 id="fd-set位图数组"><a href="#fd-set位图数组" class="headerlink" title="fd_set位图数组"></a>fd_set位图数组</h4><p>在C语言中，<code>fd_set</code> 通常是一个由宏定义和位操作函数组成的数据结构，用于设置、清除和测试文件描述符的状态。也就是多个<code>0</code>和<code>1</code>，例如：100个<code>fd</code>， 我们可以用100个位(bit)来记录是否有事件。</p>
+<p>它通常包括以下三个宏定义：</p>
+<ol>
+<li><code>FD_ZERO(fd_set *set)</code>：将 <code>set</code> 中的所有位都清零。</li>
+<li><code>FD_SET(int fd, fd_set *set)</code>：将 <code>set</code> 中的第<code>fd</code>位置<code>1</code>。</li>
+<li><code>FD_CLR(int fd, fd_set *set)</code>：将 <code>set</code> 中的第<code>fd</code>位置<code>0</code>。</li>
+<li><code>FD_ISSET(int fd, fd_set *set)</code>：查看<code>set</code> 中的第<code>fd</code>位置是否为1</li>
+</ol>
+<p>其中，在大多数系统中，<code>FD_SETSIZE</code> 的默认值是 1024，这意味着一个 <code>fd_set</code> 数据结构最多可以包含 1024 个文件描述符。</p>
+<h4 id="参数解读"><a href="#参数解读" class="headerlink" title="参数解读"></a>参数解读</h4><p><code>readfds</code> <code>writefds</code> <code>exceptfds</code></p>
+<p>当为参数时，第<code>fd</code>位为<code>1</code>代表监听该<code>fd</code>的对应事件，第<code>fd</code>位为<code>0</code>代表不监听该<code>fd</code>的对应事件。</p>
+<p>当为结果时，第<code>fd</code>位为<code>1</code>代表该<code>fd</code>的对应事件触发，第<code>fd</code>位为<code>0</code>代表该<code>fd</code>的对应事件没触发。</p>
+<h4 id="代码解释"><a href="#代码解释" class="headerlink" title="代码解释"></a>代码解释</h4><pre class="line-numbers language-C" data-language="C"><code class="language-C">while(1)&#123;
+    &#x2F;&#x2F; 初始化rset
+    FD_ZERO(&amp;rset);
+    for (int i &#x3D; 0; i&lt; 5; i++ ) &#123;
+        FD_SET(fds[i], &amp;rset); &#x2F;&#x2F; fds是一个int数组，存储了要监听的fd
+    &#125;
+    
+    &#x2F;&#x2F; 此时rset存放了我们要监听的fd，第fd位都为1，其他为0
+    puts(&quot;round again&quot;);
+    select(max+1, &amp;rset, NULL, NULL, NULL); &#x2F;&#x2F; 进行select操作
+    &#x2F;&#x2F; 此时rset存放了监听的fd是否发生事件的结果，发生了的fd，第fd位都为1，其他为0
+    
+    for(i &#x3D; 0; i &lt; 5;i++) &#123;
+        if (FD_ISSET(fds[i], &amp;rset))&#123; &#x2F;&#x2F; 判断是否发生事件
+            fmemset(buffer, 0, MAXBUF); &#x2F;&#x2F; 处理fd的读取
+            read(fds[i], buffer, MAXBUF);
+            puts(buffer);
+    	&#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="select总结"><a href="#select总结" class="headerlink" title="select总结"></a>select总结</h4><p>select解决了基本的多路复用问题，但仍有不足</p>
+<ul>
+<li><code>FD_SETSIZE</code>设置了<code>fd_set</code>的大小，一般不会更改，导致监听的最大的<code>fd</code>序号必须小于1024</li>
+<li><code>fd_set</code>同时作为输入和结果，导致<code>fd_set</code>不可复用，每次都要重新初始化一个<code>fd_set</code></li>
+<li><code>select</code>在传入<code>rset</code>时候，将该<code>fd_set</code>从用户态切换到内核态，仍然有一定的开销</li>
+<li>产生结果的时候，我们要遍历一遍<code>fd_set</code>，这有<code>O(n)</code>的复杂度</li>
+<li><code>select</code>还是一个堵塞函数，在所有的<code>fd</code>都没有事件监听到的时候，会堵塞至有一个变化为止</li>
+</ul>
+<h3 id="poll"><a href="#poll" class="headerlink" title="poll"></a>poll</h3><p><code>poll</code> 最早由 Doug McIlroy 于 1986 年提出，并最早实现于 4.3BSD Unix 操作系统中。Doug McIlroy是 Unix 操作系统的早期开发者之一，他提出了 <code>poll</code> 来替代 <code>select</code> 函数，以解决 <code>select</code> 在文件描述符限制方面的一些不足之处。随后，<code>poll</code> 函数成为 POSIX 标准的一部分，因此在支持 POSIX 标准的各种 Unix 和 Unix-like 操作系统上都可以使用。</p>
+<h4 id="解决问题的原理-1"><a href="#解决问题的原理-1" class="headerlink" title="解决问题的原理"></a>解决问题的原理</h4><p>和<code>select</code>很相似，同样是一次性处理多个<code>fd</code>，但<code>poll</code>主要替换了<code>fd_set</code>，使用了自己的结构体，具体流程就是，建立一个自己的结构体的数组，负责输入和输出。</p>
+<h4 id="提供的系统调用-1"><a href="#提供的系统调用-1" class="headerlink" title="提供的系统调用"></a>提供的系统调用</h4><p><code>poll</code>的基本语法如下：</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;poll.h&gt;
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ol>
+<li><code>fds</code>：一个 <code>pollfd</code> 数组的指针，其中包含了要监视的<code>fd</code>以及它们的监视事件。</li>
+<li><code>nfds</code>：<code>fds</code> 数组的大小，即要监视的文件描述符数量。</li>
+<li><code>timeout</code>：指定超时时间，以毫秒为单位。有以下几种情况：<ul>
+<li>正数：表示等待多少毫秒后超时返回，或者直到有<code>fd</code>准备就绪为止。</li>
+<li>0：表示立即返回，不等待。</li>
+<li><code>-1</code>：表示一直等待，直到有文件描述符准备就绪。</li>
+</ul>
+</li>
+</ol>
+<h4 id="结构体pollfd"><a href="#结构体pollfd" class="headerlink" title="结构体pollfd"></a>结构体<code>pollfd</code></h4><pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">struct pollfd &#123;
+    int fd;
+    short events;
+    short revents;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p> 结构包含三字段：</p>
+<ul>
+<li><code>fd</code>：文件描述符，即要监视的句柄。</li>
+<li><code>events</code>：表示要监视的事件类型，可以使用以下标志的组合：<ul>
+<li><code>POLLIN</code>：可读事件。</li>
+<li><code>POLLOUT</code>：可写事件。</li>
+<li><code>POLLERR</code>：错误事件。</li>
+<li><code>POLLHUP</code>：挂起事件。</li>
+<li><code>POLLNVAL</code>：无效事件。</li>
+</ul>
+</li>
+<li><code>revents</code>：在 <code>poll</code> 调用返回后，内核会修改此字段，表示实际发生的事件。</li>
+</ul>
+<h4 id="代码解读"><a href="#代码解读" class="headerlink" title="代码解读"></a>代码解读</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">for (int i &#x3D; 0; i &lt; 5; i++)&#123;
+    memset(&amp;client, 0, sizeof (client));
+    addrlen &#x3D; sizeof(client);
+    pollfds[i].fd &#x3D; accept(sockfd, (struct sockaddr*)&amp;client, &amp;addrlen); &#x2F;&#x2F; 获取fd
+    pollfds[i].events &#x3D; POLLIN; &#x2F;&#x2F; 设置该pollfd监听可读事件
+&#125; &#x2F;&#x2F; 建立多个 fd 创建pollfds数组
+&#x2F;&#x2F; 准备完毕
+while(1)&#123;
+    puts(&quot;round again&quot;);
+    &#x2F;&#x2F; 处理pollfds，所有的pollfds的revents都是0
+    poll(pollfds, 5, 50000);
+    &#x2F;&#x2F; poll完成，pollfds中的revents，若有此事件，则会被设置为此事件
+    
+    for(int i &#x3D; 0, i &lt; 5; i++)&#123;
+        if(pollfds[i].revents &amp; POLLIN)&#123; &#x2F;&#x2F; 判断pollfds[i] 是否发生了 POLLIN 事件
+            pollfds[i].revents &#x3D; 0; &#x2F;&#x2F; 恢复状态
+            &#x2F;&#x2F; 开始处理和接受处理数据
+            memset(buffer, 0, MAXBUF); 
+            read(pollfds[i].fd, buffer, MAXBUF);
+            puts(buffer);
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="poll总结"><a href="#poll总结" class="headerlink" title="poll总结"></a>poll总结</h4><p><code>poll</code>的实现思路和<code>select</code>几乎一样，不同之处就是不使用位图数组使用了新的结构体<code>pollfd</code>，相比原来的用一个位（bit）表示<code>fd</code>状态到一个<code>pollfd</code>表示<code>fd</code>状态。可以使得<code>fd</code>有自己的需要检查事件的输入和结果事件的区分。</p>
+<p>解决的不足：</p>
+<ul>
+<li>不会被限定<code>fd</code>大小限制，使用了自己结构体的数组</li>
+<li>可以复用<code>pollfds</code>，不需要重新创建</li>
+<li><code>poll</code>可以通过设置<code>timeout</code>为0就不再堵塞</li>
+</ul>
+<p>未解决的不足：</p>
+<ul>
+<li><code>poll</code>在传入<code>pollfds</code>时候，将该<code>pollfds</code>从用户态切换到内核态，仍然有一定的开销</li>
+<li>产生结果的时候，我们要遍历一遍<code>pollfds</code>，这有<code>O(n)</code>的复杂度</li>
+</ul>
+<h3 id="epoll"><a href="#epoll" class="headerlink" title="epoll"></a>epoll</h3><p><code>epoll</code> 最早由Ingo Molnár在2002年提出，并被引入到Linux内核中。它的设计和实现使得它适用于高性能网络服务器等需要处理大量并发连接的应用。相比于<code>select</code>和<code>poll</code>，<code>epoll</code>的性能更好，因为它使用了基于事件的模型，而不是每次调用时都扫描整个文件描述符集合。</p>
+<h4 id="解决问题的原理-2"><a href="#解决问题的原理-2" class="headerlink" title="解决问题的原理"></a>解决问题的原理</h4><p>创建了一个<code>epfd</code>实例高效管理多个事件的添加删除查找等管理，<code>epfd</code>实例实际上使用了<strong>红黑树</strong>和<strong>双向链表</strong>以及<strong>哈希表</strong>，一旦<code>fd</code>的事件发生，内核会将其在<strong>红黑树</strong>上标记，并将其转移到一个储存完成事件<code>fd</code>的<strong>双向链表</strong>。</p>
+<p>创建一个<code>epoll_event</code>结构体数组，快速得到发生事件的多个<code>fd</code>，进行处理。</p>
+<h4 id="提供的系统调用-2"><a href="#提供的系统调用-2" class="headerlink" title="提供的系统调用"></a>提供的系统调用</h4><pre class="line-numbers language-C" data-language="C"><code class="language-C">int epoll_create(int size);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p><code>size</code>（已被忽略）：表示<code>epoll</code>实例的大小，以前用于指定<code>epoll</code>实例能够管理的文件描述符的数量。现代的<code>epoll</code>实现已经不再受此限制，所以可以将<code>size</code>设置为0。</p>
+<p><code>epoll_create()</code> 返回一个整数，这个整数是<code>epoll</code>实例的文件描述符（通常称为<code>epfd</code>，表示 epoll file descriptor）。即该<code>epfd</code>代表了这个<code>epoll</code>实例，可以在后续的函数中使用。</p>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li><code>epfd</code>：是 <code>epoll</code> 实例的文件描述符，即之前通过 <code>epoll_create()</code> 创建的文件描述符。</li>
+<li><code>op</code>：表示操作类型，可以是以下值之一：<ul>
+<li><code>EPOLL_CTL_ADD</code>：将文件描述符 <code>fd</code> 注册到 <code>epoll</code> 实例中，并关联 <code>event</code> 中指定的事件。</li>
+<li><code>EPOLL_CTL_MOD</code>：修改文件描述符 <code>fd</code> 在 <code>epoll</code> 实例中的关联事件为 <code>event</code> 中指定的新事件。</li>
+<li><code>EPOLL_CTL_DEL</code>：从 <code>epoll</code> 实例中删除文件描述符 <code>fd</code>。</li>
+</ul>
+</li>
+<li><code>fd</code>：是要注册、修改或删除的文件描述符。(不同于<code>epfd</code>)</li>
+<li><code>event</code>：是一个指向 <code>struct epoll_event</code> 结构的指针，它包含了要注册的事件类型和相关的数据。</li>
+</ul>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li><code>epfd</code>：是 <code>epoll</code> 实例的文件描述符，即之前通过 <code>epoll_create()</code> 创建的文件描述符。</li>
+<li><code>events</code>：是一个指向 <code>struct epoll_event</code> 结构数组的指针，用于存储已发生事件的信息。（储存结果）</li>
+<li><code>maxevents</code>：表示 <code>events</code> 数组的最大容量，即数组中能够存储的最大事件数量。</li>
+<li><code>timeout</code>：指定 <code>epoll_wait()</code> 的超时时间，以毫秒为单位。有以下几种情况：<ul>
+<li>如果 <code>timeout</code> 为正数，表示等待事件发生，最多等待 <code>timeout</code> 毫秒，如果在这段时间内有事件发生，<code>epoll_wait()</code> 会立即返回。</li>
+<li>如果 <code>timeout</code> 为零，表示非阻塞地检查事件，如果没有事件发生，立即返回。</li>
+<li>如果 <code>timeout</code> 为负数，表示一直等待，直到有事件发生才返回。</li>
+</ul>
+</li>
+</ul>
+<h4 id="结构体epoll-event以及epoll实例对象"><a href="#结构体epoll-event以及epoll实例对象" class="headerlink" title="结构体epoll_event以及epoll实例对象"></a>结构体<code>epoll_event</code>以及<code>epoll</code>实例对象</h4><pre class="line-numbers language-C" data-language="C"><code class="language-C">struct epoll_event &#123;
+    __uint32_t events;  &#x2F;&#x2F; 表示感兴趣的事件类型（如 EPOLLIN、EPOLLOUT 等）
+    epoll_data_t data;  &#x2F;&#x2F; 用户数据，通常是一个指针，用于标识或关联事件
+&#125;;
+
+typedef union epoll_data &#123;
+    void *ptr;
+    int fd;
+    __uint32_t u32;
+    __uint64_t u64;
+&#125; epoll_data_t;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通常让<code>data</code>处于<code>fd</code>状态储存要监听的<code>fd</code></p>
+<p><code>epoll_create</code>创建了一个<code>epoll</code>实例对象，它有众多特性</p>
+<ul>
+<li><p><strong>高效的事件管理</strong>：<code>epoll</code> 使用内部数据结构（红黑树和双向链表）来管理感兴趣的文件描述符，以及跟踪已就绪的事件。这使得 <code>epoll</code> 能够高效地处理大量并发事件，而不需要遍历所有文件描述符。</p>
+</li>
+<li><p><strong>支持大量文件描述符</strong>：<code>epoll</code> 可以轻松地管理大量文件描述符，因此适用于需要同时处理大量客户端连接的高并发网络应用。</p>
+</li>
+<li><p><strong>事件驱动</strong>：<code>epoll</code> 是事件驱动的，它通常不需要轮询文件描述符，而是等待事件的发生并在事件就绪时通知应用程序。这减少了不必要的 CPU 消耗。</p>
+</li>
+</ul>
+<p>实例对象创建了红黑树，双向链表</p>
+<p>红黑树用于储存事件和<code>fd</code>的对应关系，可以快速找到<code>fd</code>和事件，以及快速增加删除。每个<code>fd</code>事件在发生后，会自动转移到双向链表中，等待<code>epoll_wait</code>提取，这是它的<strong>事件驱动</strong>特性。这样的话，就不需要轮询红黑树中的所有<code>fd</code>只要轮询这个双向链表。使用了红黑树的数据结构，方便<code>epoll_ctl</code>对其实例进行各种修改。</p>
+<p>使用双向链表，<strong>支持边缘触发（Edge-Triggered）</strong>，<code>epoll</code>可以以边缘触发或水平触发模式工作。在边缘触发模式下，已就绪事件只会通知一次，而不会在事件未被处理时重复通知。使用双向链表可以更好地支持这种模式，因为已就绪事件会从链表中移除，确保不会重复通知。</p>
+<h4 id="边缘触发和水平触发"><a href="#边缘触发和水平触发" class="headerlink" title="边缘触发和水平触发"></a>边缘触发和水平触发</h4><ol>
+<li><strong>水平触发（Level-Triggered）</strong>：<ul>
+<li>水平触发是默认的触发模式，在文件描述符上的事件处于就绪状态时通知应用程序。</li>
+<li>当应用程序收到通知后，它可以不立即处理部分事件，然后等待下一次通知。</li>
+</ul>
+</li>
+<li><strong>边缘触发（Edge-Triggered）</strong>：<ul>
+<li>边缘触发是一种更严格的触发模式，它只在文件描述符上的状态变化时通知应用程序，而不是在每次事件都通知。</li>
+<li>当应用程序收到边缘触发通知后，它需要立即处理事件，否则可能错过事件。边缘触发模式要求应用程序在每个通知时处理尽可能多的事件，以确保不会错过任何事件。</li>
+<li>边缘触发模式通常需要更多的注意和更复杂的事件处理逻辑，但可以提供更高的性能，特别是在高并发的情况下。</li>
+</ul>
+</li>
+</ol>
+<p>边缘触发和水平触发在以下方面有不同之处：</p>
+<ul>
+<li><strong>通知粒度</strong>：水平触发通知任何时刻文件描述符上的就绪事件，而边缘触发只在状态变化时通知，即从未就绪到就绪或从就绪到未就绪。</li>
+<li><strong>处理要求</strong>：边缘触发要求应用程序能够快速响应并处理事件，否则可能错过事件，而水平触发允许应用程序选择何时处理事件。</li>
+<li><strong>性能和效率</strong>：边缘触发通常更高效，因为它避免了重复的事件通知。然而，它需要更谨慎的事件处理。</li>
+</ul>
+<h4 id="代码解读-1"><a href="#代码解读-1" class="headerlink" title="代码解读"></a>代码解读</h4><pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">struct epoll_event events[5]; &#x2F;&#x2F; 创建epoll_event结构体数组，用于存储拷贝出来的已完成事件
+int epfd &#x3D; epoll_create(10); &#x2F;&#x2F; 创建epoll示例对象，此处的10已经没有什么意义了
+...
+...
+for (i&#x3D;0;1&lt;5;i++)
+&#123;
+    static struct epoll_event ev;
+    memset(&amp;client, 0, sizeof(client));
+    addrlen&#x3D; sizeof(client);
+    ev.data.fd &#x3D; accept(sockfd, (struct sockaddr*)&amp;client, &amp;addrlen);
+    ev.events&#x3D; EPOLLIN; &#x2F;&#x2F; ev.events &#x3D; EPOLLIN | EPOLLET; 边缘触发模式，不设置默认为水平触发模式
+    epoll_ctl(epfd, EPOLL_CTL_ADD, ev.data.fd, &amp;ev); &#x2F;&#x2F; 添加fd到epoll实例之中
+&#125; &#x2F;&#x2F; 此时，不论是否epoll_wait，一旦事件触发，该fd会自动转移到双向队列中
+
+
+while(1)&#123;
+    puts(&quot;round again&quot;);
+    nfds &#x3D; epoll_wait(epfd, events, 5, 10000); &#x2F;&#x2F; nfds即有触发事件的个数
+    &#x2F;&#x2F; epoll_wait只负责检查和拷贝双向队列中的fd，对于红黑树中的fd不会轮询
+    
+    for(int i &#x3D; 0; i &lt; nfds; i++)&#123;
+        &#x2F;&#x2F;读取和处理 events[i] 即可访问对应 fd
+        memset(buffer, 0, MAXBUF);
+        read(events[i].data.fd, buffer, MAXBUF);
+        puts(buffer);
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h4 id="epoll总结"><a href="#epoll总结" class="headerlink" title="epoll总结"></a>epoll总结</h4><p>新的优化：</p>
+<ul>
+<li>减少了用户态和内核态的切换，减少了一定的开销</li>
+<li>产生结果的时候，我们只需要遍历从双向队列中拷贝出来的<code>fd</code>，并不用全部轮询</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/10/10/asyncio-note/">Python异步底层原理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/web/" rel="tag">web</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/10/18/io-multiplexing-linux-note/">IO多路复用——Linux</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/10/asyncio-note/">Python异步底层原理</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/09/02/c-primer-plus-note2/">C Primer Plus 笔记2</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 15px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 15px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 20px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
