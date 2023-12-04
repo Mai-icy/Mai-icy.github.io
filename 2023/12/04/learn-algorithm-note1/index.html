@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>算法学习笔记1——极角排序 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="算法学习笔记1——极角排序"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>算法学习笔记1——极角排序</h2>
+            <div class="post-meta">
+                <time class="date">2023.12.04</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="算法学习笔记1——极角排序"><a href="#算法学习笔记1——极角排序" class="headerlink" title="算法学习笔记1——极角排序"></a>算法学习笔记1——极角排序</h1><h2 id="基础含义"><a href="#基础含义" class="headerlink" title="基础含义"></a>基础含义</h2><p>对于一个平面的多个点，选择一个点作为<strong>极点</strong>O，再从O出去一条射线定为<strong>极轴</strong>OX（一般把X轴正半轴作为极轴），对于每个平面上的点我们有一种新的表示方法：<strong>极坐标（γ、θ）</strong>，γ为线段OP的长度，θ为OP与OX所夹的角。</p>
+<p>极角排序顾名思义就是根据极坐标的角度值进行排序，对于一个中心点，类似于雷达一样，按照雷达扫描的顺序进行排序的点。</p>
+<p><strong>平面叉乘</strong>：对于向量<em>u</em>&#x3D;(u1，u2)和 <em>v</em>&#x3D;(v1,v2) 它们的叉乘定义如下：<em>u</em> x <em>v</em> &#x3D; u1v2 - u2v1 &#x3D; |OU||OV|sin a 并且</p>
+<p>当 <em>u</em> x <em>v</em> &gt; 0, v在p的右方向 即向量u在向量v的顺时针方向</p>
+<p>当 <em>u</em> x <em>v</em> &lt; 0, v在p的左方向 即向量u在向量v的逆时针方向</p>
+<p>当 <em>u</em> x <em>v</em> &#x3D; 0, 两个向量共线</p>
+<p>abs(u1v2 - u2v1) &#x3D; 2 S△OUV</p>
+<h2 id="极角排序常用方法："><a href="#极角排序常用方法：" class="headerlink" title="极角排序常用方法："></a><strong>极角排序常用方法：</strong></h2><p>要求输入为多个点的(x, y)坐标，按照某个点例如(0, 0)进行极角排序。</p>
+<p>建立的基本结构体来总结以上的性质</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">struct Vector&#123;
+    double x, y;
+	double operator^(const Vector&amp; other) const &#123;
+        return (x * other.y - other.x * p1); &#x2F;&#x2F; 计算叉积
+    &#125;
+    bool isOnLeft(const Vector&amp; other) const&#123;
+        return *this ^ other &lt; 0;
+    &#125;
+    bool isCollinear(const Vector&amp; other) const&#123;
+        return *this ^ other &#x3D;&#x3D; 0; &#x2F;&#x2F; 是否共线
+    &#125;
+&#125;;
+
+struct Point&#123;
+	double x, y;
+    Vector operator-(const Point&amp; other) const &#123;
+        return Vector(&#123;x - other.x, y - other.y&#125;); &#x2F;&#x2F; 获得两点之间的向量
+    &#125;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<p>对此我们有多种实现方法</p>
+<h3 id="方法1：利用atan2（）函数按极角从小到大排序。"><a href="#方法1：利用atan2（）函数按极角从小到大排序。" class="headerlink" title="方法1：利用atan2（）函数按极角从小到大排序。"></a>方法1：利用atan2（）函数按极角从小到大排序。</h3><p>介绍<code>atan2()</code>函数：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">double atan2(double y, double x); &#x2F;&#x2F; 函数原型<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<p>与简单的 <code>atan(y/x)</code> 不同，<code>atan2</code> 能够正确处理各个象限内的角度，并避免由于除零操作引起的错误。它能够通过坐标的符号来确定角度所在的象限。</p>
+<p>对于<code>atan(y/x)</code>，由于仅仅使用 <code>y</code> 和 <code>x</code> 的比值，<code>atan(y/x)</code> 无法确定角度所在的象限，因此需要额外的逻辑来处理。它的值域在−<em>π&#x2F;2</em> 到 +<em>π&#x2F;2</em></p>
+<p>对于<code>atan2(y, x)</code></p>
+<p><code>atan2</code> 是为了弥补 <code>atan(y/x)</code> 的不足而设计的。它接受两个参数 <code>y</code> 和 <code>x</code>，并根据它们的符号来确定角度所在的象限，避免了由于 <code>x</code> 接近零而引起的问题。<code>atan2</code> 返回的角度范围通常是 −<em>π</em> 到 <em>π</em>。</p>
+<pre class="line-numbers language-none"><code class="language-none">double angle &#x3D; std::atan2(y, x);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ol>
+<li>第一象限：<code>atan2</code> 返回值在 0 到 π&#x2F;2 之间（开区间）。</li>
+<li>第二象限：<code>atan2</code> 返回值在 -π&#x2F;2 到 0 之间（闭区间）。</li>
+<li>第三象限：<code>atan2</code> 返回值在 -π 到 -π&#x2F;2 之间（闭区间）。</li>
+<li>第四象限：<code>atan2</code> 返回值在 π&#x2F;2 到 π 之间（开区间）。</li>
+</ol>
+<p>在进行atan2的比较之前我们需要先判断象限，然后再进行比较</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int Quadrant(const Point &amp; a)　　&#x2F;&#x2F; 象限排序，注意包含四个坐标轴
+&#123;
+    if(a.x &gt; 0 &amp;&amp; a.y &gt;&#x3D; 0)  return 1;
+    if(a.x &lt;&#x3D; 0 &amp;&amp; a.y &gt; 0)  return 2;
+    if(a.x &lt; 0 &amp;&amp; a.y &lt;&#x3D; 0)  return 3;
+    if(a.x &gt;&#x3D; 0 &amp;&amp; a.y &lt; 0)  return 4;
+&#125;
+
+bool cmp1(const Point &amp; a, const Point &amp; b)
+&#123;
+    if(atan2(a.y, a.x)!&#x3D;atan2(b.y, b.x))
+        return atan2(a.y, a.x)&lt;atan2(b.y, b.x);
+    else return a.x &lt; b.x;
+&#125;
+
+bool cmp3(const Point &amp; a, const Point &amp; b)  &#x2F;&#x2F; 先按象限从小到大排序 再按极角从小到大排序
+&#123;
+    if(Quadrant(a) &#x3D;&#x3D; Quadrant(b)) &#x2F;&#x2F; 返回值就是象限
+        return cmp1(a, b);
+    else Quadrant(a) &lt; Quadrant(b);
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="方法2：利用叉积性质小到大排序"><a href="#方法2：利用叉积性质小到大排序" class="headerlink" title="方法2：利用叉积性质小到大排序"></a>方法2：利用叉积性质小到大排序</h3><p>叉积正负性可以判断位于左侧还是右侧，利于排序。</p>
+<pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">bool cmp(const Point &amp; a, const Point &amp; b) 
+&#123;
+    Point p(&#123;0, 0&#125;); &#x2F;&#x2F; 原点
+	Vector v1 &#x3D; a - p;
+    Vector v2 &#x3D; b - p;
+    if(v1 ^ v2 &#x3D;&#x3D; 0)
+        return a.x &lt; b.x;
+    else return v1 ^ v2 &gt; 0;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+
+<h2 id="极角排序的应用："><a href="#极角排序的应用：" class="headerlink" title="极角排序的应用："></a>极角排序的应用：</h2><h3 id="1-凸包问题（Graham扫描法）"><a href="#1-凸包问题（Graham扫描法）" class="headerlink" title="1.凸包问题（Graham扫描法）"></a>1.凸包问题（Graham扫描法）</h3><p>假设平面上有多个点，过某些点作一个多边形，使这个多边形能把所有点都“包”起来。当这个多边形是凸多边形的时候，我们就叫它“凸包”。</p>
+<p>给定多个点，求形成凸包的点有哪些？</p>
+<p>对于这种问题，我们就可以采用极角排序</p>
+<p>首先，<strong>最左下角</strong>的一个点是必然在凸包上的。我们以这个点为极点进行<strong>极角排序</strong>。按照极角排序的顺序将多个点依次相连，可以获得到一个多边形，这个多边形不一定是凸多边形，但是包含了所有的点。</p>
+<p>更换思路</p>
+<p>我们维护一个<strong>栈</strong>，按照极角排序后的顺序遍历每个点。如果栈中点数小于3，就直接进栈；否则，检查栈顶三个点组成的两个向量的旋转方向是否为<strong>逆时针</strong>（用叉乘判断），若是则进栈，若不是则弹出栈顶，直到栈中点数小于3或者满足逆时针条件为止。组成的多边形，向量不断逆时针旋转，这必定是凸多边形。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">using Points &#x3D; vector&lt;Point&gt;;
+double theta(Point p) &#123; return p &#x3D;&#x3D; O ? -1 &#x2F; 0. : atan2(p.y, p.x); &#125; &#x2F;&#x2F; 求极角
+void psort(Points &amp;ps, Point c &#x3D; O)                                  &#x2F;&#x2F; 极角排序
+&#123;
+    sort(ps.begin(), ps.end(), [&amp;](auto p1, auto p2) &#123;
+        return lt(theta(p1 - c), theta(p2 - c));
+    &#125;);
+&#125;
+bool check(Point p, Point q, Point r) &#x2F;&#x2F; 检查三个点组成的两个向量的旋转方向是否为逆时针
+&#123;
+    return lt(0, cross(q - p, r - q));
+&#125;
+Points chull(Points &amp;ps)
+&#123;
+    psort(ps, *min_element(ps.begin(), ps.end())); &#x2F;&#x2F; 以最左下角的点为极角排序
+    Points H&#123;ps[0]&#125;;
+    for (int i &#x3D; 1; i &lt; ps.size(); i++)
+    &#123;
+        while (H.size() &gt; 1 &amp;&amp; !check(H[H.size() - 2], H.back(), ps[i]))
+            H.pop_back();
+        H.push_back(ps[i]);
+    &#125;
+    return H;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/11/20/acm-class-note4/">ACM程序课算法笔记4——背包问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/27/acm-class-note3/">ACM程序课算法笔记3——动态规划</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/27/acm-class-note2/">ACM程序课算法笔记2——递推求解</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/27/acm-class-note1/">ACM程序设计课笔记1——贪心算法</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
