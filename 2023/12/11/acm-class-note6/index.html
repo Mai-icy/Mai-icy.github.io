@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>ACM程序课算法笔记6——二分图匹配 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="ACM程序课算法笔记6——二分图匹配"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>ACM程序课算法笔记6——二分图匹配</h2>
+            <div class="post-meta">
+                <time class="date">2023.12.11</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="ACM程序课算法笔记6——二分图匹配"><a href="#ACM程序课算法笔记6——二分图匹配" class="headerlink" title="ACM程序课算法笔记6——二分图匹配"></a>ACM程序课算法笔记6——二分图匹配</h1><h2 id="前置定义"><a href="#前置定义" class="headerlink" title="前置定义"></a>前置定义</h2><p><strong>二分图</strong>(<strong>Bipartite Graph</strong> )：如果一个图的顶点可以分为两个集合X和Y，图的所有边连接的两个点都来自不同的集合，则称该图为“二分图”或“二部图”。</p>
+<h2 id="最大匹配问题"><a href="#最大匹配问题" class="headerlink" title="最大匹配问题"></a>最大匹配问题</h2><p>对于一个二分图，问最多可以有几对边连接的点，并且这些点不重复。</p>
+<p>说的形象一点，类似于婚配问题，将所有人分为男女两组，告诉你哪些人互相匹配（A能接受B，B必定接受A），问最多可以配成几对。</p>
+<p>这就是一个典型的最大匹配，对于结果我们成为<strong>最大匹配对数</strong></p>
+<h3 id="匈牙利算法"><a href="#匈牙利算法" class="headerlink" title="匈牙利算法"></a><strong>匈牙利算法</strong></h3><p>通过最简单的思路来看，我们就从上往下进行判断</p>
+<p>操作A(x)判断这位男性x可以匹配的对象中有没有未被匹配的。若有则匹配，并进行A(x的下一位)：若无</p>
+<p>判断x连接的已被匹配的女性y，y对应匹配男性为z，判断z是否可以取消该匹配获得新匹配（即操作A(z)），若能，则匹配，若不能，则x无法被匹配。</p>
+<p>范例代码：</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &lt;bits&#x2F;stdc++.h&gt;
+using namespace std;
+
+int findMaximumMatching(const vector&lt;vector&lt;int&gt;&gt; &amp; adj, const function&lt;bool(int)&gt; &amp; onLeft)&#123;
+    int result &#x3D; 0;
+    vector&lt;int&gt; linked(adj.size(), -1); &#x2F;&#x2F; linked[i] 值为 j 意为对于右点i，其连接为j
+    vector&lt;bool&gt; visited(adj.size());
+    
+    function&lt;bool(int)&gt; dfs &#x3D; [&amp;](int u)&#123;
+        for(int v:adj[u])&#123;
+			if(visited[v]) continue;
+            if(linker[v]&#x3D;&#x3D;-1||dfs(linker[v]))&#123;
+            	linker[v] &#x3D; u;
+                return true;
+            &#125;
+        &#125;
+        return false;
+	&#125;;
+    
+    for(int i &#x3D; 0, i &lt; adj.size(); i++)&#123;
+		if(not onLeft(i)) continue;
+        fill(visited.begin(), visited.end(), false);
+    	if(dfs(u)) result++;
+    &#125;
+    return result;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="最小顶点覆盖"><a href="#最小顶点覆盖" class="headerlink" title="最小顶点覆盖"></a>最小顶点覆盖</h2><p><strong>覆盖</strong>：当一个边连接到某个点，可以说为该边被该点覆盖</p>
+<p>给一副二分图，问该图最少被几个点覆盖？</p>
+<p>该结果我们称为<strong>最小顶点覆盖</strong>。对于最小顶点覆盖，不妨先寻找它和<strong>最大匹配对数</strong>的关系</p>
+<h3 id="证明：最大匹配对数-x3D-最小顶点覆盖"><a href="#证明：最大匹配对数-x3D-最小顶点覆盖" class="headerlink" title="证明：最大匹配对数 &#x3D; 最小顶点覆盖"></a>证明：最大匹配对数 &#x3D; 最小顶点覆盖</h3><p>要证明两者相等，不妨先得出 </p>
+<ul>
+<li>最小顶点覆盖A &gt;&#x3D; 最大匹配对数B：</li>
+</ul>
+<p>对于最大匹配，暂时去掉所有除了匹配边之外的边，剩余B条边，这B条边都由两个点覆盖，又因为所有的边都要被覆盖，这B条边只能被它的两端的某个点覆盖，这些点不会重复，所以为了覆盖这B条边，至少需要B个点，可得A &gt;&#x3D; B。</p>
+<ul>
+<li>最小顶点覆盖A &lt;&#x3D; 最大匹配对数B</li>
+</ul>
+<p>对于最小顶点覆盖的A个点，去掉其它的所有点，剩下的每个点都有一个特性——每个点的所有边中至少有一个边另一端是空的，利用反证法，若某个点的所有边中都有它的另一端，那么该点可以被删除而不被纳入最小顶点覆盖。得证。然后对于最小覆盖的每个点，它和另一端空的边必能形成一个匹配，故B &gt;&#x3D; A</p>
+<p>根据以上得证！</p>
+<p>最小定点覆盖题就被转化为最大匹配问题</p>
+<h2 id="DAG图的最小路径覆盖"><a href="#DAG图的最小路径覆盖" class="headerlink" title="DAG图的最小路径覆盖"></a>DAG图的最小路径覆盖</h2><p>用尽量少的不相交简单路径覆盖有向无环图(DAG) 的所有顶点，这就是——DAG图的最小路径覆盖问题。</p>
+<p>路径覆盖问题的目标是选择尽可能少的路径，以覆盖图中的所有节点。这些路径不能相交，除非它们共享一个起点或终点。</p>
+<p>对于图</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
+1<span class="token text string">((1))</span>
+2<span class="token text string">((2))</span>
+3<span class="token text string">((3))</span>
+4<span class="token text string">((4))</span>
+1 <span class="token arrow operator">--></span> 3
+2 <span class="token arrow operator">--></span> 3
+3 <span class="token arrow operator">--></span> 4<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>可见只需选择点1， 2便可覆盖所有点</p>
+<p>变化思考</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TD
+1<span class="token text string">((1))</span>
+2<span class="token text string">((2))</span>
+3<span class="token text string">((3))</span>
+4<span class="token text string">((4))</span>
+
+5<span class="token text string">((1'))</span>
+6<span class="token text string">((2'))</span>
+7<span class="token text string">((3'))</span>
+8<span class="token text string">((4'))</span>
+
+1 <span class="token arrow operator">--></span> 7
+2 <span class="token arrow operator">--></span> 7
+3 <span class="token arrow operator">--></span> 8<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>由于是有向图，我们应当思考如何转化为无向图问题，对于有向，我们可以让每个点都获得它的复制体，并且总是复制体被指向，原来的点指出。</p>
+<h4 id="结论："><a href="#结论：" class="headerlink" title="结论："></a>结论：</h4><p>最小路径覆盖数&#x3D;节点数(n)-最大匹配数(m)</p>
+<h4 id="证明："><a href="#证明：" class="headerlink" title="证明："></a>证明：</h4><p>一开始每个点都是一条路径，每次找一条匹配边，代表合并两条路径</p>
+<p>由于路径不相交（即每个点的入度和出度至少有一个为1），所以二分图上的边也不相交（如果相交则说明某个点的入度或出度大于1），这正好是匹配的定义</p>
+<p>每条匹配边代表答案减去1，所以<strong>最小路径覆盖&#x3D;原图节点数-新图最大匹配数</strong></p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int findMinimumPathCover(const vector&lt;vector&lt;int&gt;&gt; &amp; adj)&#123;
+    int maximumMatching &#x3D; 0;
+    int nodeNum &#x3D; adj.size();
+    vector&lt;int&gt; linked(nodeNum * 2, -1); &#x2F;&#x2F; linked[i] 值为 j 意为对于右点i，其连接为j
+    vector&lt;bool&gt; visited(nodeNum * 2);
+    
+    function&lt;bool(int)&gt; dfs &#x3D; [&amp;](int u)&#123;
+        for(int v:adj[u])&#123;
+			if(visited[v]) continue;
+            if(linker[v]&#x3D;&#x3D;-1||dfs(linker[v]))&#123;
+            	linker[v] &#x3D; u;
+                return true;
+            &#125;
+        &#125;
+        return false;
+	&#125;;
+    
+    for(int i &#x3D; 0, i &lt; adj.size(); i++)&#123;
+        fill(visited.begin(), visited.end(), false);
+    	if(dfs(u)) maximumMatching++;
+    &#125;
+    return nodeNum - maximumMatching;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="最大独立集"><a href="#最大独立集" class="headerlink" title="最大独立集"></a>最大独立集</h2><p>二分图的最大独立集是指在一个二分图中选择最大数量的节点，使得这些节点之间没有直接相连的边。</p>
+<ul>
+<li><p><strong>独立集：</strong> 一个图的独立集是指图中的一组节点，其中任意两个节点之间没有直接相连的边。</p>
+</li>
+<li><p><strong>最大独立集：</strong> 对于给定的图，最大独立集是指具有最大节点数的独立集。</p>
+</li>
+</ul>
+<h4 id="结论：-1"><a href="#结论：-1" class="headerlink" title="结论："></a>结论：</h4><p>二分图最大独立集 &#x3D; 节点数(n) - 二分图最大匹配</p>
+<h4 id="证明：-1"><a href="#证明：-1" class="headerlink" title="证明："></a>证明：</h4><p>去掉二分图的最小点覆盖，剩下的点就是一个独立集，添加任意一个最小点覆盖中的点，依据之前的定理：<strong>最小点覆盖的每个点都有一个特性——每个点的所有边中至少有一个边另一端是空的</strong>，然而这个空的点就属于我们剩下的独立集，也就是说，添加任意一个最小点覆盖中的点，都会导致生成一条边，故：二分图最大独立集 &#x3D; 节点数(n) - 二分图最小点覆盖 &#x3D; 节点数(n) - 二分图最大匹配</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/birchtree/p/12912607.html">进阶参考</a></p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&amp;字典树</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/11/20/acm-class-note4/">ACM程序课算法笔记4——背包问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/27/acm-class-note3/">ACM程序课算法笔记3——动态规划</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
