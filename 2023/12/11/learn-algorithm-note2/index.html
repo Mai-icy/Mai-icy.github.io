@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>算法学习笔记2——基环树&amp;字典树 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="算法学习笔记2——基环树&amp;字典树"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>算法学习笔记2——基环树&amp;字典树</h2>
+            <div class="post-meta">
+                <time class="date">2023.12.11</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="算法学习笔记-2-基环树-amp-字典树"><a href="#算法学习笔记-2-基环树-amp-字典树" class="headerlink" title="算法学习笔记(2): 基环树&amp;字典树"></a>算法学习笔记(2): 基环树&amp;字典树</h1><h1 id="基环树"><a href="#基环树" class="headerlink" title="基环树"></a>基环树</h1><p>若一个图有n个节点，n-1条边，那么这个图一定无环，此时若再增加一条边，必定会出现一条环。</p>
+<p>由此可得 n个节点，n条边，必定有个环，去掉这个环的每个边，剩余的就是多颗树。</p>
+<p>对于一个这样的图我们就称为基环树</p>
+<blockquote>
+<p>基环树实际上是图而不是树</p>
+</blockquote>
+<h2 id="无向图上的基环树"><a href="#无向图上的基环树" class="headerlink" title="无向图上的基环树"></a>无向图上的基环树</h2><pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
+1<span class="token text string">((1))</span>
+2<span class="token text string">((2))</span>
+3<span class="token text string">((3))</span>
+4<span class="token text string">((4))</span>
+5<span class="token text string">((5))</span>
+6<span class="token text string">((6))</span>
+7<span class="token text string">((7))</span>
+
+3 <span class="token arrow operator">---</span> 4
+4 <span class="token arrow operator">---</span> 5
+5 <span class="token arrow operator">---</span> 3
+
+2 <span class="token arrow operator">---</span> 4
+1 <span class="token arrow operator">---</span> 2
+6 <span class="token arrow operator">---</span> 2
+7 <span class="token arrow operator">---</span> 5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>图中的3 4 5形成一个环，这就是基环树的基本特征</p>
+<p>同时，如果图不一定全联通，那就有多个基环树组成，有几个联通分量就有几个基环树</p>
+<h2 id="有向图上的基环树"><a href="#有向图上的基环树" class="headerlink" title="有向图上的基环树"></a>有向图上的基环树</h2><p>同样是n个节点，n条边作为前提条件</p>
+<h3 id="内向基环树"><a href="#内向基环树" class="headerlink" title="内向基环树"></a>内向基环树</h3><p>若每个点都只有一条出度，该图为内向基环树</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
+1<span class="token text string">((1))</span>
+2<span class="token text string">((2))</span>
+3<span class="token text string">((3))</span>
+4<span class="token text string">((4))</span>
+5<span class="token text string">((5))</span>
+6<span class="token text string">((6))</span>
+7<span class="token text string">((7))</span>
+
+3 <span class="token arrow operator">---></span> 4
+4 <span class="token arrow operator">---></span> 5
+5 <span class="token arrow operator">---></span> 3
+
+2 <span class="token arrow operator">---></span> 4
+1 <span class="token arrow operator">---></span> 2
+6 <span class="token arrow operator">---></span> 2
+7 <span class="token arrow operator">---></span> 5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>除了环以外的树枝上的节点都指向其树的父节点</p>
+<h3 id="外向基环树"><a href="#外向基环树" class="headerlink" title="外向基环树"></a>外向基环树</h3><p>若每个点都只有一条入度，该图为内向基环树</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> RL
+1<span class="token text string">((1))</span>
+2<span class="token text string">((2))</span>
+3<span class="token text string">((3))</span>
+4<span class="token text string">((4))</span>
+5<span class="token text string">((5))</span>
+6<span class="token text string">((6))</span>
+7<span class="token text string">((7))</span>
+
+3 <span class="token arrow operator">---></span> 4
+4 <span class="token arrow operator">---></span> 5
+5 <span class="token arrow operator">---></span> 3
+
+
+2 <span class="token arrow operator">---></span> 1
+2 <span class="token arrow operator">---></span> 6
+5 <span class="token arrow operator">---></span> 7
+4 <span class="token arrow operator">---></span> 2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>除了环以外的树枝上的节点都是树的父节点指向子节点。</p>
+<h2 id="寻找环"><a href="#寻找环" class="headerlink" title="寻找环"></a>寻找环</h2><h3 id="tarjan-算法"><a href="#tarjan-算法" class="headerlink" title="tarjan 算法"></a>tarjan 算法</h3><p>搜索每个节点，标记节点的 DFN 值，并记录每个结点的前驱；</p>
+<p>若搜索到一条返祖边，则从当前节点沿前驱节点回溯至边的另一端点，则回溯路上的所有节点均为环上的节点；</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">vector &lt;edge&gt; g[MAXN];
+int dfn[MAXN], cnt, fa[MAXN], loop[MAXN], len;
+void dfs_loop(int i) &#123;
+	dfn[i] &#x3D; ++cnt;
+	for (int t &#x3D; 0; t &lt; g[i].size(); t++)&#123;
+		int v &#x3D; g[i][t];
+		if (v &#x3D;&#x3D; fa[i]) continue;
+		if (!dfn[v]) &#123;
+			fa[v] &#x3D; i;
+			dfs_loop(v);
+		&#125; else &#123;
+			if (dfn[v] &lt; dfn[i]) continue; 
+			loop[++len] &#x3D; v;
+			for (; v !&#x3D; i; v &#x3D; fa[v]) loop[++len] &#x3D; fa[v];
+		&#125;
+	&#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="拓扑排序"><a href="#拓扑排序" class="headerlink" title="拓扑排序"></a>拓扑排序</h3><p>记录每个节点的度数，进行拓扑排序；</p>
+<p>则入度 ≥ 2 的点即为环上的点；</p>
+<p>则拓扑排序后度数不为 0 的节点即为环上的点；</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void topo_loop() &#123;
+	queue &lt;int&gt; q;  
+	for (int i &#x3D; 1; i &lt;&#x3D; n; i++) &#123;
+		if (de[i] &#x3D;&#x3D; 1) q.push(i);
+	&#125;   
+    while (!q.empty()) &#123;
+        int i &#x3D; q.front();
+		q.pop();
+        for (int t &#x3D; 0; t &lt; g[i].size(); t++) &#123;
+            int v &#x3D; g[i][t];
+			if (de[v] &gt; 1) &#123;
+            	de[v]--;
+            	if (de[v] &#x3D;&#x3D; 1) q.push(v);
+			&#125;
+        &#125;
+    &#125;
+    return;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h1 id="字典树"><a href="#字典树" class="headerlink" title="字典树"></a>字典树</h1><p>字典树，又称Trie树、前缀树，是一种树形结构，用于统计、排序、和保存大量字符串。所以经常被搜索引擎系统用于文本词频统计。它的优点是：利用字符串的公共前缀来减少查询时间，最大限度地减少无谓的字符串比较。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">&#x2F;&#x2F; Trie节点
+struct TrieNode &#123;
+    unordered_map&lt;char, TrieNode*&gt; children;
+    bool isEndOfWord;
+
+    TrieNode() : isEndOfWord(false) &#123;&#125;
+
+    &#x2F;&#x2F; 递归释放内存
+    ~TrieNode() &#123;
+        for (auto&amp; pair : children) &#123;
+            delete pair.second;
+        &#125;
+    &#125;
+&#125;;
+
+&#x2F;&#x2F; Trie类
+class Trie &#123;
+private:
+    TrieNode* root;
+
+public:
+    Trie() &#123;
+        root &#x3D; new TrieNode();
+    &#125;
+
+    &#x2F;&#x2F; 插入单词
+    void insert(const string&amp; word) &#123;
+        TrieNode* node &#x3D; root;
+        for (char ch : word) &#123;
+            if (node-&gt;children.find(ch) &#x3D;&#x3D; node-&gt;children.end()) &#123;
+                node-&gt;children[ch] &#x3D; new TrieNode();
+            &#125;
+            node &#x3D; node-&gt;children[ch];
+        &#125;
+        node-&gt;isEndOfWord &#x3D; true;
+    &#125;
+
+    &#x2F;&#x2F; 搜索单词
+    bool search(const string&amp; word) &#123;
+        TrieNode* node &#x3D; root;
+        for (char ch : word) &#123;
+            if (node-&gt;children.find(ch) &#x3D;&#x3D; node-&gt;children.end()) &#123;
+                return false;
+            &#125;
+            node &#x3D; node-&gt;children[ch];
+        &#125;
+        return node !&#x3D; nullptr &amp;&amp; node-&gt;isEndOfWord;
+    &#125;
+
+    &#x2F;&#x2F; 判断是否有单词以给定前缀开头
+    bool startsWith(const string&amp; prefix) &#123;
+        TrieNode* node &#x3D; root;
+        for (char ch : prefix) &#123;
+            if (node-&gt;children.find(ch) &#x3D;&#x3D; node-&gt;children.end()) &#123;
+                return false;
+            &#125;
+            node &#x3D; node-&gt;children[ch];
+        &#125;
+        return node !&#x3D; nullptr;
+    &#125;
+
+    &#x2F;&#x2F; 释放内存
+    ~Trie() &#123;
+        delete root;
+    &#125;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>每一个节点就是一个字符，可以储存多个字符的前缀情况。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/11/20/acm-class-note4/">ACM程序课算法笔记4——背包问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/27/acm-class-note3/">ACM程序课算法笔记3——动态规划</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/10/27/acm-class-note2/">ACM程序课算法笔记2——递推求解</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
