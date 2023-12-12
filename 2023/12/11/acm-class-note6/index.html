@@ -77,22 +77,23 @@ int findMaximumMatching(const vector&lt;vector&lt;int&gt;&gt; &amp; adj, const f
     
     function&lt;bool(int)&gt; dfs &#x3D; [&amp;](int u)&#123;
         for(int v:adj[u])&#123;
-			if(visited[v]) continue;
-            if(linker[v]&#x3D;&#x3D;-1||dfs(linker[v]))&#123;
-            	linker[v] &#x3D; u;
+            if(visited[v]) continue;
+            visited[v] &#x3D; true;
+            if(linked[v]&#x3D;&#x3D;-1||dfs(linked[v]))&#123;
+                linked[v] &#x3D; u;
                 return true;
             &#125;
         &#125;
         return false;
-	&#125;;
+    &#125;;
     
-    for(int i &#x3D; 0, i &lt; adj.size(); i++)&#123;
-		if(not onLeft(i)) continue;
+    for(int i &#x3D; 0; i &lt; adj.size(); i++)&#123;
+        if(not onLeft(i)) continue;
         fill(visited.begin(), visited.end(), false);
-    	if(dfs(u)) result++;
+        if(dfs(i)) result++;
     &#125;
     return result;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="最小顶点覆盖"><a href="#最小顶点覆盖" class="headerlink" title="最小顶点覆盖"></a>最小顶点覆盖</h2><p><strong>覆盖</strong>：当一个边连接到某个点，可以说为该边被该点覆盖</p>
 <p>给一副二分图，问该图最少被几个点覆盖？</p>
@@ -145,26 +146,27 @@ int findMaximumMatching(const vector&lt;vector&lt;int&gt;&gt; &amp; adj, const f
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int findMinimumPathCover(const vector&lt;vector&lt;int&gt;&gt; &amp; adj)&#123;
     int maximumMatching &#x3D; 0;
     int nodeNum &#x3D; adj.size();
-    vector&lt;int&gt; linked(nodeNum * 2, -1); &#x2F;&#x2F; linked[i] 值为 j 意为对于右点i，其连接为j
-    vector&lt;bool&gt; visited(nodeNum * 2);
+    vector&lt;int&gt; linked(nodeNum, -1); &#x2F;&#x2F; linked[i] 值为 j 意为对于右点i，其连接为j
+    vector&lt;bool&gt; visited(nodeNum);
     
     function&lt;bool(int)&gt; dfs &#x3D; [&amp;](int u)&#123;
         for(int v:adj[u])&#123;
-			if(visited[v]) continue;
-            if(linker[v]&#x3D;&#x3D;-1||dfs(linker[v]))&#123;
-            	linker[v] &#x3D; u;
+            if(visited[v]) continue;
+            visited[v] &#x3D; true;
+            if(linked[v]&#x3D;&#x3D;-1 or dfs(linked[v]))&#123;
+                linked[v] &#x3D; u;
                 return true;
             &#125;
         &#125;
         return false;
-	&#125;;
+    &#125;;
     
-    for(int i &#x3D; 0, i &lt; adj.size(); i++)&#123;
+    for(int i &#x3D; 0; i &lt; adj.size(); i++)&#123;
         fill(visited.begin(), visited.end(), false);
-    	if(dfs(u)) maximumMatching++;
+        if(dfs(i)) maximumMatching++;
     &#125;
     return nodeNum - maximumMatching;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
 <h2 id="最大独立集"><a href="#最大独立集" class="headerlink" title="最大独立集"></a>最大独立集</h2><p>二分图的最大独立集是指在一个二分图中选择最大数量的节点，使得这些节点之间没有直接相连的边。</p>
 <ul>
