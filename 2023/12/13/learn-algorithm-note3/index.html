@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>算法学习笔记3——快速傅里叶变换(FFT) - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="算法学习笔记3——快速傅里叶变换(FFT)"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>算法学习笔记3——快速傅里叶变换(FFT)</h2>
+            <div class="post-meta">
+                <time class="date">2023.12.13</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="算法学习笔记3——快速傅里叶变换-FFT"><a href="#算法学习笔记3——快速傅里叶变换-FFT" class="headerlink" title="算法学习笔记3——快速傅里叶变换(FFT)"></a>算法学习笔记3——快速傅里叶变换(FFT)</h1><h2 id="问题："><a href="#问题：" class="headerlink" title="问题："></a>问题：</h2><h3 id="内容：对于两个多项式快速取得两个多项式的乘积。"><a href="#内容：对于两个多项式快速取得两个多项式的乘积。" class="headerlink" title="内容：对于两个多项式快速取得两个多项式的乘积。"></a>内容：对于两个多项式快速取得两个多项式的乘积。</h3><p>对于最基本的解法，便是通过分配率将两个多项式中的每一项都相乘，然后取得计算结果。</p>
+<p>对于两个n项式，其复杂度为O(N2)，然而通过快速傅里叶变换可以将复杂度降低为O(NlogN)</p>
+<h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><h3 id="系数表示法"><a href="#系数表示法" class="headerlink" title="系数表示法"></a>系数表示法</h3><p>对于一个多项式，我们可以用每一项的系数表示，对于n项式我们需要(n+1)个系数，成为一组系数，对于每一组系数，这个多项式都是唯一的。这种表示我们称为<strong>系数表示法</strong>。</p>
+<h3 id="点值表示法"><a href="#点值表示法" class="headerlink" title="点值表示法"></a>点值表示法</h3><p>然而多项式也可以通过点值来表示，例如两个端点确定一条直线。其结论是对于n次多项式，都可以用n+1个点来表示一个唯一的多项式，只需这n+1个点的坐标，便可以确定这个多项式。这种表示我们称为<strong>点值表示法</strong>。</p>
+<h4 id="证明"><a href="#证明" class="headerlink" title="证明"></a>证明</h4><p>对于多项式</p>
+<p>$$<br>P(x) &#x3D; p_0 + p_1x + p_2x^2 + p_3x^3 + \cdots + p_dx^d<br>$$</p>
+<p>代入d + 1个点可得该矩阵</p>
+<p>$$<br>\left[<br>\begin{matrix}<br>   P(p_0)    \<br>   P(p_1)    \<br>   \vdots \<br>   P(p_d)<br>  \end{matrix}<br>\right]<br>&#x3D;<br>\left[<br>\begin{matrix}<br>   1      &amp; x_0    &amp; x_0^2 &amp; \cdots&amp; x_0^d   \<br>   1      &amp; x_1    &amp; x_1^2 &amp; \cdots&amp; x_1^d   \<br>   \vdots &amp; \vdots &amp; \vdots&amp; \ddots&amp; \vdots  \<br>   1      &amp; x_d    &amp; x_d^2 &amp; \cdots&amp; x_d^d<br>  \end{matrix}<br>\right]</p>
+<p>\left[<br>\begin{matrix}<br>   p_0    \<br>   p_1    \<br>   \vdots \<br>   p_d<br>  \end{matrix}<br>\right]<br>$$<br>对于该矩阵，可见范德蒙行列式，易得该多项式唯一。</p>
+<h2 id="解决思路"><a href="#解决思路" class="headerlink" title="解决思路"></a>解决思路</h2><p>因为点值表示法也能表达一个多项式，故我们可以尝试使用点值表达来获得结果的多项式。</p>
+<p>对于两个d次多项式，其乘积为2d次，此时只需要从前两个多项式中找到2d + 1个点，再让这2d+1个点的值相乘，便是结果多项式的2d + 1个点，再通过2d + 1个点来解决问题。</p>
+<p>此时我们的问题就被转化为了三个步骤。</p>
+<ul>
+<li>由系数表达法转化为点值表达法（转换两个要相乘的多项式，并有2d + 1个点）</li>
+<li>使两个多项式的点值表达相乘得到结果表达式的点值表达法</li>
+<li>结果表达式的点值表达法转化为表达式的点值表达法</li>
+</ul>
+<p>这三个步骤看似简化了O(N2)的复杂计算，实则找到2d + 1更为复杂，每个点都需要被计算，结果值将会有更多计算。</p>
+<h3 id="系数表达法转化为点值表达法"><a href="#系数表达法转化为点值表达法" class="headerlink" title="系数表达法转化为点值表达法"></a>系数表达法转化为点值表达法</h3><p>我们把目光转移到第一步，如何快速的找到2d + 1个点</p>
+<p>对于这种问题，我们肯定不能去死算2d + 1次，不妨先考虑一些特殊例子</p>
+<p>F(x) &#x3D; x^2</p>
+<p>对于这个例子，当我计算出(1, 1)是它的一个点时，另一个点也就是(-1, 1)，如果我需要计算2d + 1个点，我实际上只需要计算d个点。</p>
+<p>对于偶函数的这种特性，我们不妨对原多项式进行以下的转化 —— 取出所有的奇数次项和偶数次项<br>$$<br>P(x) &#x3D; p_0 + p_1x + p_2x^2 + p_3x^3 + \cdots + p_dx^d \<br>&#x3D; (p_0 + p_2x^2 + p_4x^4 + \cdots) + x(p_1 + p_3x^2 + p_5x^4 + \cdots) \<br>&#x3D; P_e(x^2) + xP_o(x^2)<br>$$<br>此时，当我们计算到x&#x3D;1时，当x&#x3D;-1也就是计算两者相加还是相减了。</p>
+<p>同样，计算到Pe(x2)和Po(x2)时，这就是一个同理的问题（递归的味道）。我们也只需要通过递归便可找到下面的值来求上面的解。同样一个子问题的解会变成其父问题的两个解。</p>
+<p>然而事情并没有这么简单，我们之前的预设都是在相反数的基础上，例如1和-1，它们的平方都为1故能满足我们的需求。但例如下一层计算为1的值，上一层便可或得到1和-1，若我们需要第三层，也就是8个值我们就会遇到i^2 &#x3D; -1，这会阻止递归的继续，我们需要找到一个恰到好处的值，便于我们多次的递归。或者说，我们设定的子问题参数都为x的平方，都是正，故继续使用相反数便不能成立。</p>
+<p>但我们不妨作图，发现一些规律</p>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TD
+1<span class="token text string">((1))</span>
+2<span class="token text string">((1))</span>
+3<span class="token text string">(( -1))</span>
+4<span class="token text string">((1))</span>
+5<span class="token text string">(( -1))</span>
+6<span class="token text string">(( -i))</span>
+7<span class="token text string">(( i))</span>
+
+11<span class="token text string">((x1))</span>
+12<span class="token text string">((x2))</span>
+13<span class="token text string">((x3))</span>
+14<span class="token text string">((x4))</span>
+15<span class="token text string">((x5))</span>
+16<span class="token text string">((x6))</span>
+17<span class="token text string">((x7))</span>
+18<span class="token text string">((x8))</span>
+
+
+1 <span class="token arrow operator">--></span> 2
+1 <span class="token arrow operator">--></span> 3
+2 <span class="token arrow operator">--></span> 4
+2 <span class="token arrow operator">--></span> 5
+3 <span class="token arrow operator">--></span> 6
+3 <span class="token arrow operator">--></span> 7
+
+4 <span class="token arrow operator">--></span> 11
+4 <span class="token arrow operator">--></span> 12
+5 <span class="token arrow operator">--></span> 13
+5 <span class="token arrow operator">--></span> 14
+6 <span class="token arrow operator">--></span> 15
+6 <span class="token arrow operator">--></span> 16
+7 <span class="token arrow operator">--></span> 17
+7 <span class="token arrow operator">--></span> 18
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>一个子问题的解会变成其父问题的两个解。故我们找到的点的数量必定是2的幂次</p>
+<p>其中对于该问题，我们要求x的8次方等于1，对于这样的x我们需要使用复数来解决。</p>
+<p>此时我们不妨使用复数坐标系，以0作为原点，向上为i，向右为1。以1作为半径做一个圆，圆上的所有点到原点的距离为1，设定任意一个点与正方向夹角为θ，该点坐标即为(cosθ, sinθ)，代表的数就是cosθ + isinθ</p>
+<p>此时我们引入欧拉公式<br>$$<br>e^{iθ} &#x3D; \cos(θ) + i\sin(θ)\<br>该点便可表示为\<br>w &#x3D; e^\frac{2\pi i}{n}<br>$$</p>
+<p>此时的w便是我们参考用值的目标，接下来便可进行FFT</p>
+<h3 id="FFT"><a href="#FFT" class="headerlink" title="FFT"></a>FFT</h3><p>$$<br>P(x) : [P_0, P_1, P_2\cdots P_{n-1}]\<br>w &#x3D; e^\frac{2\pi i}{n} :[w^0, w^1, w^2\cdots w^{n-1}]\<br>可以分割为\<br>P_e(x^2):[P_0, P_2, P_4\cdots P_{n-2}] \ \ \ \ \ P_e(x^2):[P_0, P_2, P_4\cdots P_{n-2}]\<br>w &#x3D; e^\frac{2\pi i}{n} :[w^0, w^2, w^4\cdots w^{n-2}]\<br>y_e &#x3D; [P_e(w^0), P_e(w^2)\cdots P_e(w^{n-2})]\ \ \ y_o &#x3D; [P_o(w^0), P_o(w^2)\cdots P_o(w^{n-2})]\<br>由以上可得\<br>P(w^j) &#x3D; y_e[j] + w^jy_o[j]\<br>P(w^{j + n&#x2F;2}) &#x3D; y_e[j] - w^jy_o[j]<br>$$</p>
+<p>根据以上思路转化为伪代码</p>
+<pre class="line-numbers language-none"><code class="language-none">def FFT(P):
+    n &#x3D; len(P) # n是2的幂
+    if n &#x3D;&#x3D; 1:
+        return P
+    w &#x3D; e**(2*pi*i&#x2F;n)
+    Pe, Po &#x3D; [p0, p2, ...pn-2], [p1, p3, ...pn-1]
+    ye, yo &#x3D; FFT(Pe), FFT(Po)
+    y &#x3D; [0] * n
+    for j in range(n&#x2F;2):
+    	y[j] &#x3D; ye[j] + w**j*yo[j]
+    	y[j + n&#x2F;2] &#x3D; ye[j] - w**j*yo[j]
+    return y<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我们同时可以再次整理和理解当前算法的目的，由于我们实际上代入w，故x也可以替换掉<br>$$<br>\left[<br>\begin{matrix}<br>   P(w^0)    \<br>   P(w^1)    \<br>   P(w^2)    \<br>   \vdots \<br>   P(w^{n-1})<br>  \end{matrix}<br>\right]<br>&#x3D;<br>\left[<br>\begin{matrix}<br>   1      &amp; 1    &amp; 1 &amp; \cdots&amp; 1   \<br>   1      &amp; w    &amp; w^2 &amp; \cdots&amp; w^{n-1}   \<br>   1      &amp; w^2  &amp; w^4 &amp; \cdots&amp; w^{2(n-1)}   \<br>   \vdots &amp; \vdots &amp; \vdots&amp; \ddots&amp; \vdots  \<br>   1      &amp; w^{n-1}  &amp; w^{2(n-1)} &amp; \cdots&amp; w^{(n-1)(n-1)}<br>  \end{matrix}<br>\right]</p>
+<p>\left[<br>\begin{matrix}<br>   p_0    \<br>   p_1    \<br>   p_2    \<br>   \vdots \<br>   p_n<br>  \end{matrix}<br>\right]<br>$$<br>中间的这个矩阵我们也就称为<strong>离散傅里叶变换矩阵</strong>（DFT）</p>
+<p>实际上我们就是通过代入p得到对应的P的函数值，是由右边一列得到左边一列。</p>
+<p>通常这种<strong>向量</strong>乘上<strong>离散傅里叶变换矩阵</strong>的运算我们都称为<strong>快速傅里叶变换</strong></p>
+<h3 id="点值表达法转化为系数表达法"><a href="#点值表达法转化为系数表达法" class="headerlink" title="点值表达法转化为系数表达法"></a>点值表达法转化为系数表达法</h3><h4 id="IFFT"><a href="#IFFT" class="headerlink" title="IFFT"></a>IFFT</h4><p>点值表达式代入多个点，以计算多项式的系数，我们同样可以用矩阵得到表达式<br>$$<br>\left[<br>\begin{matrix}<br>   p_0    \<br>   p_1    \<br>   p_2    \<br>   \vdots \<br>   p_n<br>  \end{matrix}<br>\right]<br>&#x3D;<br>\left[<br>\begin{matrix}<br>   1      &amp; 1    &amp; 1 &amp; \cdots&amp; 1   \<br>   1      &amp; w    &amp; w^2 &amp; \cdots&amp; w^{n-1}   \<br>   1      &amp; w^2  &amp; w^4 &amp; \cdots&amp; w^{2(n-1)}   \<br>   \vdots &amp; \vdots &amp; \vdots&amp; \ddots&amp; \vdots  \<br>   1      &amp; w^{n-1}  &amp; w^{2(n-1)} &amp; \cdots&amp; w^{(n-1)(n-1)}<br>  \end{matrix}<br>\right]^{-1}<br>\left[</p>
+<p>\begin{matrix}<br>   P(w^0)    \<br>   P(w^1)    \<br>   P(w^2)    \<br>   \vdots \<br>   P(w^{n-1})<br>  \end{matrix}<br>\right]<br>$$<br>此时也就是基本的矩阵运算，将另一边移过去即可，<strong>离散傅里叶变换矩阵</strong>的逆矩阵也就是<br>$$<br>\left[<br>\begin{matrix}<br>   p_0    \<br>   p_1    \<br>   p_2    \<br>   \vdots \<br>   p_n<br>  \end{matrix}<br>\right]<br>&#x3D;\frac{1}{n}<br>\left[<br>\begin{matrix}<br>   1      &amp; 1    &amp; 1 &amp; \cdots&amp; 1   \<br>   1      &amp; w^{-1}    &amp; w^{-2} &amp; \cdots&amp; w^{-(n-1)}   \<br>   1      &amp; w^{-2}  &amp; w^{-4} &amp; \cdots&amp; w^{-2(n-1)}   \<br>   \vdots &amp; \vdots &amp; \vdots&amp; \ddots&amp; \vdots  \<br>   1      &amp; w^{-(n-1)}  &amp; w^{-2(n-1)} &amp; \cdots&amp; w^{-(n-1)(n-1)}<br>  \end{matrix}<br>\right]<br>\left[</p>
+<p>\begin{matrix}<br>   P(w^0)    \<br>   P(w^1)    \<br>   P(w^2)    \<br>   \vdots \<br>   P(w^{n-1})<br>  \end{matrix}<br>\right]<br>$$<br>此时和我们原来的FFT函数的运算几乎一样，只是修改了其中矩阵的值，并且修改也不大，便可简单的获得其伪函数：</p>
+<pre class="line-numbers language-none"><code class="language-none">def IFFT(P):
+    n &#x3D; len(P) # n是2的幂
+    if n &#x3D;&#x3D; 1:
+        return P
+    w &#x3D; e**(-2*pi*i&#x2F;n)
+    Pe, Po &#x3D; [p0, p2, ...pn-2], [p1, p3, ...pn-1]
+    ye, yo &#x3D; IFFT(Pe), IFFT(Po)
+    y &#x3D; [0] * n
+    for j in range(n&#x2F;2):
+    	y[j] &#x3D; ye[j] + w**j*yo[j]
+    	y[j + n&#x2F;2] &#x3D; ye[j] - w**j*yo[j]
+    return y<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1za411F76U/">参考视频</a></p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/11/20/acm-class-note4/">ACM程序课算法笔记4——背包问题</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
