@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库学习笔记1——B+树 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库学习笔记1——B+树"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库学习笔记1——B+树</h2>
+            <div class="post-meta">
+                <time class="date">2023.12.15</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="用途"><a href="#用途" class="headerlink" title="用途"></a>用途</h2><p>B+树的主要目的之一就是存储所有键值对，并确保键的有序性，以便于高效的查找操作。B+树是一种树状数据结构，其中所有的键值对都存储在<strong>叶子节点</strong>上，而<strong>内部节点</strong>仅包含用于导航的关键字。</p>
+<blockquote>
+<p>内部节点就是除了叶子节点的节点</p>
+</blockquote>
+<h2 id="特征"><a href="#特征" class="headerlink" title="特征"></a>特征</h2><p>B+树拥有一个阶数m，这个阶数是根据特定应用场景和系统需求进行权衡的结果。</p>
+<p>B+树全称(Balanced Plus tree)，它与B树的区别就是每个节点可以包含多个子节点，数量由阶数决定。</p>
+<p>确定了阶数m，m阶的B+数将会有以下特征：</p>
+<ul>
+<li>对于每个内部节点，它最多包含m个关键字，拥有m + 1个指针，每个指针指向它的子节点</li>
+<li>对于每个叶子节点，它最多包含m个数据的<strong>索引</strong>，它们是有序的。</li>
+</ul>
+<p>B+树的本身特征：</p>
+<ul>
+<li>在内部节点中出现的每个值也作为子树叶级中最右边的值出现（由于已排序，最右边即最大）</li>
+<li>根节点只有树节点指针，叶节点只有数据指针</li>
+<li>在插入和删除的过程中，节点会动态变化，移动关键字和调整指针，</li>
+</ul>
+<h2 id="B-树的查找"><a href="#B-树的查找" class="headerlink" title="B+树的查找"></a>B+树的查找</h2><h3 id="精确查找"><a href="#精确查找" class="headerlink" title="精确查找"></a>精确查找</h3><p>对于B+树，刚进入查找时从根节点开始，根节点有m个索引值和m + 1个指针，由于索引值是有序的，每两个索引值之间都有一个指针，代表索引值位于这两者之间值的下一层节点。若查找值小于等于最小值，则进入第一个指针，若大于所有值则进入。直至最后一层叶子节点，找到对应的索引值，叶子节点的索引值会带有数据的指针。</p>
+<img src="/2023/12/15/learn-database-note1/p1.png" class>
+
+<p>对于以上例子，当我查找7的时候，7 &gt; 5，故查看最右边的节点，然后找到7。</p>
+<h3 id="范围查找"><a href="#范围查找" class="headerlink" title="范围查找"></a>范围查找</h3><p>对B+树的观察可以发现，叶子节点之间都有指针相连，这是为了便于范围查找，当找到范围的左边和右边，便可通过遍历获取范围内的值。</p>
+<h2 id="B-树的插入"><a href="#B-树的插入" class="headerlink" title="B+树的插入"></a>B+树的插入</h2><h3 id="分裂"><a href="#分裂" class="headerlink" title="分裂"></a>分裂</h3><p>分裂是B+树插入的重要行为，当插入到叶子节点有空位时，便可直接插入，当要插入的叶子节点没有空位，例如上图插入2，此时该叶子节点就会有三个值，B+树就会采用分裂的行为。</p>
+<p>该叶子节点分裂， 建立一个新的叶子节点插入，将一半的关键字移动到一个新的叶子节点中，然后由于下面叶子节点的变化，上面也跟着发生变化，当一个非叶子节点中的关键字数量达到阶数的上限时，该节点中的关键字按照中间的关键字分成两组，然后分别放入两个新的节点中，并在父节点中添加一个指向新节点的指针。这样可以保持B+树的平衡。</p>
+<blockquote>
+<p>为了更好理解，可以尝试对一颗空的B+树添加元素8,5,1,7,3,12,9,6</p>
+</blockquote>
+<h2 id="B-树的删除"><a href="#B-树的删除" class="headerlink" title="B+树的删除"></a>B+树的删除</h2><p>通过查找找到要删除的关键字，如果删除关键字后，叶子节点的关键字数量低于下限(没有关键字了或者低于设置的下限)，就需要进行重配或者合并</p>
+<h3 id="重配-借关键字"><a href="#重配-借关键字" class="headerlink" title="重配(借关键字)"></a>重配(借关键字)</h3><p>如果相邻的兄弟节点关键字数量足够多，可以从兄弟节点借一个关键字过来，这样就可以放置低于最低值</p>
+<h3 id="合并-合并节点"><a href="#合并-合并节点" class="headerlink" title="合并(合并节点)"></a>合并(合并节点)</h3><p>如果相邻的兄弟节点关键字数量都较小，可以选择合并两个节点，并将一个关键字提升到父节点中。</p>
+<h2 id="B-树应用场景"><a href="#B-树应用场景" class="headerlink" title="B+树应用场景"></a>B+树应用场景</h2><p>B+树主要用在磁盘文件组织、数据索引和数据库索引。</p>
+<ul>
+<li><p>B+tree的磁盘读写代价更低，B+tree的内部结点并没有指向关键字具体信息的指针。因此其内部结点相对B树更小。如果把所有同一内部结点的关键字存放在同一盘块中，那么盘块所能容纳的关键字数量也越多。一次性读入内存中的需要查找的关键字也就越多。相对来说IO读写次数也就降低了。</p>
+</li>
+<li><p>B+tree的查询效率更加稳定，由于非叶子结点并不是最终指向文件内容的结点，而只是叶子结点中关键字的索引。所以任何关键字的查找必须走一条从根结点到叶子结点的路。所有关键字查询的路径长度相同，导致每一个数据的查询效率相当。</p>
+</li>
+<li><p>B树在提高了磁盘IO性能的同时并没有解决元素遍历的效率低下的问题。正是为了解决这个问题，B+树应运而生。B+树只要遍历叶子节点就可以实现整棵树的遍历。而且在数据库中基于范围的查询是非常频繁的，而B树不支持这样的操作（或者说效率太低）。</p>
+</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" rel="tag">数据结构</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/15/learn-database-note1/">数据库学习笔记1——B+树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
