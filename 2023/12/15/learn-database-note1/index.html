@@ -77,7 +77,7 @@
 <li>在插入和删除的过程中，节点会动态变化，移动关键字和调整指针，</li>
 </ul>
 <h2 id="B-树的查找"><a href="#B-树的查找" class="headerlink" title="B+树的查找"></a>B+树的查找</h2><h3 id="精确查找"><a href="#精确查找" class="headerlink" title="精确查找"></a>精确查找</h3><p>对于B+树，刚进入查找时从根节点开始，根节点有m个索引值和m + 1个指针，由于索引值是有序的，每两个索引值之间都有一个指针，代表索引值位于这两者之间值的下一层节点。若查找值小于等于最小值，则进入第一个指针，若大于所有值则进入。直至最后一层叶子节点，找到对应的索引值，叶子节点的索引值会带有数据的指针。</p>
-<img src="/2023/12/15/learn-database-note1/p1.png" class>
+<img src="/2023/12/15/learn-database-note1/12/15/learn-database-note1/p1.png" class>
 
 <p>对于以上例子，当我查找7的时候，7 &gt; 5，故查看最右边的节点，然后找到7。</p>
 <h3 id="范围查找"><a href="#范围查找" class="headerlink" title="范围查找"></a>范围查找</h3><p>对B+树的观察可以发现，叶子节点之间都有指针相连，这是为了便于范围查找，当找到范围的左边和右边，便可通过遍历获取范围内的值。</p>
@@ -103,7 +103,7 @@
         <section class="post-near">
             <ul>
                 
-                    <li>上一篇: 看完啦 (つд⊂)</li>
+                    <li>上一篇: <a href="/2023/12/21/learn-algorithm-note4/">算法学习笔记4——莫比乌斯反演前置知识</a></li>
                 
                 
                     <li>下一篇: <a href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li>
@@ -140,7 +140,7 @@
             <div class="row">
                 <div class="col-m-4">
                     <h3 class="title-recent">最新文章：</h3>
-                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/15/learn-database-note1/">数据库学习笔记1——B+树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li></ul>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/21/learn-algorithm-note4/">算法学习笔记4——莫比乌斯反演前置知识</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/15/learn-database-note1/">数据库学习笔记1——B+树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-date">时光机：</h3>
