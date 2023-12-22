@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>ACM程序课算法笔记7——母函数 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="ACM程序课算法笔记7——母函数"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>ACM程序课算法笔记7——母函数</h2>
+            <div class="post-meta">
+                <time class="date">2023.12.22</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="ACM程序课算法笔记7——母函数"><a href="#ACM程序课算法笔记7——母函数" class="headerlink" title="ACM程序课算法笔记7——母函数"></a>ACM程序课算法笔记7——母函数</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>母函数实际上就是一个多项式和其系数表达的关系，</p>
+<p>对于多项式x2 + 2x + 1就是序列1 2 1的母函数</p>
+<h2 id="母函数的基础转化"><a href="#母函数的基础转化" class="headerlink" title="母函数的基础转化"></a>母函数的基础转化</h2><h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><p>若有1克、2克、3克、4克的砝码各一枚，能称出哪几种重量？各有几种可能方案？</p>
+<h3 id="构造"><a href="#构造" class="headerlink" title="构造"></a>构造</h3><p>对此我们可以构造母函数，对于每个砝码，我们让砝码的重量作为x的指数。</p>
+<p>对于4g的砝码，我们可以设置为(1 + x^4)</p>
+<p>那么对于这道题我们就可以构造结果</p>
+<p>(1 + x) (1 + x^2) (1 + x^3) (1 + x^4) &#x3D; </p>
+<p>1 + x + x^2 + 2x^3 + 2x^4 + 2x^5 + 2x^6 + 2x^7 + x^8 + x^9 + x^10</p>
+<p> 对于ax^b也就代表对于b克物品有a种方案可以称出来</p>
+<p>那么如何解释 (1 + x^4)的含义呢。</p>
+<p>对于结果式(1 + x) (1 + x^2) (1 + x^3) (1 + x^4)结果的每一项，都是从这四项中二选一然后相乘得到的。(1 + x^4)也就意味着，要不我取用4g砝码，要不我就不取。</p>
+<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><p>这是一种基础的构造方式，把题目含义转化为多项式相乘，利用程序帮助计算</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">&#x2F;&#x2F; 计算 (1 + x) (1 + x^2) (1 + x^3) (1 + x^4)
+result[0] &#x3D; 1; &#x2F;&#x2F; 代表初始值 为 1 * x ^ 0 + 0 * x ^ 1 + 0 * x ^ 2 ....
+for(int i &#x3D; 1; i &lt; 4; i++)&#123; &#x2F;&#x2F; 4为多项式的个数
+    for(int j &#x3D; 0; j &lt;&#x3D; 10; j++)&#123;  &#x2F;&#x2F; 10为需要储存多项式结果次数的最大值
+        temp[j + k] +&#x3D; result[j];
+    &#125;
+    for (int j &#x3D; 0; j &lt;&#x3D; score; j++)
+    &#123;
+        result[j] &#x3D; temp[j];
+        temp[j] &#x3D; 0;
+    &#125;
+&#125;
+&#x2F;&#x2F; result<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="母函数多项式内无限项"><a href="#母函数多项式内无限项" class="headerlink" title="母函数多项式内无限项"></a>母函数多项式内无限项</h2><p>求用1分、2分、3分的邮票贴的某个数值的方案数—— 因邮票允许重复，故母函数为：</p>
+<p>G(x) &#x3D; (1 + x + x^2 + …) (1 + x^2 + x^4 + …) (1 + x^3 + x^6 + …)</p>
+<p>由上题总结 <strong>对于结果ax^b也就代表对于b克物品有a种方案可以称出来</strong></p>
+<p>同样是获得结果多项式对应项的系数</p>
+<p>多了无限项的条件，实际上我们计算的x次数只要不超过指定次数即可。例如我们求9以内的邮票的次数，x^4 与 x^6 我们就不用计算储存考虑</p>
+<h3 id="问题-1"><a href="#问题-1" class="headerlink" title="问题"></a>问题</h3><p>整数拆分,就是把整数分解成若干整数的和，比如：3 &#x3D; 1+1+1, 3 &#x3D; 1+2 等等；整数拆分成若干整数的和，办法不一，不同拆分法的总数叫做拆分数。求整数n的拆分数。</p>
+<h3 id="构造-1"><a href="#构造-1" class="headerlink" title="构造"></a>构造</h3><p>对于n来说相当于有1分、2分、3分…. n分n种邮票贴出数值为n的方案数，只要构造</p>
+<p>G(x) &#x3D; (1 + x + x^2 + …) (1 + x^2 + x^4 + …) (1 + x^3 + x^6 + …)  (1 + x^4 + x^8 + …)…  (1 + x^n + x^2n + …)</p>
+<p>并求结果即可，此时结果中大于n次的项都不需要计算。</p>
+<h3 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h3><pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">result[0] &#x3D; 1;
+for (i &#x3D; 1; i &lt;&#x3D; n; i++) &#x2F;&#x2F; 代表了n个多项式
+&#123;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+        for (k &#x3D; 0; k + j &lt;&#x3D; n; k +&#x3D; i) &#x2F;&#x2F; i为当前多项式的每项递增的次数
+        &#123;  &#x2F;&#x2F; 当 k + j 比n大，不需要进行计算，高次数不会影响低次数
+            temp[j + k] +&#x3D; result[j];
+        &#125;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+    &#123;
+        result[j] &#x3D; temp[j];
+        temp[j] &#x3D; 0;
+    &#125;
+&#125;
+cout &lt;&lt; result[n] &lt;&lt; endl;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="母函数多项式无规律系数"><a href="#母函数多项式无规律系数" class="headerlink" title="母函数多项式无规律系数"></a>母函数多项式无规律系数</h2><p>对于自定义系数，理解上反而比无限项简单，对于价值为v的物品有n个其多项式就是</p>
+<p>(1 + x^v + x^2v + … + x^nv)</p>
+<p>或者是系数并不是简单递增，例如平方数等等</p>
+<h3 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h3><p>告诉各个物品的各个价格和数量，求他们组合成某个价值数的组合种类有几种。(限制了数量)</p>
+<h3 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h3><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">&#x2F;&#x2F; 结构体说明
+srtuct Item&#123;
+    int value;
+    int num;
+&#125;
+&#x2F;&#x2F; 结构体说明 items是该结构体vector
+result[0] &#x3D; 1;
+for (Item it:items) &#x2F;&#x2F; 代表了items.size()个多项式
+&#123;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+        for (k &#x3D; 0; k * it.value + j &lt;&#x3D; n and k &lt;&#x3D; it.num; k ++) &#x2F;&#x2F; 增加限制条件 k &lt;&#x3D; it.num
+        &#123;
+            temp[k * it.value + j] +&#x3D; result[j];
+        &#125;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+    &#123;
+        result[j] &#x3D; temp[j];
+        temp[j] &#x3D; 0;
+    &#125;
+&#125;
+cout &lt;&lt; result[n] &lt;&lt; endl;
+<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h3><p>同样是硬币组合，现在硬币只有1,4,9,16等平方数的种类直到289，对于一个价值有几种组合。</p>
+<h3 id="代码-3"><a href="#代码-3" class="headerlink" title="代码"></a>代码</h3><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int coins &#x3D; &#123;1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196, 225, 256, 289&#125;;
+result[0] &#x3D; 1;
+for (int value:coins) &#x2F;&#x2F; 代表了coins.size()个多项式
+&#123;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+        for (k &#x3D; 0; k * value + j &lt;&#x3D; n; k ++)
+        &#123;
+            temp[k * value + j] +&#x3D; result[j];
+        &#125;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+    &#123;
+        result[j] &#x3D; temp[j];
+        temp[j] &#x3D; 0;
+    &#125;
+&#125;
+cout &lt;&lt; result[n] &lt;&lt; endl;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="母函数多项式负系数"><a href="#母函数多项式负系数" class="headerlink" title="母函数多项式负系数"></a>母函数多项式负系数</h2><h3 id="问题-2"><a href="#问题-2" class="headerlink" title="问题"></a>问题</h3><p>给你一个天平，告诉你有的砝码，求该天平无法称出的重量有哪些</p>
+<h3 id="构造-2"><a href="#构造-2" class="headerlink" title="构造"></a>构造</h3><p>有意思的地方在于，天平两段都可以放置砝码，例如5,2实际上还可以称出3.</p>
+<p>对于这种问题，实际上就是砝码之间可以相减，我们的砝码多了一种选择方式，原本的砝码是不取，取一个，取多个。现在的砝码多了一个减去的作用，该作用在多项式中便体现为负的系数，对于砝码重量为v，多项式为</p>
+<p>(x^-v + 1 + x^v)</p>
+<h3 id="代码-4"><a href="#代码-4" class="headerlink" title="代码"></a>代码</h3> <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">&#x2F;&#x2F; 结构体说明
+srtuct Item&#123;
+    int value;
+    int num;
+&#125;
+&#x2F;&#x2F; 结构体说明 items是该结构体vector
+result[0] &#x3D; 1;
+for (Item it: Item) &#x2F;&#x2F; 代表了n个多项式
+&#123;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+        for (k &#x3D; -it.num; k * it.value + j &lt;&#x3D; n and k * it.value + j &gt;&#x3D; 0 and j &lt;&#x3D; it.num; k ++) &#x2F;&#x2F; k + j 要大于等于 0
+        &#123;
+            temp[k * it.value + j] +&#x3D; result[j];
+        &#125;
+    for (j &#x3D; 0; j &lt;&#x3D; n; j++)
+    &#123;
+        result[j] &#x3D; temp[j];
+        temp[j] &#x3D; 0;
+    &#125;
+&#125;
+cout &lt;&lt; result[n] &lt;&lt; endl;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2023/12/21/learn-algorithm-note4/">算法学习笔记4——莫比乌斯反演前置知识</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2023/12/22/acm-class-note7/">ACM程序课算法笔记7——母函数</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/21/learn-algorithm-note4/">算法学习笔记4——莫比乌斯反演前置知识</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/15/learn-database-note1/">数据库学习笔记1——B+树</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/acm-class-note6/">ACM程序课算法笔记6——二分图匹配</a></li><li class="post-list-item"><a class="post-list-link" href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&字典树</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2023 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
