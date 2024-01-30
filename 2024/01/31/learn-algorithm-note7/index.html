@@ -3,7 +3,7 @@
   <head>
      
     <meta charset="UTF-8">
-    <title>搭建博客ヾ(≧▽≦*)o - Mai Icy</title>
+    <title>算法学习笔记7——根号分治 - Mai Icy</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
     
@@ -15,7 +15,7 @@
 
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
     <meta property="og:site_name" content="Mai Icy">
-    <meta property="og:title" content="搭建博客ヾ(≧▽≦*)o"/>
+    <meta property="og:title" content="算法学习笔记7——根号分治"/>
     
 <meta name="generator" content="Hexo 6.0.0"></head>
 
@@ -51,29 +51,110 @@
     <main>
     <div class="wrap min">
         <section class="post-title">
-            <h2>搭建博客ヾ(≧▽≦*)o</h2>
+            <h2>算法学习笔记7——根号分治</h2>
             <div class="post-meta">
-                <time class="date">2022.03.09</time>
+                <time class="date">2024.01.31</time>
             
             </div>
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 693 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
-        
-            <p>成功搭建博客！</p>
+            <h1 id="算法学习笔记-7-根号分治"><a href="#算法学习笔记-7-根号分治" class="headerlink" title="算法学习笔记(7): 根号分治"></a>算法学习笔记(7): 根号分治</h1><p>根号分治是一种对暴力的优化，类似于一种优雅的暴力。</p>
+<p>对于一个问题的解决，我们可能有多种暴力的思路，但对于暴力思路A来说，空间占用过大。对于暴力思路B来说，时间占用过大。</p>
+<p>两个暴力思路各有自己的优点。这里举出题目例子更好理解。</p>
+<h3 id="P3396-哈希冲突"><a href="#P3396-哈希冲突" class="headerlink" title="P3396 哈希冲突"></a>P3396 哈希冲突</h3><p>题目大意：给出一个数组arr，有多次查询，每次询问有两个值，m和k，问下标模m余k的所有元素之和。</p>
+<p>对于这个题目要求，有两个暴力思路</p>
+<h4 id="思路A"><a href="#思路A" class="headerlink" title="思路A"></a>思路A</h4><p>如果只有一次查询，我们的暴力思路就是</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int result &#x3D; 0;
+for(int i &#x3D; k; i &lt; n; i +&#x3D; m)
+    result +&#x3D; arr[i];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>但实际有多次查询，这种查询十分消耗时间，m越小，需要添加的次数就越多</p>
+<p>为了减少这种多次查询的高时间复杂度，可以采用空间换时间的思路</p>
+<h4 id="思路B"><a href="#思路B" class="headerlink" title="思路B"></a>思路B</h4><p>使用一个二维数组保存查询结果</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">cin &gt;&gt; a[i];
+for(int m &#x3D; 1; m&lt; n; m++)
+    res[m][i % m] +&#x3D; a[i];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>其中<code>res[m][k]</code>就代表了以m为除数，余数为k的数的总和。</p>
+<p>但是我们可以发现，res的大小是n * n，一旦n比较大，将会使用大量的空间，并且有一半的空间都属于空的没有用的状态，消耗了很多空间。但查询成功做到了O(1)</p>
+<h4 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h4><p>对两个思路进行分析，分析其优缺点。</p>
+<p>思路A可以对大的m进行高效查找并且节约空间</p>
+<p>思路B可以对小的m进行高效缓存并且节约时间</p>
+<p>为此，不妨进行一个结合，如果找到一个分界点，让小的m使用思路B，让大的m使用思路A，就可以兼得两者的优点，达到空间和时间的平衡，对于这个思路，有一个结论就是，分界点取根号N的常数倍。</p>
+<p>这个思路就是根号分治</p>
+<h4 id="题解代码"><a href="#题解代码" class="headerlink" title="题解代码"></a>题解代码</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &lt;bits&#x2F;stdc++.h&gt;
+
+using namespace std;
+
+int ans[501][501];
+
+int main()
+&#123;
+    int n, m;
+    cin &gt;&gt; n &gt;&gt; m;
+
+    vector&lt;int&gt; arr(n + 1);
+    &#x2F;&#x2F; vector&lt;vector&lt;int&gt;&gt; ans(n + 2, vector&lt;int&gt;(n + 2));
+
+    int line &#x3D; sqrt(n);
+
+    for (int i &#x3D; 1; i &lt;&#x3D; n; i++)
+    &#123;
+        cin &gt;&gt; arr[i];
+        for (int p &#x3D; 1; p &lt;&#x3D; line; p++)
+            ans[p][i % p] +&#x3D; arr[i];
+    &#125;
+    while (m--)
+    &#123;
+        int x, y;
+        char op;
+        cin &gt;&gt; op &gt;&gt; x &gt;&gt; y;
+        if (&#39;A&#39; &#x3D;&#x3D; op)
+        &#123;
+            if (x &lt;&#x3D; line)
+                cout &lt;&lt; ans[x][y] &lt;&lt; endl;
+            else
+            &#123;
+                int sum &#x3D; 0;
+                for (int i &#x3D; y; i &lt;&#x3D; n; i +&#x3D; x)
+                    sum +&#x3D; arr[i];
+                cout &lt;&lt; sum &lt;&lt; endl;
+            &#125;
+        &#125;
+        else
+        &#123;
+            for (int p &#x3D; 1; p &lt;&#x3D; line; p++)
+            &#123;
+                ans[p][x % p] -&#x3D; (arr[x] - y);
+            &#125;
+            arr[x] &#x3D; y;
+        &#125;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>这种算法的时间复杂度是O(N根号N)</p>
+<p>根号分治适用于这种多查询的问题，其中对于查询来说，还有密度问题，前密后疏适合使用</p>
+<p>对于分界点，分界点越小，时间越大空间越小。分界点越大，时间越小空间越大</p>
+<blockquote>
+<p>练习可见codeforces920 F题，题型一致</p>
+</blockquote>
 
         </article>
         <section class="post-near">
             <ul>
                 
-                    <li>上一篇: <a href="/2022/03/10/crawler-1/">爬虫学习(1) - 超基础篇</a></li>
+                    <li>上一篇: 看完啦 (つд⊂)</li>
                 
                 
-                    <li>下一篇: 看完啦 (つд⊂)</li>
+                    <li>下一篇: <a href="/2024/01/05/learn-database-note2/">《How does a relational database work》阅读笔记</a></li>
                 
             </ul>
         </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
         
     
         <section class="post-author">
