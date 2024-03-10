@@ -3,7 +3,7 @@
   <head>
      
     <meta charset="UTF-8">
-    <title>算法学习笔记5——异或哈希 - Mai Icy</title>
+    <title>ACM程序课算法笔记8——二分答案 - Mai Icy</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
     
@@ -15,7 +15,7 @@
 
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
     <meta property="og:site_name" content="Mai Icy">
-    <meta property="og:title" content="算法学习笔记5——异或哈希"/>
+    <meta property="og:title" content="ACM程序课算法笔记8——二分答案"/>
     
 <meta name="generator" content="Hexo 6.0.0"></head>
 
@@ -51,74 +51,47 @@
     <main>
     <div class="wrap min">
         <section class="post-title">
-            <h2>算法学习笔记5——异或哈希</h2>
+            <h2>ACM程序课算法笔记8——二分答案</h2>
             <div class="post-meta">
-                <time class="date">2023.12.26</time>
+                <time class="date">2024.03.10</time>
             
             </div>
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-5-异或哈希"><a href="#算法学习笔记-5-异或哈希" class="headerlink" title="算法学习笔记(5): 异或哈希"></a>算法学习笔记(5): 异或哈希</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>异或哈希主要利用了异或操作的特殊性，再从特殊性出发，解决阻挡特殊性的问题。</p>
-<h2 id="异或操作的特殊性"><a href="#异或操作的特殊性" class="headerlink" title="异或操作的特殊性"></a>异或操作的特殊性</h2><p>异或操作是对数字的二进制表示按位相加并对2取余，它的运算十分高效，利于计算机的运算。异或运算符合交换律等等。同时有个特性<code>A ^ A = 0</code>.</p>
-<p>推论可得当一个数进行偶数次异或运算后，其值为0，当一个数进行奇数次操作后，其结果为自身</p>
-<h3 id="问题1："><a href="#问题1：" class="headerlink" title="问题1："></a>问题1：</h3><p>一个数组中除了一个元素外其他元素都出现了两次(偶数次)，找出这个元素。</p>
-<h3 id="题解："><a href="#题解：" class="headerlink" title="题解："></a>题解：</h3><p>我们就可以采用异或操作的特殊性，一旦异或两次就会变成0，故剩余的数就是所有值异或的结果。同样很好理解，类似于一个bitmap，每个数都占据一个位的空间，如果出现一次就变成1，再出现一次就变成0。最后的运算结果值剩下的位就是只出现1次的数了。</p>
-<p>但是反思一下，对于不同的数，我都要将它们映射到不同的位上，而且一旦有n个数，我的bitmap相当于使用了2^n的空间，那如果我们不采用这种方式，直接使用这个值呢</p>
-<h3 id="修改尝试"><a href="#修改尝试" class="headerlink" title="修改尝试"></a>修改尝试</h3><p>对于序列，如果直接使用这个值，就会产生不同的数直接互相干扰，例如数列 3 5 7,他的运算结果是0，因为3和5异或恰好就是7。为了避免这种互相干扰带来的冲突，我们选择哈希随机数。</p>
-<h2 id="哈希随机数"><a href="#哈希随机数" class="headerlink" title="哈希随机数"></a>哈希随机数</h2><p>此时就需要请出我们的哈希产生作用，我们希望将原本的序列中的数字映射到一个不互相干扰的数字上，对此我们通常采用<code>mt19937_64 rnd(time(0))</code>，产生一个随机数，再将普通数字映射到上面。</p>
-<p>代入该随机数的目的就是为了减少冲突。</p>
+            <h1 id="ACM程序课算法笔记8——二分答案"><a href="#ACM程序课算法笔记8——二分答案" class="headerlink" title="ACM程序课算法笔记8——二分答案"></a>ACM程序课算法笔记8——二分答案</h1><h2 id="问题一：序列划分"><a href="#问题一：序列划分" class="headerlink" title="问题一：序列划分"></a>问题一：序列划分</h2><h3 id="问题描述："><a href="#问题描述：" class="headerlink" title="问题描述："></a>问题描述：</h3><p>给定n个正整数数组a，将这个序列从左到右划分成m段，使得每段至少有一个数；你需要让数字之和最大的那一段的数字和尽可能的小；求最大和最小的值。</p>
+<h3 id="解题思路："><a href="#解题思路：" class="headerlink" title="解题思路："></a>解题思路：</h3><p>根据题目分析，从正向思路来说，需要考虑如何划分，从而变得复杂。但我们如果有无限制的需求，从暴力的角度来看，能否通过枚举答案来获得结果呢？</p>
+<p>如果有了答案，我们可以用贪心的思路，让每个子序列装最多个数的数。</p>
+<p>让答案从1开始网上枚举，直到成立即可。以上复杂度为O(N2)</p>
+<p>能否优化呢？从题目中可以发现，当中有很多无效的枚举，一旦减少枚举的数量，复杂度就可以降低。</p>
+<p>那么我们可以选择二分答案，让答案值的枚举顺序和二分查找一样。此时的复杂度为O(NlogN)</p>
+<h3 id="经验："><a href="#经验：" class="headerlink" title="经验："></a>经验：</h3><p>典型的二分答案题通常有”最小值的最大值“，”最大值的最小值“。</p>
+<p>至于为什么它们可以满足，是因为答案符合了满足二分的递增性。</p>
+<p>例如上题，如果告诉你数字之和最大为T，那么你可以求出m段，显然随着T的变小，m会单调递增</p>
+<h2 id="问题二：Ice-Cream-Tower"><a href="#问题二：Ice-Cream-Tower" class="headerlink" title="问题二：Ice Cream Tower"></a>问题二：Ice Cream Tower</h2><p>给定n个正整数数组a和一个正整数k</p>
+<p>一座高度为k的塔b[1..k]满足: b[1] x 2 &lt;&#x3D; b[2], b[2] x 2 &lt;&#x3D; b[3], b[3] x 2 &lt;&#x3D; b[4] …</p>
+<p>你要从中选择一些数来叠很多座高度为k的塔,问最多能叠多少座塔。</p>
+<h3 id="解题思路：-1"><a href="#解题思路：-1" class="headerlink" title="解题思路："></a>解题思路：</h3><p>依旧是二分答案，只不过不同在于如何验证，对于塔的堆叠，不应该一座一座塔的堆叠，应当对于k座塔，先把每座塔的最顶层放置，再放第二层，再放第三层。一旦不能堆叠，便无法叠。</p>
+<h2 id="问题三：第K小的数"><a href="#问题三：第K小的数" class="headerlink" title="问题三：第K小的数"></a>问题三：第K小的数</h2><p>给定n个正整数数组a 和 m个正整数数组b; 在n * m个a[i] + b[i] 中，找到第k小的数（不去重);</p>
 <blockquote>
-<p>mt19937_64 是 c++ 自带的梅森旋转（Mersenne Twister）伪随机数，可以随机生成 64 位整数。同时它输出的数字也是64位无符号整数。</p>
+<p>感想：即使我知道是二分答案，我也不好想出题解，此题提问的方式十分有参考价值，不能把二分答案的线索锁定在最小最大最大最小，f(x)[两个值的关系]的递增性才是更重要的</p>
 </blockquote>
-<p>此时代入它，让我们解决更加复杂的题目。</p>
-<h3 id="问题2："><a href="#问题2：" class="headerlink" title="问题2："></a>问题2：</h3><p>给一个长度为 n 的数组 A，找到所有的连续子序列 S ，其长度为L，满足：S包含A中前L个的所有数字。求这样的区间个数。</p>
-<h3 id="题解：-1"><a href="#题解：-1" class="headerlink" title="题解："></a>题解：</h3><p>就是在询问对于区间[L, R] 和 区间[1, R - L + 1], 元素是否相同，对此可以理解为</p>
-<p><strong>判断一个序列是否是另一个序列的排列组合</strong>问题</p>
-<p>以下便是题解代码</p>
-<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include&lt;bits&#x2F;stdc++.h&gt;
-using namespace std;
-
-mt19937_64 random(time(0)); &#x2F;&#x2F; 创建随机数引擎
-using hash_t &#x3D; uint64_t;    &#x2F;&#x2F; 随机数和运算后的数都是64无符号整数
-
-int solve(int n)
-&#123;
-    vector&lt;hash_t&gt; preXorValue(n + 1);
-    vector&lt;hash_t&gt; hashValue(n + 1);
-    vector&lt;bool&gt; hasSet(n + 1);
-
-    for (int i &#x3D; 1; i &lt;&#x3D; n; i++)
-    &#123;   
-        int temp;
-        cin &gt;&gt; temp;
-        if(not hasSet[temp])&#123;
-            hashValue[temp] &#x3D; random();
-            hasSet[temp] &#x3D; true;
-        &#125;
-        preXorValue[i] &#x3D; preXorValue[i - 1] ^ hashValue[temp]; &#x2F;&#x2F; 计算前缀和
-    &#125;
-
-    int result &#x3D; 0;
-    for (int l &#x3D; 1; l &lt;&#x3D; n; l++)
-        for (int r &#x3D; l; r &lt;&#x3D; n; r++)
-            if ((preXorValue[r] ^ preXorValue[l - 1]) &#x3D;&#x3D; preXorValue[r - l + 1]) &#x2F;&#x2F; 注意异或运算的优先级，加括号
-                result++;
-        
-    return result;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="问题3："><a href="#问题3：" class="headerlink" title="问题3："></a>问题3：</h3><p>判断一个序列的乘积是否是完全平方数</p>
-<h3 id="题解：-2"><a href="#题解：-2" class="headerlink" title="题解："></a>题解：</h3><p>对序列的数进行因数分解，然后改序列所有因数出现的个数都是偶数个，即为平方数</p>
+<h3 id="解题思路：-2"><a href="#解题思路：-2" class="headerlink" title="解题思路："></a>解题思路：</h3><p>设f(x) 表示有多少对 i, j 满足 a[i] + b[j] &lt;&#x3D; x</p>
+<p>找到最小的x，满足f(x) &gt;&#x3D; k;</p>
+<p>接下来的思路是如何在已知x的情况下得到有几对。</p>
+<p>首先将a, b进行排序。</p>
+<h4 id="A：二分法"><a href="#A：二分法" class="headerlink" title="A：二分法"></a>A：二分法</h4><p>对于已知x，对于数组a中的元素xa，所以数组b中可以和xa成对的个数就是b中小于等于x - xa。</p>
+<p>此时就可以用二分查找b中小于x - xa的个数。</p>
+<h4 id="B：尺取法"><a href="#B：尺取法" class="headerlink" title="B：尺取法"></a>B：尺取法</h4><p>对于已知x，对于数组a中的元素xa，第一次找到b中满足数的位置，然后在xa变大的过程中，反向扫描满足条件b的个数，时间复杂度更低。</p>
 
         </article>
         <section class="post-near">
             <ul>
                 
-                    <li>上一篇: <a href="/2023/12/28/learn-algorithm-note6/">算法学习笔记6——ST表</a></li>
+                    <li>上一篇: 看完啦 (つд⊂)</li>
                 
                 
-                    <li>下一篇: <a href="/2023/12/22/acm-class-note7/">ACM程序课算法笔记7——母函数</a></li>
+                    <li>下一篇: <a href="/2024/01/31/learn-algorithm-note7/">算法学习笔记7——根号分治</a></li>
                 
             </ul>
         </section>
