@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>ACM程序课算法笔记10——最短路径问题 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="ACM程序课算法笔记10——最短路径问题"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>ACM程序课算法笔记10——最短路径问题</h2>
+            <div class="post-meta">
+                <time class="date">2024.03.25</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="ACM程序课算法笔记10——最短路径问题"><a href="#ACM程序课算法笔记10——最短路径问题" class="headerlink" title="ACM程序课算法笔记10——最短路径问题"></a>ACM程序课算法笔记10——最短路径问题</h1><h2 id="松弛"><a href="#松弛" class="headerlink" title="松弛"></a>松弛</h2><p>最短路算法中，松弛是最关键的思想，彻底的理解松弛，就能理解最短路径的算法。</p>
+<p>以下是边的松弛，而且是有向边的松弛。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void relax(WeightedDigraph G, Edge e)
+&#123;
+    int from &#x3D; e.from;
+    int to &#x3D; e.to;
+    if (distTo_[to] &gt; distTo_[from] + e.weight)
+    &#123;
+        distTo_[to] &#x3D; distTo_[from] + e.weight;
+        edgeTo_[to] &#x3D; e;
+    &#125;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>意思就是，看看这个有向边，能否为<strong>最短路结果</strong>提供贡献，如果可以，那么就使用它。</p>
+<p>通过这个思路，我们可以知道由于每次贡献都会让<strong>最短路结果</strong>更小，所以考虑的最短路只会变小不会变大。</p>
+<p>以下不同的算法，均利用了松弛，主要思想也是松弛，不同点在于目的，和对松弛边的顺序不同。</p>
+<p>松弛的distTo数组就是动态规划的体现。</p>
+<h2 id="Dijkstra算法"><a href="#Dijkstra算法" class="headerlink" title="Dijkstra算法"></a>Dijkstra算法</h2><h3 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h3><p>获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法"><a href="#简述算法" class="headerlink" title="简述算法"></a>简述算法</h3><p>算法依照逐渐考虑边的形式来解决，主要思想在于<strong>松弛</strong></p>
+<p>松弛顺序：</p>
+<ul>
+<li>先松弛起点</li>
+<li>再松弛没有松弛过的离起点最近的点</li>
+</ul>
+<p>松弛完所有的点就结束了</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>Dijkstra实际上是贪心+动态规划的算法。</p>
+<p>根据松弛，就是DP。然而根据<strong>每次选择最近的点</strong>进行松弛，就是贪心。</p>
+<p>理解贪心的合理性：</p>
+<p>如果我们不按照贪心的顺序进行松弛点，当在松弛一条边的时，distTo[to]和 distTo[from]如果都是INF，那么这个松弛就是无效的，因为无法做出任何贡献，如何让松弛有效成为最大问题：</p>
+<p>松弛有效的前提是，distTo[from]已经是最小的了，这就是Dijkstra的贪心体现。</p>
+<p>先松弛起点，所有的distTo中最小的，就已经是这个点的答案了，因为<strong>其他的路径必须要从其它点路过</strong>其它点的距离已经远于最小的了，最小点也就是答案了。</p>
+<p>同时我们顺手理解了另外一个问题Dijkstra算法不能处理负边，因为我们保证<strong>最小点也就是答案</strong>，这是松弛有效的前提，最小点是答案的前提是<strong>其他的路径从其它点路过，其它点因为更大所以不会影响最小点，但如果有负边，就不一样了</strong>。</p>
+<h2 id="Dijkstra算法基于优先队列优化"><a href="#Dijkstra算法基于优先队列优化" class="headerlink" title="Dijkstra算法基于优先队列优化"></a>Dijkstra算法基于优先队列优化</h2><h3 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h3><p>依旧是获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法-1"><a href="#简述算法-1" class="headerlink" title="简述算法"></a>简述算法</h3><p>依旧在于松弛的顺序，用优先队列(最小堆)维护distTo，每次松弛距离最小的点即可。</p>
+<h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>上述Dijkstra算法说过，<strong>每次选择最近的点</strong>，也就是每次都找dist里面最小距离的点，至于这种经常更新，还要找到最小点的过程，我们就可以用队列进行优化。否则要每次遍历一遍这个数组去找到最小的点。</p>
+<h2 id="Floyd算法"><a href="#Floyd算法" class="headerlink" title="Floyd算法"></a>Floyd算法</h2><h3 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h3><p>获得到了所有的两个点之间的最小路径</p>
+<h3 id="简述算法-2"><a href="#简述算法-2" class="headerlink" title="简述算法"></a>简述算法</h3><p>Floyd算法的主要思想是逐步地更新这个二维数组，通过考虑从中间节点经过的路径来找到更短的路径。具体来说，算法的步骤如下：</p>
+<ul>
+<li><p>将<code>dist[i][j]</code>初始化为直接连接节点<code>i</code>和节点<code>j</code>的边的权重。如果两个节点之间不存在直接的边，则将<code>dist[i][j]</code>初始化为一个无穷大的值。</p>
+</li>
+<li><p>对于每对节点<code>(i, j)</code>，以及每一个可能的中间节点<code>k</code>，检查路径<code>i-&gt;k-&gt;j</code>是否比当前已知的路径<code>i-&gt;j</code>更短。如果是，则更新<code>dist[i][j] = dist[i][k] + dist[k][j]</code>。</p>
+</li>
+<li><p>重复步骤2，对于每一个可能的中间节点<code>k</code>，直到没有节点可以通过路径<code>i-&gt;k-&gt;j</code>获得更短的路径为止。</p>
+</li>
+</ul>
+<h3 id="分析-2"><a href="#分析-2" class="headerlink" title="分析"></a>分析</h3><p>十分暴力的思路，因此为了便于理解，有人又称其为插点法，对于每个点，考虑它会不会成为图中所有点对中的任意两点的中间者。</p>
+<h2 id="Bellman-Ford算法"><a href="#Bellman-Ford算法" class="headerlink" title="Bellman-Ford算法"></a>Bellman-Ford算法</h2><h3 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h3><p>获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法-3"><a href="#简述算法-3" class="headerlink" title="简述算法"></a>简述算法</h3><p>对所有边进行n - 1次松弛。</p>
+<h3 id="分析-3"><a href="#分析-3" class="headerlink" title="分析"></a>分析</h3><p>Dijkstra为了松弛的有效性，选择按照贪心的顺序去松弛。Bellman-Ford算法为了有效性就比较暴力了，因为无效的松弛不会影响最终结果，该算法决定一次松弛所有边，这样做n - 1次，所有的边都被有效松弛了。</p>
+<p>解释：</p>
+<p>如果没有负边，已知Dijkstra是有效的，松弛所有边，和起点相关的边被有效松弛，再松弛所有边，和Dijkstra计算的第二个点的所有边都是有效松弛的，以此类推，有n - 1个点，就进行n - 1次全松弛即可。</p>
+<p>可处理负边：</p>
+<p>Bellman-Ford算法缺点是效率低下，但不同于Dijkstra算法，它可以处理负边。</p>
+<p>我们换一个思路，如果一条路径被发现，那么也就是这条路径上所有的边都已经被松弛，对于这条路径，我们假设有起点和终点，从起点开始到终点的顺序逐步松弛边是有效的，无论有没有负边，这个情况都是成立的。</p>
+<p>再看，对于一条路径来说，最多有n - 1 条边，每次松弛至少会让一条边有效松弛，重复 n - 1次，这个路径上的所有边就都会被有效松弛了。所以起点的所有路径都被有效松弛了。</p>
+<p>负环：</p>
+<p>如果一旦出现负环，显然无法进行最小路径的计算，因为程序可以一直在负环绕圈圈，导致最后的结果就是负无穷，然而Bellman-Ford算法可以处理负环。</p>
+<p>根据上一个结论，V - 1次全边松弛可以让所有点都有效松弛，因此第V次松弛必定是全无效松弛，然而，一旦出现负环，就可以无限有效松弛下去。如果第V次出现有效松弛，那么必定就有负环了。</p>
+<h2 id="Bellman-Ford算法基于队列优化"><a href="#Bellman-Ford算法基于队列优化" class="headerlink" title="Bellman-Ford算法基于队列优化"></a>Bellman-Ford算法基于队列优化</h2><h3 id="结果-4"><a href="#结果-4" class="headerlink" title="结果"></a>结果</h3><p>还是获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法-4"><a href="#简述算法-4" class="headerlink" title="简述算法"></a>简述算法</h3><p>使用一个<strong>队列</strong>，一轮松弛过后，如果有点的距离发生改变，这个点就要被之后松弛，使用队列记录他，如果这个点还在队列里，就不需要再添加进去了，因此还需要记录是否在队列里。</p>
+<h3 id="分析-4"><a href="#分析-4" class="headerlink" title="分析"></a>分析</h3><p>这个队列只是用于记录要松弛的点而已，并不需要优先队列来找最小。只起到了记录的作用。</p>
+<blockquote>
+<p>所以用栈也行</p>
+</blockquote>
+<p>在队列优化版本中，只有那些在上一轮松弛中发生了变化的节点才会被考虑。这样一来，可以避免对所有边进行松弛。如果上次松弛中，节点没有变化，那么下一步松弛就对它没有任何作用了。</p>
+<p>就像上面说明的一样对于一条路径，需要从左往右的逐步松弛，所以一个最有效松弛的前提条件就是，前面一个点的距离发生了变化。把这个作为约束条件，可以大大减少不必要的松弛</p>
+<blockquote>
+<p>注意：一个点可以被重复松弛</p>
+</blockquote>
+<p>负环：</p>
+<p>基于队列优化的Bellman-Ford算法，只需要记录所有点松弛的次数，一旦次数大于等于点的个数，就可以代表有负环了。</p>
+<blockquote>
+<p>菊花图是这个算法的弱点，因为会往队列里面加很多的点。许多题都会卡SPFA</p>
+</blockquote>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/03/18/acm-class-note9/">ACM程序课算法笔记9——计算几何入门</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/03/25/acm-class-note10/">ACM程序课算法笔记10——最短路径问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/18/acm-class-note9/">ACM程序课算法笔记9——计算几何入门</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/16/learn-algorithm-note8/">算法学习笔记8——同余</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/10/acm-class-note8/">ACM程序课算法笔记8——二分答案</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/01/31/learn-algorithm-note7/">算法学习笔记7——根号分治</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/01/05/learn-database-note2/">《How does a relational database work》阅读笔记</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
