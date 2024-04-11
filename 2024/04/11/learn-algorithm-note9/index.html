@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>算法学习笔记9——后缀数组 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="算法学习笔记9——后缀数组"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/algorithm/">algorithm</a><a class="category-link" href="/categories/python/">python</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>算法学习笔记9——后缀数组</h2>
+            <div class="post-meta">
+                <time class="date">2024.04.11</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="算法学习笔记-9-后缀数组"><a href="#算法学习笔记-9-后缀数组" class="headerlink" title="算法学习笔记(9): 后缀数组"></a>算法学习笔记(9): 后缀数组</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>后缀数组是对后缀的一个排序，每个后缀按照字典序进行排序，然后用两个数组来映射它们自己和它们的排名。</p>
+<p>同时，为了便于记录后缀，我们记字符串s的后缀s[i:]记为i，同时i和它的排名rank相互映射。这就是后缀数组。为了便于理解，在本文将此数组称为映射，这是它实际完成的任务，只是数组恰好作为这个工具。我们通常使用sa(idToRank) 和 rk(rankToId)两个映射来记录后缀数组。</p>
+<h2 id="如何构造后缀数组"><a href="#如何构造后缀数组" class="headerlink" title="如何构造后缀数组"></a>如何构造后缀数组</h2><h3 id="做法一：暴力法"><a href="#做法一：暴力法" class="headerlink" title="做法一：暴力法"></a>做法一：暴力法</h3><p><strong>复杂度：O(n^2logn)</strong></p>
+<p>暴力排序，枚举出所有的后缀，在对所有的后缀进行排序。</p>
+<h3 id="做法二：倍增法"><a href="#做法二：倍增法" class="headerlink" title="做法二：倍增法"></a>做法二：倍增法</h3><p>复杂度：<strong>O(nlog^2n)</strong></p>
+<p>为了完成这个思想，先建设一个前提，首先要了解字典排序的特点，当被排序的两者长度不一时。</p>
+<p>当abc和b进行排序和123和2进行排序是不同的，进行等价的转换，实际上是123和200之间进行排序。虽然后缀的长度不同，实际上比较的时候，它们的长度是相同的。</p>
+<p>如果所有后缀都要进行排序，不妨我们让短一点的后缀在后面填充0，好了，这下子所有后缀的长度都一样了。</p>
+<p>这个算法的第一步：</p>
+<p>首先对字符串s的所有长度为1的子串，即每个字符进行排序，得到排序后的编号数组sa1和排名数组 rk1。（此时如果有两者一样，两者的排名相同）</p>
+<p>你就可以发现，对于他们的排序就相当于对每个后缀的第一个字符进行预先比较，下一步，就是这些预先比较使用动态规划的思想被后面的排序利用到。</p>
+<p>再换一个角度去想，abac变成1213实际上就是一种序号编码，通过他们的大小进行了一个编码。</p>
+<p>第二步，对所有长度为2的子串进行排序，此时，最后一位就是以0结尾。同时，依据这个思路，把长度为2 的子串进行了编码。但又是怎么排序的呢，位置1的取1和2，位置2的取2和3。</p>
+<p>第三步，对所有长度为4的子串进行排序，注意！为什么从2直接跳跃到4，因为原来长度为2的情况已经被编码过了，将两个组合起来在进行排序就可以获得长度为4的排序。</p>
+<p><img src="/2024/04/11/learn-algorithm-note9/sa2.png" alt="sa2"></p>
+<p>复杂度分析也就简单了，因为倍增所以排序logN次，每次排序消耗NlogN次。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">buildSAArray</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> input<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> len <span class="token operator">=</span> input<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">idToRank</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">*</span> len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">RankToid</span><span class="token punctuation">(</span>len <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 由于没有第0名这个概念，于是空置第一个位置</span>
+
+	<span class="token keyword">int</span> currentSortLen<span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        RankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> i<span class="token punctuation">;</span> <span class="token comment">// 塞入所有的名次编号</span>
+        idToRank<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> input<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token comment">// 因为一开始未编码，所以只要保存大小关系即可，ascii能说明字典序</span>
+    <span class="token punctuation">&#125;</span>
+	
+	<span class="token keyword">auto</span> cmp <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">int</span> id1<span class="token punctuation">,</span> <span class="token keyword">int</span> id2<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span><span class="token punctuation">(</span>idToRank<span class="token punctuation">[</span>id1<span class="token punctuation">]</span> <span class="token operator">==</span> idToRank<span class="token punctuation">[</span>id2<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> idToRank<span class="token punctuation">[</span>id1 <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span> <span class="token operator">&lt;</span> idToRank<span class="token punctuation">[</span>id2 <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> idToRank<span class="token punctuation">[</span>id1<span class="token punctuation">]</span> <span class="token operator">&lt;</span> idToRank<span class="token punctuation">[</span>id2<span class="token punctuation">]</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	
+	<span class="token keyword">for</span><span class="token punctuation">(</span>currentSortLen <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> currentSortLen <span class="token operator">&lt;</span> len<span class="token punctuation">;</span> currentSortLen <span class="token operator">&lt;&lt;=</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+		<span class="token function">sort</span><span class="token punctuation">(</span>RankToid<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> RankToid<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cmp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+		vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">temp</span><span class="token punctuation">(</span>idToRank<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> idToRank<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+		<span class="token comment">// 根据排序顺序编码化</span>
+		<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> p <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+			<span class="token keyword">if</span> <span class="token punctuation">(</span>temp<span class="token punctuation">[</span>RankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">==</span> temp<span class="token punctuation">[</span>RankToid<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">and</span> 
+					temp<span class="token punctuation">[</span>RankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span> <span class="token operator">==</span> temp<span class="token punctuation">[</span>RankToid<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+				idToRank<span class="token punctuation">[</span>RankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> p<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+				idToRank<span class="token punctuation">[</span>RankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">++</span>p<span class="token punctuation">;</span>
+			<span class="token punctuation">&#125;</span> 
+	  <span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+	<span class="token comment">// for (int i = 1; i &lt;= len; ++i) printf("%d ", RankToid[i]);</span>
+  <span class="token comment">// cout &lt;&lt; endl;</span>
+	<span class="token comment">// for (int i = 1; i &lt;= len; ++i) printf("%d ", idToRank[i]);</span>
+  <span class="token comment">// 得到的RankToid和idToRank可自行选择方式返回获取</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="优化排序"><a href="#优化排序" class="headerlink" title="优化排序"></a>优化排序</h2><p>此处可以选择优化的排序，使排序从NLogN提升到N，这样复杂度就会降低到NLogN。</p>
+<p>通过做法2的思路，我们可以发现，我们的排序实际上被排序的元素只有两个标签值，称作双关键字。对此我们可以使用非比较排序的基数排序。</p>
+<p>在进行基数排序之前，需要了解基数排序和计数排序的基本内容。它们都属于非比较排序。</p>
+<h3 id="计数排序"><a href="#计数排序" class="headerlink" title="计数排序"></a>计数排序</h3><p>非比较排序就是不会进行元素之间的比较，计数排序使用了从空间角度上很暴力的手段。举一个例子就可以知道了。</p>
+<p>对于排序序列 2 3 3 1 4 2 8</p>
+<p>计数排序直接维护一个大数组，此处可以取长度为10。记录所有0~9的元素出现个数，然后再从小到大依次输出记录的个数。</p>
+<p>此处记录了①有1个 ② 有2个 ③有2个④有2个⑧有1个。其余都是0个。按照顺序输出也就是</p>
+<p>1 2 2 3 3 4 4 8</p>
+<p>排序完成。</p>
+<h3 id="基数排序"><a href="#基数排序" class="headerlink" title="基数排序"></a>基数排序</h3><p>基数排序适用于多关键字排序，对于自然数来说，关键字就是不同的例如百位十位个位的值，而这个双关键字的情况，根据<strong>MSD 基数排序,</strong> 也就是从小的位到大的位进行排序。再结合计数排序，先按照第二关键字进行计数排序，取出所有，再对第一关键字进行排序即可。</p>
+<p>以下就是基于基数排序的使排序复杂度降低到O(N)</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">buildSAArray</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> input<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	<span class="token keyword">int</span> len <span class="token operator">=</span> input<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">idToRank</span><span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">*</span> len<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">rankToid</span><span class="token punctuation">(</span>len <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+	<span class="token keyword">int</span> currentSortLen<span class="token punctuation">;</span>
+	
+	vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">cnt</span><span class="token punctuation">(</span><span class="token number">128</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span> <span class="token comment">// 此处就是计数排序</span>
+		idToRank<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> input<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+		cnt<span class="token punctuation">[</span>input<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token operator">++</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+	
+	<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> cnt<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+		<span class="token comment">// 计算前缀和的原因是，我们需要的并不是计数排序输出所有元素，而是获取排名。</span>
+		cnt<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> cnt<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span> 
+
+	<span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> len<span class="token punctuation">;</span> i <span class="token operator">>=</span> <span class="token number">1</span><span class="token punctuation">;</span> i<span class="token operator">--</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token comment">// 放在SA里面的排名也就是index 需要不一样，所以这里要减一</span>
+        <span class="token keyword">int</span> rank <span class="token operator">=</span> cnt<span class="token punctuation">[</span>input<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        cnt<span class="token punctuation">[</span>input<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token operator">--</span><span class="token punctuation">;</span>
+		rankToid<span class="token punctuation">[</span>rank<span class="token punctuation">]</span> <span class="token operator">=</span> i<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">oldIdToRank</span><span class="token punctuation">(</span>idToRank<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+    <span class="token comment">// 排名序列化，之前说明过</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> p <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>oldIdToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">==</span> oldIdToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        idToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> p<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        idToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">++</span>p<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>currentSortLen <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> currentSortLen <span class="token operator">&lt;</span> len<span class="token punctuation">;</span> currentSortLen <span class="token operator">&lt;&lt;=</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 对第二关键字：idToRank[RankToid[i] + currentSortLen]进行计数排序</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">cnt</span><span class="token punctuation">(</span>len <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">id</span><span class="token punctuation">(</span>rankToid<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// id保存一份儿RankToid的拷贝，实质上就相当于oldRankToid</span>
+        
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> secondValue <span class="token operator">=</span> idToRank<span class="token punctuation">[</span>id<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            cnt<span class="token punctuation">[</span>secondValue<span class="token punctuation">]</span><span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> cnt<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 进行前缀和，理由和上面一样</span>
+            cnt<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> cnt<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> len<span class="token punctuation">;</span> i <span class="token operator">>=</span> <span class="token number">1</span><span class="token punctuation">;</span> i<span class="token operator">--</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> secondValue <span class="token operator">=</span> idToRank<span class="token punctuation">[</span>id<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">int</span> rank <span class="token operator">=</span> cnt<span class="token punctuation">[</span>secondValue<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            cnt<span class="token punctuation">[</span>secondValue<span class="token punctuation">]</span><span class="token operator">--</span><span class="token punctuation">;</span>
+            rankToid<span class="token punctuation">[</span>rank<span class="token punctuation">]</span> <span class="token operator">=</span> id<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// 对第一关键字：id[i]进行计数排序</span>
+        <span class="token function">fill</span><span class="token punctuation">(</span>cnt<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cnt<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        id <span class="token operator">=</span> rankToid<span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> firstValue <span class="token operator">=</span> idToRank<span class="token punctuation">[</span>id<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+            cnt<span class="token punctuation">[</span>firstValue<span class="token punctuation">]</span><span class="token operator">++</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            cnt<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> cnt<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> len<span class="token punctuation">;</span> i <span class="token operator">>=</span> <span class="token number">1</span><span class="token punctuation">;</span> i<span class="token operator">--</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> firstValue <span class="token operator">=</span> idToRank<span class="token punctuation">[</span>id<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">int</span> rank <span class="token operator">=</span> cnt<span class="token punctuation">[</span>firstValue<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            cnt<span class="token punctuation">[</span>firstValue<span class="token punctuation">]</span> <span class="token operator">--</span><span class="token punctuation">;</span>
+            rankToid<span class="token punctuation">[</span>rank<span class="token punctuation">]</span> <span class="token operator">=</span> id<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token comment">// 以上的两次计数排序就完成了一次基数排序</span>
+        vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">oldidToRank</span><span class="token punctuation">(</span>idToRank<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> p <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>oldidToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">==</span> oldidToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">&amp;&amp;</span>
+                oldidToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span> <span class="token operator">==</span> oldidToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">+</span> currentSortLen<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                idToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> p<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+                idToRank<span class="token punctuation">[</span>rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">++</span>p<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d "</span><span class="token punctuation">,</span> rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>根据以上代码的重新整理和总结，简化了许多以及使人更容易看懂。以下是一些注意点：</p>
+<p>在进行SA构建的中途idToRank和rankToid是不一定互相映射的，因为rankToId的index作为rank，rank是唯一的，然后idToRank中，如果两者一样，排名也会一样。至于为什么最后还是相互映射的，因为所有的后缀长度不一样，所以必定不会出现相同的情况。</p>
+<p>一开始的时候，idToRank并不是真正意义上的rank，实际上包括在过程中，rank的作用只需要是能体现两者之间的大小关系就可以。在每次排完后，会进行一次序列化，就会变成从1开始的排名。</p>
+<p>以上代码仅供参考理解，性能方面不敢保证，理解算法本质后可使用他人模板。</p>
+<h2 id="常数优化"><a href="#常数优化" class="headerlink" title="常数优化"></a>常数优化</h2><h3 id="第二关键字排序优化"><a href="#第二关键字排序优化" class="headerlink" title="第二关键字排序优化"></a>第二关键字排序优化</h3><p>第二关键字实际上是偏移后的位置，因为上面的考虑，第二关键字很多时候都是空，也就是等同于0的存在。对于计数排序，在计数完后再取出进行编号就会变得不那么必要了，因为它为0，就必定先出，可以直接进行序列化编号。</p>
+<h3 id="优化计数排序的范围"><a href="#优化计数排序的范围" class="headerlink" title="优化计数排序的范围"></a>优化计数排序的范围</h3><p>计数排序的缺点在于空间的使用以及需要遍历空间，然而我们说过，一旦出现相同，rank值可以一样，又因为计数排序的容器大小就是被排序元素种类的个数，所以有的时候不一定为len，可以用p获取种类数进行优化。</p>
+<h3 id="将-相互映射-保存"><a href="#将-相互映射-保存" class="headerlink" title="将 相互映射 保存"></a><strong>将 相互映射 保存</strong></h3><p>因为计算过程中的映射不统一，所以计算中经常出现idToRank[rankToid[i]]，可以直接保存这个关系，减少不连续内存访问</p>
+<h3 id="用函数替换重复判断"><a href="#用函数替换重复判断" class="headerlink" title="用函数替换重复判断"></a>用函数替换重复判断</h3><p>把 <code>oldrk[sa[i]] == oldrk[sa[i - 1]] &amp;&amp; oldrk[sa[i] + w] == oldrk[sa[i - 1] + w]</code></p>
+<p>替换成 <code>cmp(sa[i], sa[i - 1], w)</code>，</p>
+<p><code>bool cmp(int x, int y, int w) &#123; return oldrk[x] == oldrk[y] &amp;&amp; oldrk[x + w] == oldrk[y + w]; &#125;</code>。</p>
+<h3 id="若排名都不相同可直接生成后缀数组"><a href="#若排名都不相同可直接生成后缀数组" class="headerlink" title="若排名都不相同可直接生成后缀数组"></a><strong>若排名都不相同可直接生成后缀数组</strong></h3><p>如果过程中，排名已经没有出现重复，那么实际上已经排序结束了。</p>
+<h3 id="O-N-参考"><a href="#O-N-参考" class="headerlink" title="O(N) 参考"></a>O(N) 参考</h3><h3 id="SA-IS"><a href="#SA-IS" class="headerlink" title="SA-IS"></a><strong>SA-IS</strong></h3><p>可以参考 <a target="_blank" rel="noopener" href="https://riteme.site/blog/2016-6-19/sais.html">诱导排序与 SA-IS 算法</a>，另外它的 <a target="_blank" rel="noopener" href="https://github.com/riteme/riteme.github.io/issues/28">评论页面</a> 也有参考价值。</p>
+<h3 id="DC3"><a href="#DC3" class="headerlink" title="DC3"></a><strong>DC3</strong></h3><p>可以参考[<a target="_blank" rel="noopener" href="https://wenku.baidu.com/view/5b886b1ea76e58fafab00374.html">2009] 后缀数组——处理字符串的有力工具 by. 罗穗骞</a>。</p>
+<h2 id="后缀数组的应用"><a href="#后缀数组的应用" class="headerlink" title="后缀数组的应用"></a><strong>后缀数组的应用</strong></h2><p>后缀数组通常和子串有关，因为子串实际上就是后缀的前缀。例如<strong>在字符串中找子串，</strong>因为有了后缀数组，可以直接二分去找。或者是利用好单调性，同时关注前缀关键词，有的时候，题目的前缀也就是反串的后缀。</p>
+<h2 id="用后缀数组构建height-数组"><a href="#用后缀数组构建height-数组" class="headerlink" title="用后缀数组构建height 数组"></a>用后缀数组构建<strong>height 数组</strong></h2><p><strong>LCP（最长公共前缀）：lcp(i, j) 后缀i和后缀j的最长公共前缀（的长度） height[i] &#x3D; lcp(sa[i], sa[i - 1])</strong></p>
+<p>易得</p>
+<p><strong>height[rank[i]] ≥ height[rank[i - 1]] - 1</strong></p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> n<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>rk<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">continue</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>k<span class="token punctuation">)</span> <span class="token operator">--</span>k<span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>s<span class="token punctuation">[</span>i <span class="token operator">+</span> k<span class="token punctuation">]</span> <span class="token operator">==</span> s<span class="token punctuation">[</span>sa<span class="token punctuation">[</span>rk<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">+</span> k<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">++</span>k<span class="token punctuation">;</span>
+  height<span class="token punctuation">[</span>rk<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> k<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="height-数组应用"><a href="#height-数组应用" class="headerlink" title="height 数组应用"></a><strong>height 数组应用</strong></h2><h3 id="两子串最长公共前缀"><a href="#两子串最长公共前缀" class="headerlink" title="两子串最长公共前缀"></a><strong>两子串最长公共前缀</strong></h3><p><code>lcp(sa[i], sa[j]) = min(height[i + 1 ~ j])</code></p>
+<p>区间最值问题</p>
+<h3 id="比较一个字符串的两个子串的大小关系"><a href="#比较一个字符串的两个子串的大小关系" class="headerlink" title="比较一个字符串的两个子串的大小关系"></a><strong>比较一个字符串的两个子串的大小关系</strong></h3><p>设<code>A = S[a~b]</code> , <code>B = S[c~d]</code></p>
+<p>if <code>lcp(a, c) ≥ min(|A|, |B|)</code> ，<code> A &lt; B = |A| &lt; |B|</code></p>
+<p>else<code> A &lt; B = rk[a] &lt; rk[c]</code></p>
+<h3 id="不同子串的数目"><a href="#不同子串的数目" class="headerlink" title="不同子串的数目"></a><strong>不同子串的数目</strong></h3><p>答案是<code>n(n +1) / 2 - sum(height[2:])</code></p>
+<h3 id="出现至少-k-次的子串的最大长度"><a href="#出现至少-k-次的子串的最大长度" class="headerlink" title="出现至少 k 次的子串的最大长度"></a><strong>出现至少 k 次的子串的最大长度</strong></h3><p>出现至少k次意味着后缀排序后有至少连续k个后缀以这个子串作为公共前缀。所以，求出每相邻k个的最小值，再求这些最小值的最大值就是答案。</p>
+<h3 id="某字符串在文本串中至少不重叠地出现了两次"><a href="#某字符串在文本串中至少不重叠地出现了两次" class="headerlink" title="某字符串在文本串中至少不重叠地出现了两次"></a><strong>某字符串在文本串中至少不重叠地出现了两次</strong></h3><p>可以二分目标串的长度|s|，将h数组划分成若干个连续 LCP 大于等于 |s| 的段，利用 RMQ 对每个段求其中出现的数中最大和最小的下标，若这两个下标的距离满足条件，则一定有长度为 |s| 的字符串不重叠地出现了两次。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/04/01/acm-class-note11/">ACM程序课算法笔记11——差分约束</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/04/11/learn-algorithm-note9/">算法学习笔记9——后缀数组</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/04/01/acm-class-note11/">ACM程序课算法笔记11——差分约束</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/25/acm-class-note10/">ACM程序课算法笔记10——最短路径问题</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/18/acm-class-note9/">ACM程序课算法笔记9——计算几何入门</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/16/learn-algorithm-note8/">算法学习笔记8——同余</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/03/10/acm-class-note8/">ACM程序课算法笔记8——二分答案</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/python/" style="font-size: 10px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%BC%82%E6%AD%A5-%E5%BA%95%E5%B1%82/" style="font-size: 10px;">异步 底层</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
