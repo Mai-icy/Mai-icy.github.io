@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>ACM程序课算法笔记15——强联通分量 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="ACM程序课算法笔记15——强联通分量"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>ACM程序课算法笔记15——强联通分量</h2>
+            <div class="post-meta">
+                <time class="date">2024.05.08</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="ACM程序课算法笔记15——强联通分量"><a href="#ACM程序课算法笔记15——强联通分量" class="headerlink" title="ACM程序课算法笔记15——强联通分量"></a>ACM程序课算法笔记15——强联通分量</h1><h2 id="问题与目的"><a href="#问题与目的" class="headerlink" title="问题与目的"></a>问题与目的</h2><p>强联通的点是指，A点能到达B点，且B点能到达A点。</p>
+<p>对于一个图，问有多少强联通分量？</p>
+<h2 id="Kosaraju-算法"><a href="#Kosaraju-算法" class="headerlink" title="Kosaraju 算法"></a><strong>Kosaraju 算法</strong></h2><p>获取目标图G1的反图G2（所有边反向）</p>
+<p>该算法先获取一张图G1所有点后序遍历的逆序排列。</p>
+<p>再对G2进行dfs，每次dfs遇到的未到达的点集合就是一个强联通分量。</p>
+<h3 id="理解算法"><a href="#理解算法" class="headerlink" title="理解算法"></a>理解算法</h3><p>首先我们要了解后序遍历的逆序排序意味着什么：</p>
+<p>如果是一棵无环的树，后序排序的逆序一定是从根节点开始的，也就是说如果我们遍历一个点就删除它，我们就能保证，我们遍历到的每个点的时候（前面的点被删除）都是没有边指向它的。</p>
+<p>如果这是一个连通图，再去寻找规律：</p>
+<p>对于后序遍历的逆排序，对于其中的任意一个点，在这个点右边的所有点都是这个点能达到的，在这个点左边的所有点都是这个点碰不到的。</p>
+<p>如果这图不一定联通，有规律：（这个规律就很重要）</p>
+<p>这个点的后面的所有点都是这个点能到达的，或者根本不连通的（没有任何的边关系），前面的点都是到达不了的。</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>对G2进行dfs，所有的边都反向了，此时的A点到达B点实际上就是B点能到达A点。</p>
+<p>对所有的点从前往后运算，我们能保证，这个点后面的所有点只有两种情况，根本没有连接关系和能到达的点。例如第一个点，我们能保证除去和它根本无关的点，它能到达其他的所有点。</p>
+<p>所以G2中，从前点开始能遇到的点，就是这些点能遇到前点，形成了一个强联通，一旦形成便删除，所以对于后面遍历的每个点都有这样的连接关系。</p>
+<p>这也就是Kosaraju算法的原理。</p>
+<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// g 是原图，g2 是反图</span>
+
+<span class="token keyword">void</span> <span class="token function">dfs1</span><span class="token punctuation">(</span><span class="token keyword">int</span> u<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  vis<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> v <span class="token operator">:</span> g<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>vis<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token function">dfs1</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  s<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>u<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token function">dfs2</span><span class="token punctuation">(</span><span class="token keyword">int</span> u<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  color<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> sccCnt<span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> v <span class="token operator">:</span> g2<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>color<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token function">dfs2</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token function">kosaraju</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  sccCnt <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> n<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>vis<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token function">dfs1</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> n<span class="token punctuation">;</span> i <span class="token operator">>=</span> <span class="token number">1</span><span class="token punctuation">;</span> <span class="token operator">--</span>i<span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>color<span class="token punctuation">[</span>s<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token operator">++</span>sccCnt<span class="token punctuation">;</span>
+      <span class="token function">dfs2</span><span class="token punctuation">(</span>s<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="例题一："><a href="#例题一：" class="headerlink" title="例题一："></a>例题一：</h3><p>给定一个有向图，每个点i有点权ai，请对于每个点i，找到i能到达的点中点权的最大值（包括i点）。</p>
+<p>对于题目要求，我们可以利用强联通分量，对于强联通分量中的每个点，它们能到达点点权最大值是一样的，所以不妨把一个强联通分量的点集合看做一个点，这就形成了一个有向无环图，再进行记忆化搜索即可。</p>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void solve()&#123;
+    int n, m;
+    int sccCnt &#x3D; 0;
+    int maxV &#x3D; 0;
+    cin &gt;&gt; n &gt;&gt; m;
+    vector&lt;int&gt; value(n + 1);
+
+    vector&lt;int&gt; value2(n + 1);
+
+    for(int i &#x3D; 1; i &lt;&#x3D; n; i++)&#123;
+        cin &gt;&gt; value[i];
+    &#125;
+    vector&lt;int&gt; G1[n + 1];
+    vector&lt;int&gt; G2[n + 1];
+    vector&lt;int&gt; G3[n + 1];
+
+    for (int i &#x3D; 0; i &lt; m; i++)
+    &#123;
+        int a, b;
+        cin &gt;&gt; a &gt;&gt; b;
+        G1[a].push_back(b);
+        G2[b].push_back(a);
+    &#125;
+
+    vector&lt;int&gt; order;
+    vector&lt;bool&gt; visited(n + 1);
+    vector&lt;bool&gt; visited2(n + 1);
+
+    vector&lt;int&gt; type(n + 1);
+
+    function&lt;void(int)&gt; dfs1 &#x3D; [&amp;](int u)
+    &#123;
+        visited[u] &#x3D; true;
+        for (int x : G1[u])
+            if (not visited[x])
+                dfs1(x);
+        order.push_back(u);
+    &#125;;
+
+    function&lt;void(int)&gt; dfs2 &#x3D; [&amp;](int u)
+    &#123;   
+        maxV &#x3D; max(maxV, value[u]);
+        type[u] &#x3D; sccCnt;
+        visited2[u] &#x3D; true;
+        for (int x : G2[u])
+            if (not visited2[x])
+                dfs2(x);
+    &#125;;
+
+    long long result &#x3D; 0;
+    for (int i &#x3D; 1; i &lt;&#x3D; n; i++)
+        if(not visited[i]) dfs1(i);
+    
+    
+    for (int i &#x3D; n - 1; i &gt;&#x3D; 0; i--)
+    &#123;
+        if (not visited2[order[i]])
+        &#123;
+            maxV &#x3D; 0;
+            ++sccCnt;
+            dfs2(order[i]);
+            value2[sccCnt] &#x3D; maxV;
+        &#125;
+    &#125;
+
+    for(int i &#x3D; 1; i &lt;&#x3D; n; i++)&#123;
+        for(int x:G1[i])&#123;
+            if(type[i] !&#x3D; type[x])&#123;
+                G3[type[i]].push_back(type[x]);
+            &#125;
+        &#125;
+    &#125;
+
+    &#x2F;&#x2F; 缩点完成
+    vector&lt;bool&gt; done(n + 1);
+    
+    function&lt;int(int)&gt; dfs3 &#x3D; [&amp;](int u)
+    &#123;   
+        if(done[u]) 
+            return value2[u];
+
+        for(int x: G3[u])&#123;
+            if(not done[x])&#123;
+                value2[x] &#x3D; dfs3(x);
+                done[x] &#x3D; true;
+            &#125;
+            value2[u] &#x3D; max(value2[u], value2[x]);
+        &#125;
+        done[u] &#x3D; true;
+        return value2[u];
+    &#125;;
+
+    for(int i &#x3D; 1; i &lt;&#x3D; sccCnt; i++)&#123;
+        if(not done[i]) dfs3(i);
+    &#125;
+
+    for(int i &#x3D; 1; i &lt;&#x3D; n; i++)&#123;
+        cout &lt;&lt; value2[type[i]] &lt;&lt; endl;
+    &#125;
+
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><p>我们可以将一张图的每个强连通分量都缩成一个点。</p>
+<p>然后这张图会变成一个 DAG，可以进行拓扑排序以及更多其他操作。</p>
+<p>举个简单的例子，求一条路径，可以经过重复结点，要求经过的不同结点数量最多。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/04/28/acm-class-note14/">ACM程序课算法笔记14——KMP算法</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" rel="tag">强联通分量</a><a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/05/08/acm-class-note15/">ACM程序课算法笔记15——强联通分量</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/04/28/acm-class-note14/">ACM程序课算法笔记14——KMP算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/04/26/learn-algorithm-note10/">算法学习笔记10——康托展开</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/04/16/acm-class-note13/">ACM程序课算法笔记13——线段树入门</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/04/16/acm-class-note12/">ACM程序课算法笔记12——树状数组</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/04/11/learn-algorithm-note9/">算法学习笔记9——后缀数组</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/C/" style="font-size: 13.33px;">C</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/python/" style="font-size: 13.33px;">python</a> <a href="/tags/python-requests/" style="font-size: 13.33px;">python requests</a> <a href="/tags/web/" style="font-size: 10px;">web</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 10px;">动态规划</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16.67px;">图算法</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
