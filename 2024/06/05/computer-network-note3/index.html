@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>计算机网络笔记3——电子邮件 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="计算机网络笔记3——电子邮件"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>计算机网络笔记3——电子邮件</h2>
+            <div class="post-meta">
+                <time class="date">2024.06.05</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="计算机网络笔记3——电子邮件"><a href="#计算机网络笔记3——电子邮件" class="headerlink" title="计算机网络笔记3——电子邮件"></a>计算机网络笔记3——电子邮件</h1><h2 id="电子邮件"><a href="#电子邮件" class="headerlink" title="电子邮件"></a>电子邮件</h2><p>对于电子邮件的发送，我们模拟一个用户A向用户B发送的情况。</p>
+<p>其中有个用户代理的概念，我们此处可以将用户代理当做 邮件客户端例如qq邮箱，outlook等</p>
+<p>我们引入的角色有用户A，用户B，代理用户A，代理用户B，邮箱服务器A，邮箱服务器B。其中邮箱服务器A管理A的邮件，邮箱服务器B管理B的邮件</p>
+<ul>
+<li>用户A先使用代理用户A，完成内容和目标邮箱</li>
+<li>代理用户A把A的邮件和目标交给邮箱服务器A（SMTP）</li>
+<li>邮箱服务器A把邮件发往邮箱服务器B（SMTP）</li>
+<li>代理用户B从邮箱服务器B中获取邮件（POP3&#x2F;IMAP&#x2F;HTTP）</li>
+</ul>
+<p>SMTP并不经过中间邮件服务器，这个TCP连接会直接连接两方服务器。</p>
+<p>其中，如果服务器B是关闭的，服务器A中将会有一个队列，一旦服务器A到B的发送失败，就会进入队列等待下一轮发送。</p>
+<p>至于为什么用户A要使用SMTP而不直接给B，是因为我们不能确保用户A能直接访问到用户B。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">客户端</span><span class="token punctuation">:</span>  HELO mail.example.com
+<span class="token key atrule">服务器</span><span class="token punctuation">:</span>  250 Hello mail.example.com
+<span class="token key atrule">客户端</span><span class="token punctuation">:</span>  MAIL FROM<span class="token punctuation">:</span>&lt;sender@example.com<span class="token punctuation">></span>
+<span class="token key atrule">服务器</span><span class="token punctuation">:</span>  250 OK
+<span class="token key atrule">客户端</span><span class="token punctuation">:</span>  RCPT TO<span class="token punctuation">:</span>&lt;receiver@example.com<span class="token punctuation">></span>
+<span class="token key atrule">服务器</span><span class="token punctuation">:</span>  250 OK
+<span class="token key atrule">客户端</span><span class="token punctuation">:</span>  DATA
+<span class="token key atrule">服务器</span><span class="token punctuation">:</span>  354 Start mail input; end with &lt;CRLF<span class="token punctuation">></span>.&lt;CRLF<span class="token punctuation">></span>
+<span class="token key atrule">客户端</span><span class="token punctuation">:</span>  <span class="token key atrule">Subject</span><span class="token punctuation">:</span> Test email
+         This is a test email.
+         .
+<span class="token key atrule">服务器</span><span class="token punctuation">:</span>  <span class="token key atrule">250 OK</span><span class="token punctuation">:</span> queued as 12345
+<span class="token key atrule">客户端</span><span class="token punctuation">:</span>  QUIT
+<span class="token key atrule">服务器</span><span class="token punctuation">:</span>  221 Bye<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>CR代表回车 LF代表换行。</p>
+<h3 id="SMTP命令"><a href="#SMTP命令" class="headerlink" title="SMTP命令"></a>SMTP命令</h3><p>SMTP协议由一系列命令和响应构成，常见的SMTP命令包括：</p>
+<ul>
+<li><strong>HELO</strong>：标识发送方服务器，开始会话。</li>
+<li><strong>MAIL FROM</strong>：指定邮件发送者地址。</li>
+<li><strong>RCPT TO</strong>：指定邮件接收者地址。</li>
+<li><strong>DATA</strong>：表示开始传输邮件内容。</li>
+<li><strong>QUIT</strong>：终止会话。</li>
+</ul>
+<h3 id="SMTP与HTTP"><a href="#SMTP与HTTP" class="headerlink" title="SMTP与HTTP"></a>SMTP与HTTP</h3><ul>
+<li>SMTP是推协议，HTTP是拉协议</li>
+<li>SMTP要求是ASCII，HTTP无限制</li>
+<li>SMTP将所有媒体对象放在单一文件，HTTP每个媒体对象会分别通过独立的HTTP请求来获取</li>
+</ul>
+<h3 id="邮件报文格式"><a href="#邮件报文格式" class="headerlink" title="邮件报文格式"></a>邮件报文格式</h3><p>邮件报文格式不同于SMTP命令</p>
+<p>如同HTTP协议</p>
+<p>每个首部必须有一个From:和 To: 首部行 例如</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">From</span><span class="token punctuation">:</span> alice@crepes.fr
+<span class="token key atrule">To</span><span class="token punctuation">:</span> bob@hamburger.edu
+<span class="token key atrule">Subject</span><span class="token punctuation">:</span> Searching for the meaning of life.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="POP3-x2F-IMAP-x2F-HTTP"><a href="#POP3-x2F-IMAP-x2F-HTTP" class="headerlink" title="POP3&#x2F;IMAP&#x2F;HTTP"></a>POP3&#x2F;IMAP&#x2F;HTTP</h2><p>对于用户B要从邮箱服务器B中获取邮件，就不能使用推协议SMTP，需要使用拉协议，例如IMAP， POP3，HTTP</p>
+<h3 id="POP3"><a href="#POP3" class="headerlink" title="POP3"></a>POP3</h3><p>由RFC 1939进行定义</p>
+<p>先在端口110进行TCP连接，经过“authorization”， “transaction”，“update” 三个阶段，分别是授权，事务，更新。</p>
+<p><strong>授权阶段</strong>：</p>
+<ul>
+<li>客户端发送<code>USER &lt;username&gt;</code>命令，服务器响应<code>+OK</code>表示用户名有效。</li>
+<li>客户端发送<code>PASS &lt;password&gt;</code>命令，服务器响应<code>+OK</code>表示身份验证成功。</li>
+</ul>
+<p><strong>事务阶段</strong>：</p>
+<p>状态查询</p>
+<ul>
+<li><code>STAT</code>：获取邮件数量和总大小。</li>
+<li><code>LIST</code>：获取每封邮件的编号和大小。</li>
+</ul>
+<p>邮件操作</p>
+<ul>
+<li><code>RETR &lt;msg-number&gt;</code>：下载指定编号的邮件。</li>
+<li><code>DELE &lt;msg-number&gt;</code>：标记指定编号的邮件为删除状态。</li>
+<li><code>NOOP</code>：空操作，用于保持连接。</li>
+<li><code>RSET</code>：重置所有已标记为删除的邮件。</li>
+</ul>
+<p><strong>更新阶段</strong>：</p>
+<ul>
+<li>客户端发送<code>QUIT</code>命令。服务器响应<code>+OK</code>，并删除所有标记为删除的邮件。</li>
+</ul>
+<p>内容示例：</p>
+<pre class="line-numbers language-makefile" data-language="makefile"><code class="language-makefile"><span class="token target symbol">客户端</span><span class="token punctuation">:</span> telnet mailserver 110
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK Welcome to mail server
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> USER alice
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> PASS secret
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK
+
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> STAT
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK 2 320
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> LIST
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span>
++OK 2 messages
+1 120
+2 200
+.
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> RETR 1
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span>
++OK 120 octets
+邮件内容
+.
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> DELE 1
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK
+
+<span class="token target symbol">客户端</span><span class="token punctuation">:</span> QUIT
+<span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK Goodbye<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>缺陷：如果有两个设备使用POP3访问一个邮箱，在设备1删除了某个邮件后，设备2就无法下载访问了。</p>
+<h3 id="IMAP"><a href="#IMAP" class="headerlink" title="IMAP"></a>IMAP</h3><p>允许用户在多个设备上同步和管理电子邮件。与POP3不同，IMAP支持更丰富的功能和更复杂的邮件管理操作。IMAP通常在TCP端口143上运行，使用SSL加密的IMAPS通常在TCP端口993上运行。</p>
+<p>主要是文件夹管理，IMAP可以把报文和文件夹联系起来，管理者可以移动邮件到不同的文件夹，并且还可以创建删除，查找等。</p>
+<p>IMAP的另一个重要特性是它具有允许用户代理获取报文某些部分的命令，只获取邮件中的部分内容，降低了宽带需求。</p>
+<p>IMAP的操作过程也可以分为多个阶段：<strong>连接阶段</strong>、<strong>选择阶段</strong>、<strong>操作阶段</strong>和<strong>断开阶段</strong>。</p>
+<ol>
+<li>连接阶段（Connection State）</li>
+</ol>
+<p>客户端与服务器建立TCP连接，并进行初始的握手和身份验证。这是IMAP会话的初始阶段。</p>
+<ul>
+<li><strong>连接建立</strong>：客户端与服务器建立TCP连接。</li>
+<li><strong>身份验证</strong>：客户端通过发送用户名和密码进行身份验证，使用命令如<code>LOGIN &lt;username&gt; &lt;password&gt;</code>，服务器响应<code>OK</code>表示身份验证成功。</li>
+</ul>
+<ol start="2">
+<li>选择阶段（Selected State）</li>
+</ol>
+<p>在选择阶段，客户端选择一个邮件文件夹进行操作。IMAP支持多种文件夹（如收件箱、发件箱、草稿等），允许用户在不同文件夹之间切换。</p>
+<ul>
+<li><strong>选择文件夹</strong>：客户端使用<code>SELECT &lt;folder&gt;</code>命令选择一个邮件文件夹，服务器响应<code>OK</code>并返回文件夹的状态信息，如邮件数量、未读邮件数量等。</li>
+</ul>
+<ol start="3">
+<li>操作阶段（Operational State）</li>
+</ol>
+<p>在操作阶段，客户端可以执行各种命令来管理和操作邮件。这是IMAP会话的主要阶段。</p>
+<ul>
+<li><p>邮件状态查询：</p>
+<ul>
+<li><code>STATUS &lt;folder&gt;</code>：查询指定文件夹的状态信息。</li>
+<li><code>SEARCH &lt;criteria&gt;</code>：根据条件搜索邮件。</li>
+<li><code>FETCH &lt;sequence&gt; &lt;items&gt;</code>：获取指定邮件的内容和属性。</li>
+<li><code>EXAMINE &lt;folder&gt;</code>：类似于<code>SELECT</code>，但以只读方式打开文件夹。</li>
+</ul>
+</li>
+<li><p>邮件操作：</p>
+<ul>
+<li><code>COPY &lt;sequence&gt; &lt;folder&gt;</code>：将指定邮件复制到另一个文件夹。</li>
+<li><code>STORE &lt;sequence&gt; &lt;item&gt; &lt;value&gt;</code>：修改邮件的标志（如已读、未读）。</li>
+<li><code>EXPUNGE</code>：删除所有标记为删除的邮件。</li>
+<li><code>MOVE &lt;sequence&gt; &lt;folder&gt;</code>：将指定邮件移动到另一个文件夹。</li>
+</ul>
+</li>
+</ul>
+<ol start="4">
+<li>断开阶段（Logout State）</li>
+</ol>
+<p>在断开阶段，客户端发送<code>LOGOUT</code>命令，服务器进行必要的更新操作并断开连接。</p>
+<ul>
+<li><p>结束会话：</p>
+<ul>
+<li>客户端发送<code>LOGOUT</code>命令。</li>
+</ul>
+</li>
+<li><p>服务器响应<code>OK</code>，并断开TCP连接。</p>
+</li>
+</ul>
+<h3 id="IMAP命令"><a href="#IMAP命令" class="headerlink" title="IMAP命令"></a>IMAP命令</h3><p>以下是一些常用的IMAP命令：</p>
+<ul>
+<li>**LOGIN <username> <password>**：进行用户身份验证。</password></username></li>
+<li>**SELECT <folder>**：选择一个邮件文件夹进行操作。</folder></li>
+<li>**EXAMINE <folder>**：以只读方式选择一个文件夹。</folder></li>
+<li>**STATUS <folder>**：查询指定文件夹的状态信息。</folder></li>
+<li>**FETCH <sequence> <items>**：获取指定邮件的内容和属性。</items></sequence></li>
+<li>**SEARCH <criteria>**：根据条件搜索邮件。</criteria></li>
+<li>**STORE <sequence> <item> <value>**：修改邮件的标志。</value></item></sequence></li>
+<li>**COPY <sequence> <folder>**：将指定邮件复制到另一个文件夹。</folder></sequence></li>
+<li><strong>EXPUNGE</strong>：删除所有标记为删除的邮件。</li>
+<li><strong>LOGOUT</strong>：结束会话并断开连接。</li>
+</ul>
+<h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><p>也就是基于web的电子邮件，可以使用http协议从邮箱服务器拉取自己的邮件，方式更加丰富多样。（发送仍然是STMP）</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/06/04/computer-network-note2/">计算机网络笔记2——web和http</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/SMTP-POP3-IMAP/" rel="tag">SMTP/POP3/IMAP</a><a class="-none-link" href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" rel="tag">电子邮件</a><a class="-none-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/06/05/computer-network-note3/">计算机网络笔记3——电子邮件</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/04/computer-network-note2/">计算机网络笔记2——web和http</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/02/computer-network-note1/">计算机网络笔记1——网络概述</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/05/27/acm-class-note17/">ACM程序课算法笔记17——树链剖分</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/05/15/acm-class-note16/">ACM程序课算法笔记16——2-SAT</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/05/08/acm-class-note15/">ACM程序课算法笔记15——强联通分量</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/C/" style="font-size: 12.5px;">C</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 17.5px;">python</a> <a href="/tags/requests/" style="font-size: 12.5px;">requests</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 10px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 17.5px;">图算法</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12.5px;">源码阅读</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 15px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
