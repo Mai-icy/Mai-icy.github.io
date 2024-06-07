@@ -3,7 +3,7 @@
   <head>
      
     <meta charset="UTF-8">
-    <title>ACM程序课算法笔记4——背包问题 - Mai Icy</title>
+    <title>计算机网络笔记4——DNS服务 - Mai Icy</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
     
@@ -15,7 +15,7 @@
 
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
     <meta property="og:site_name" content="Mai Icy">
-    <meta property="og:title" content="ACM程序课算法笔记4——背包问题"/>
+    <meta property="og:title" content="计算机网络笔记4——DNS服务"/>
     
 <meta name="generator" content="Hexo 6.0.0"></head>
 
@@ -51,86 +51,109 @@
     <main>
     <div class="wrap min">
         <section class="post-title">
-            <h2>ACM程序课算法笔记4——背包问题</h2>
+            <h2>计算机网络笔记4——DNS服务</h2>
             <div class="post-meta">
-                <time class="date">2023.11.20</time>
+                <time class="date">2024.06.07</time>
             
-                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a></span>
+                <span class="category"><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a></span>
             
             </div>
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 200 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
-        
-            <h1 id="ACM程序课算法笔记4——背包问题"><a href="#ACM程序课算法笔记4——背包问题" class="headerlink" title="ACM程序课算法笔记4——背包问题"></a>ACM程序课算法笔记4——背包问题</h1><h2 id="基本模型"><a href="#基本模型" class="headerlink" title="基本模型"></a>基本模型</h2><p>给你一个容量为V的背包和若干种物品，在一定的限制条件下（每种物品都占用一定容量），问最多能放进多少价值的物品。</p>
-<blockquote>
-<p>最典型最基本的动态规划问题，DP问题中状态的理解概念</p>
-</blockquote>
-<p>有N件物品和一个容量为V的背包，知道每个物品的费用是<code>cost[i]</code>，价值是<code>value[i]</code>。求解将哪些物品装入背包可使价值总和最大。</p>
-<h3 id="01背包"><a href="#01背包" class="headerlink" title="01背包"></a>01背包</h3><h4 id="特点："><a href="#特点：" class="headerlink" title="特点："></a>特点：</h4><p>每个物品只有一件，可以选择放或者不放</p>
-<h4 id="解题思路："><a href="#解题思路：" class="headerlink" title="解题思路："></a>解题思路：</h4><p><code>dp[i][v]</code>表示前i个物品放入一个容量为v的背包可以获得的最大价值。 </p>
-<p>则可得状态转移方程</p>
-<p><code>dp[i][v] = max(dp[i - 1][v - cost[i]] + value[i], dp[i - 1][v])</code></p>
-<p>我们可以发现<code>dp[i][v]</code>只用到了<code>dp[i - 1]</code>，所以我们可以做出一维<code>dp</code>的优化</p>
-<p>j循环从总容量递减到value[i]</p>
-<p><code>dp[j] = max(dp[j], dp[j - cost[i]] + value[i])</code></p>
-<h4 id="思考：为什么要倒序？"><a href="#思考：为什么要倒序？" class="headerlink" title="思考：为什么要倒序？"></a>思考：为什么要倒序？</h4><p>先考虑第一次遍历，dp的值都是0，而后面的dp又依赖于前面的dp，保证了这个物品只会被取一次。</p>
-<p>后续的第i次遍历，dp中的值只包含了前i-1个物品，后面的dp依赖于前面的dp，保证了新的dp只会最多包含一个第i件物品。</p>
-<h3 id="完全背包"><a href="#完全背包" class="headerlink" title="完全背包"></a>完全背包</h3><h4 id="特点：-1"><a href="#特点：-1" class="headerlink" title="特点："></a>特点：</h4><p>一种物品可以取无数个</p>
-<h4 id="解题思路：-1"><a href="#解题思路：-1" class="headerlink" title="解题思路："></a>解题思路：</h4><p>暴力转换思路：直接转换到01背包</p>
-<p>可以考虑每件物品最多取几件，然后把这件物品复制n遍，便可变为01背包问题。</p>
-<p>但是很容易爆效率，几件物品可能会膨胀到几万件。</p>
-<p>优化思路：</p>
-<p>和01背包类似，只需要将j循环从0到V</p>
-<p><code>dp[j] = max(dp[j], dp[j - cost[i]] + value[i])</code></p>
-<h4 id="思考：为什么要正序？"><a href="#思考：为什么要正序？" class="headerlink" title="思考：为什么要正序？"></a>思考：为什么要正序？</h4><p>从倒序的原因可以看出倒序是为了保证某个物品都只会被取一次，此时不放考虑一下正序的情况。</p>
-<p>假如在正序情况第i次遍历，dp保存了前i-1物品的情况，如果前面的某次dp可以取第i件物品则取，后面的dp基于前面的dp，所以便可多次取第i件物品。即每次判断的时候都不考虑是否取过第i件物品，只考虑要不要取，取了值不值得。</p>
-<h3 id="填满背包"><a href="#填满背包" class="headerlink" title="填满背包"></a>填满背包</h3><h4 id="特点：-2"><a href="#特点：-2" class="headerlink" title="特点："></a>特点：</h4><p>要求背包的容量要全部利用，不能有空余空间。</p>
-<h4 id="解题思路：-2"><a href="#解题思路：-2" class="headerlink" title="解题思路："></a>解题思路：</h4><p>既然要求有空余空间，那么必然就有多种空间情况是非法的，一旦该方案非法，我们可以设置为-1，然后后面的dp依赖于前面的dp，每个dp只需要考虑两种情况（新增第i件物品和不增第i件物品），如果这两种情况都非法，则这个dp也非法，如果不非法则取用。</p>
-<h3 id="多重背包"><a href="#多重背包" class="headerlink" title="多重背包"></a>多重背包</h3><p> 一种物品可以取最多C个（不是一个也不是无数个）</p>
-<p>解题思路：</p>
-<p>暴力转换思路：直接转换到01背包</p>
-<p>同理易得出，应该很好理解。</p>
-<p>优化转换思路：优化转换到01背包</p>
-<p>由于数可以转为二进制数，然后分开相加</p>
-<p>例如 15 &#x3D; 1 + 2 + 4 + 8</p>
-<p>0~15都可以由1 2 4 8自由组合出来。</p>
-<p>我们便把最多C个物品转为多个2次幂的数相加即可，多余的数单独一组，例如</p>
-<p>18 &#x3D; 1 + 2 + 4 + 8 <strong>+ 3</strong></p>
-<p>二进制优化代码示例：</p>
- <pre class="line-numbers language-C" data-language="C"><code class="language-C">int t &#x3D; 1;
-while (x&gt;&#x3D;t) &#123;
-    v[cnt] &#x3D; a*t;
-    c[cnt++] &#x3D; b*t;
-    x -&#x3D; t;
-    t &lt;&lt;&#x3D; 1;
-&#125;
-if(x)&#123;
-    v[cnt] &#x3D; a*x;
-    c[cnt++] &#x3D; b*x;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="二维费用背包"><a href="#二维费用背包" class="headerlink" title="二维费用背包"></a>二维费用背包</h3><h4 id="特点：-3"><a href="#特点：-3" class="headerlink" title="特点："></a>特点：</h4><p>一个物品的占用两种费用，比如一件物品不仅占用空间，也有一定重量，给出最大空间和最大重量，求最大价值。</p>
-<h4 id="解题思路：-3"><a href="#解题思路：-3" class="headerlink" title="解题思路："></a>解题思路：</h4><p>背包问题利用的dp储存利用的下标实际上就是<strong>状态</strong>，此时多了一个重量状态，同理只要多添加一维的空间即可。</p>
-<p>解法同理。</p>
-<p>状态转移方程：</p>
-<p><code>f[i][v][u]=max(f[i-1][v][u],f[i-1][v-a[i]][u-b[i]]+w[i])</code></p>
+            <h1 id="计算机网络笔记3——DNS服务"><a href="#计算机网络笔记3——DNS服务" class="headerlink" title="计算机网络笔记3——DNS服务"></a>计算机网络笔记3——DNS服务</h1><h2 id="DNS服务"><a href="#DNS服务" class="headerlink" title="DNS服务"></a>DNS服务</h2><p>Domain Name System，管理域名的服务器，基于UDP，53端口。</p>
+<p>已知ip地址是访问的主要方式，但由于数字难以记忆，便有了域名，域名便于记忆，再建立DNS用于对应域名和ip地址，在HTTP，SMTP，FTP中访问的域名，都会被客户端内含的DNS应用发送请求，获取到这个域名背后的ip。</p>
+<p>DNS的服务：域名→ip and 域名别名→域名</p>
+<h3 id="实现机理"><a href="#实现机理" class="headerlink" title="实现机理"></a>实现机理</h3><p>DNS看起来是一个实现简单域名到ip映射的黑盒服务，实际上由于大量的流量以及要保证稳定性，背后有一定的结构。</p>
+<p>DNS采用了分布式、层次数据库</p>
+<p>有三种DNS服务器：根DNS服务器，顶级域(TLD)DNS服务器，权威DNS服务器</p>
+<ul>
+<li>根DNS服务器：目前有13组根DNS服务器，由A到M命名，分别由不同的组织管理。这些服务器在全球分布广泛。根名字服务器提供TLD服务器的IP地址。</li>
+<li>TLD服务器：顶级域名指的是域名中的最后一部分例如 <a target="_blank" rel="noopener" href="http://www.baidu.com/">www.baidu.com</a> 中的com就是顶级域名。TLD服务器是根DNS服务器的下一级服务器，负责解析属于其顶级域名下的所有二级域名。TLD服务器提供了权威DNS服务器的IP地址。</li>
+<li>权威DNS服务器：为域名提供解析结果的服务器。它存储了域名与IP地址的对应关系。权威DNS服务器是DNS解析链中的最后一环，返回结果ip。</li>
+</ul>
+<p>还有一种DNS服务器我们称作本地DNS服务器：</p>
+<p>本地DNS服务器是指用户所在网络中的DNS服务器，用于解析用户设备发起的DNS查询请求。本地DNS服务器通常由ISP或网络管理员管理运营，也可以是用户自己搭建的DNS服务器。其功能包括缓存DNS查询结果、转发未缓存的查询请求、处理本地域名解析等。</p>
+<p>这有点像用户代理，对于用户而言，不用直接去访问我们上面所说的三个主要DNS服务器，而是由本地DNS服务器完成三次的请求，把结果返回，同时具有缓存功能。</p>
+<h3 id="递归查询和迭代查询"><a href="#递归查询和迭代查询" class="headerlink" title="递归查询和迭代查询"></a>递归查询和迭代查询</h3><p><strong>递归查询</strong>：</p>
+<ul>
+<li>DNS客户端向DNS服务器发起请求，要求其完成整个查询过程。</li>
+<li>服务器负责所有后续查询，直到获取最终结果。</li>
+<li>通常用户的本地DNS服务器对外提供递归查询服务。</li>
+</ul>
+<p><strong>迭代查询</strong>：</p>
+<ul>
+<li>DNS客户端向DNS服务器发起请求，DNS服务器返回指向其他DNS服务器的引用。</li>
+<li>客户端根据引用继续查询，逐步获取最终结果。</li>
+<li>DNS服务器之间通常使用迭代查询。</li>
+</ul>
+<h3 id="DNS资源记录（Resource-Record）"><a href="#DNS资源记录（Resource-Record）" class="headerlink" title="DNS资源记录（Resource Record）"></a>DNS资源记录（Resource Record）</h3><p>资源记录是一个包含了下列字段的4元组：</p>
+<p>(Name, Value, Type, TTL)</p>
+<p>TTL是记录的生存时间，记录了什么时候要从缓存中删除这条记录。</p>
+<p>资源记录类型：</p>
+<ul>
+<li>Type&#x3D;A（Address Record）：该记录为（主机名，ip地址）例如（<a target="_blank" rel="noopener" href="http://example.foo.com/">example.foo.com</a>, 145.37.93.126, A）</li>
+<li>Type&#x3D;AAAA（IPv6 Address Record）：ipv6的映射记录。</li>
+<li>Type&#x3D;NS（Name Server Record）：该记录为指定域名的权威DNS服务器，这个记录用于沿着查询链来路由DNS查询。当添加了这样一个记录，访问这个域名时，会去指定的DNS服务器查找其ip。例如：(<a target="_blank" rel="noopener" href="http://example.com/">example.com</a>, <a target="_blank" rel="noopener" href="http://example.dns.com/">example.dns.com</a>, NS)</li>
+<li>Type&#x3D;CNAME（Canonical Name Record）：将一个域名别名映射到另一个域名，也就是域名别名，当遇到第一个域名，就实际上对应第二个域名，例如：(<a target="_blank" rel="noopener" href="http://ex.com/">ex.com</a>, <a target="_blank" rel="noopener" href="http://example.com/">example.com</a>, CNAME)。</li>
+<li>Tpye&#x3D;MX（Mail Exchange Record）：指定电子邮件服务器，负责接收域名的电子邮件，例如：（<a target="_blank" rel="noopener" href="http://example.com/">example.com</a>, <a target="_blank" rel="noopener" href="http://mail1.example.com/">mail1.example.com</a>, MX），当要发送邮件给<a href="mailto:&#117;&#115;&#x65;&#114;&#64;&#x65;&#x78;&#97;&#109;&#x70;&#x6c;&#x65;&#46;&#x63;&#111;&#x6d;">&#117;&#115;&#x65;&#114;&#64;&#x65;&#x78;&#97;&#109;&#x70;&#x6c;&#x65;&#46;&#x63;&#111;&#x6d;</a>，<a target="_blank" rel="noopener" href="http://正常会去dns寻找example.com/">正常会去dns寻找example.com</a>，但由于是邮件会优先查看MX记录，<a target="_blank" rel="noopener" href="http://进行映射从而转去找mail1.example.com/">进行映射从而转去找mail1.example.com</a>。</li>
+</ul>
+<h2 id="DNS报文"><a href="#DNS报文" class="headerlink" title="DNS报文"></a>DNS报文</h2><p>DNS服务器的一次服务只有询问和回答，故报文也只有这两种，并且他们格式一致</p>
+<p>由五部分组成：头部， 问题节，答案节，授权信息节，附加信息节</p>
+<h3 id="头部"><a href="#头部" class="headerlink" title="头部"></a>头部</h3><p>头部有六个数据：标识符，标志，问题数，回答RR数，权威RR数，附加RR数（RR就是资源记录）</p>
+<p>头部一共有12个字节，6个字段。其中后四个字段分别说明了后四个部分的大小和数量。</p>
+<p>主要讨论：标识符 和 标志</p>
+<ul>
+<li>标识符是用于匹配询问和回答的，回答会包含和询问一样的标识符，这是一个16bit的数。便于询问者匹配正确的回答。</li>
+<li>标志位即flag，是一个16bit的bitset，用于表示该报文的基本类型等：</li>
+</ul>
+<ol>
+<li>QR码(Query&#x2F;Response)：第0位用于指出该报文是询问报文还是回答报文，0表示询问，1表示回答。</li>
+<li>Op码（操作码）：第1-4位，表示查询的类型，一般为0（标准查询），其他值包括1（反向查询）、2（服务器状态请求）等。</li>
+<li>AA (Authoritative Answer) 码：第5位，用于表示响应是否是权威应答。1表示是权威应答，0表示不是。</li>
+<li>TC (TrunCation) 位：第6位，表示报文是否被截断。1表示报文长度超过512字节且被截断，0表示没有截断</li>
+<li>RD (Recursion Desired) 位：第7位，表示客户端是否希望服务器递归解析。1表示希望递归解析，0表示不希望</li>
+<li>RA (Recursion Available) 位：第8位，表示服务器是否支持递归解析。1表示支持，0表示不支持</li>
+<li>Z 位：保留位，9-11位，为0。</li>
+<li>RCODE (Response Code)：第12-15位：表示响应的状态码，常见值包括0（无错误）、1（格式错误）、2（服务器失败）、3（名字错误）等</li>
+</ol>
+<h3 id="问题记录"><a href="#问题记录" class="headerlink" title="问题记录"></a>问题记录</h3><p>客户端查询域名时，需要向服务端发送请求报文；待查询域名作为问题记录，保存在问题节中。</p>
+<p>问题记录由 3 个字段组成：</p>
+<ul>
+<li>待查询域名（ Name ），这个字段长度不固定，由具体域名决定；</li>
+<li>查询类型（ Type ），域名除了关联 IP 地址，还可以关联其他信息，常见类型包括：<ul>
+<li>1 表示 A 记录，即 IP 地址；</li>
+<li>28 表示 AAAA 记录，即 IPv 6 地址；</li>
+</ul>
+</li>
+<li>类 （ Class ）通常为 1 ，表示 TCP&#x2F;IP 互联网地址；</li>
+</ul>
+<h3 id="资源记录"><a href="#资源记录" class="headerlink" title="资源记录"></a><strong>资源记录</strong></h3><p>同样作为资源返回，发送应答报文；域名查询结果作为资源记录，保存在答案以及其后两节中</p>
+<p>资源记录结构共有 6 个字段：</p>
+<ul>
+<li>被查询域名（ Name ）</li>
+<li>查询类型（ Type ）</li>
+<li>类 （ Class ）</li>
+<li>有效期（ TTL ）</li>
+<li>数据长度（ Resource Data Length ）</li>
+<li>数据（ Resource Data ）</li>
+</ul>
+<p>如果想要添加自己的服务器域名和ip，根据对应的机构上传，并完成A资源记录，如果想要支持邮件服务，也就需要MX资源记录。</p>
 
         </article>
         <section class="post-near">
             <ul>
                 
-                    <li>上一篇: <a href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a></li>
+                    <li>上一篇: 看完啦 (つд⊂)</li>
                 
                 
-                    <li>下一篇: <a href="/2023/10/27/acm-class-note3/">ACM程序课算法笔记3——动态规划</a></li>
+                    <li>下一篇: <a href="/2024/06/05/computer-network-note3/">计算机网络笔记3——电子邮件</a></li>
                 
             </ul>
         </section>
         
             <section class="post-tags">
-            <a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a><a class="-none-link" href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" rel="tag">背包问题</a>
+            <a class="-none-link" href="/tags/DNS/" rel="tag">DNS</a><a class="-none-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a>
             </section>
         
     
