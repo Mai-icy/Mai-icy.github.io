@@ -3,7 +3,7 @@
   <head>
      
     <meta charset="UTF-8">
-    <title>计算机网络笔记2——web和http - Mai Icy</title>
+    <title>计算机网络笔记5——P2P - Mai Icy</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
     
@@ -15,7 +15,7 @@
 
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
     <meta property="og:site_name" content="Mai Icy">
-    <meta property="og:title" content="计算机网络笔记2——web和http"/>
+    <meta property="og:title" content="计算机网络笔记5——P2P"/>
     
 <meta name="generator" content="Hexo 6.0.0"></head>
 
@@ -51,9 +51,9 @@
     <main>
     <div class="wrap min">
         <section class="post-title">
-            <h2>计算机网络笔记2——web和http</h2>
+            <h2>计算机网络笔记5——P2P</h2>
             <div class="post-meta">
-                <time class="date">2024.06.04</time>
+                <time class="date">2024.06.10</time>
             
                 <span class="category"><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a></span>
             
@@ -61,71 +61,67 @@
         </section>
         <article class="post-content">
         
-            <h1 id="计算机网络笔记2——web和http"><a href="#计算机网络笔记2——web和http" class="headerlink" title="计算机网络笔记2——web和http"></a>计算机网络笔记2——web和http</h1><h2 id="网络应用程序体系结构"><a href="#网络应用程序体系结构" class="headerlink" title="网络应用程序体系结构"></a>网络应用程序体系结构</h2><h3 id="网络应用程序体系结构-1"><a href="#网络应用程序体系结构-1" class="headerlink" title="网络应用程序体系结构"></a>网络应用程序体系结构</h3><p>有一个常开的主机作为服务器，会有多个客户机对服务器进行请求。客户相互之间不直接通信，通过服务器作为中介进行数据的交流。为了满足大批量的请求，通常建立拥有大量服务器的数据中心。</p>
-<h3 id="P2P-体系结构"><a href="#P2P-体系结构" class="headerlink" title="P2P 体系结构"></a>P2P 体系结构</h3><p>对于专用服务器有最小的（或者没有）依赖，P2P是一种客户主机直接连接，这些主机被称为对等方</p>
-<p>它有自拓展性：网络能够随着节点（即参与网络的计算机或设备）的增加而自动扩展，负载均衡，资源共享。</p>
-<h2 id="应用层"><a href="#应用层" class="headerlink" title="应用层"></a>应用层</h2><p>进程通过软件接口在互联网上进行报文接受发送，这个软件接口称作套接字。</p>
-<ul>
-<li>数据传输：运输层协议的 可靠数据传输 和 被容忍丢失的应用</li>
-<li>时间敏感：要求严格的时间同步和实时响应，例如视频会议，或者游戏</li>
-<li>宽带弹性：能够根据需求动态调整资源分配的应用程序，自动适应宽带</li>
+            <h1 id="计算机网络笔记5——P2P"><a href="#计算机网络笔记5——P2P" class="headerlink" title="计算机网络笔记5——P2P"></a>计算机网络笔记5——P2P</h1><p>P2P连接是两个主机之间直接通信，现在没有客户端和服务器一说，两者都是对等方。</p>
+<h2 id="P2P与客户-服务器结构对比"><a href="#P2P与客户-服务器结构对比" class="headerlink" title="P2P与客户-服务器结构对比"></a>P2P与客户-服务器结构对比</h2><h3 id="客户-服务器结构分发时间"><a href="#客户-服务器结构分发时间" class="headerlink" title="客户-服务器结构分发时间"></a>客户-服务器结构分发时间</h3><ul>
+<li>定义一个文件有F大小，那么服务器如果向N个客户发送，就需要服务器上载NF大小的文件进行发送，并且速度受到服务器的上载速率限制。以u作为服务器上载上限，则要有至少要有NF&#x2F;u的时间。</li>
+<li>并且完成在最慢的客户下载完为止，则至少要有F&#x2F;dmin。</li>
 </ul>
-<p>HTTP：先发起一个TCP连接。一旦建立，该进程就可以通过套接字接口访问TCP</p>
-<p>无状态协议：是一种在通信过程中不保留客户端状态的协议，每个请求是独立的，不保存关于客户的任何信息，HTTP是一个无状态协议。</p>
-<h3 id="非持续连接和持续连接"><a href="#非持续连接和持续连接" class="headerlink" title="非持续连接和持续连接"></a>非持续连接和持续连接</h3><p>非持续连接：每次进行一次通信时都会建立连接。完成传输就会关闭。要新的数据传输时，必须重新建立连接。</p>
-<p>持续连接：也称为长连接，是指客户端和服务器之间建立的连接保持打开。可以完成多个请求，直到显式关闭或超时。</p>
-<h3 id="HTTP请求报文"><a href="#HTTP请求报文" class="headerlink" title="HTTP请求报文"></a>HTTP请求报文</h3><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">GET /somedir/page ・html HTTP/1.1
-<span class="token key atrule">Host</span><span class="token punctuation">:</span> www someschool•edu
-<span class="token key atrule">Connection</span><span class="token punctuation">:</span> close
-<span class="token key atrule">User-agent</span><span class="token punctuation">:</span> Mozilla/5•0
-<span class="token key atrule">Accept-language</span><span class="token punctuation">:</span> fr<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>第一行为请求行： 方法字段 + URL字段 + HTTP版本字段</p>
-<p>其它为首部行：</p>
-<p>Host：指定请求的目标主机名</p>
-<p>Connection：指示是否在完成当前请求后关闭网络连接，1.1默认keep-alive 持久连接</p>
-<p>User-agent：提供有关客户端软件的信息</p>
-<p>Accept-language：告诉服务器客户端希望接收的语言版本</p>
-<h3 id="HTTP的状态设计：cookie"><a href="#HTTP的状态设计：cookie" class="headerlink" title="HTTP的状态设计：cookie"></a>HTTP的状态设计：cookie</h3><p>http是无状态的，但cookie技术可以用于记录状态。而负责保存cookie和在请求的时候使用对应的cookie的责任就交给了浏览器。</p>
-<p>服务器可以在返回的请求使用 “Set-cookie”使客户浏览器保存cookie并在后序的报文中增加“Cookie”首部行。</p>
-<h3 id="web缓存"><a href="#web缓存" class="headerlink" title="web缓存"></a>web缓存</h3><p>web缓存器也叫代理服务器，会将请求过的数据（如HTML页面、图片、JavaScript文件等）存储，当用户再次请求相同的数据时，缓存器会直接返回缓存中的数据，而不是再次从原始服务器获取。这可以显著提高响应速度和降低网络流量。</p>
-<p><code>If-Modified-Since</code> 是HTTP协议中的一个请求头字段，用于实现协商缓存（conditional request）。它允许客户端告诉服务器已经缓存了某个资源，并且缓存的版本是自指定日期以来的版本。如果自该日期以来资源没有被修改，服务器可以返回304 Not Modified状态码。</p>
-<p>第一次获取资源（response）</p>
-<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">HTTP/1.1 200 OK
-<span class="token key atrule">Last-Modified</span><span class="token punctuation">:</span> Wed<span class="token punctuation">,</span> 21 Oct 2015 07<span class="token punctuation">:</span>28<span class="token punctuation">:</span>00 GMT
-<span class="token key atrule">Content-Type</span><span class="token punctuation">:</span> text/html
-<span class="token key atrule">Content-Length</span><span class="token punctuation">:</span> <span class="token number">1024</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>后续请求</p>
-<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">GET /index.html HTTP/1.1
-<span class="token key atrule">Host</span><span class="token punctuation">:</span> example.com
-<span class="token key atrule">If-Modified-Since</span><span class="token punctuation">:</span> Wed<span class="token punctuation">,</span> 21 Oct 2015 07<span class="token punctuation">:</span>28<span class="token punctuation">:</span>00 GMT<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
+<p>D &#x3D; max(F&#x2F;dmin, NF&#x2F;u)</p>
+<p>能说明客户-服务器结构分发时间是跟随客户数量N线性增长的。</p>
+<h3 id="P2P结构分发时间"><a href="#P2P结构分发时间" class="headerlink" title="P2P结构分发时间"></a>P2P结构分发时间</h3><p>特点：P2P中每个对等方都可以帮助这个服务器分发这个文件，也就是说，不同于C-S，作为客户不仅在下载文件，还在把下载的文件上传。</p>
 <ul>
-<li><p><strong>资源未修改 : 返回</strong>    HTTP&#x2F;1.1 304 Not Modified</p>
-</li>
-<li><p><strong>资源已修改</strong>：如果资源自指定时间以来已被修改，服务器返回200 OK状态码，并且发送更新后的资源内容，同时更新<code>Last-Modified</code>时间。</p>
-<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">yHTTP/1.1 200 OK
-<span class="token key atrule">Last-Modified</span><span class="token punctuation">:</span> Thu<span class="token punctuation">,</span> 22 Oct 2015 10<span class="token punctuation">:</span>00<span class="token punctuation">:</span>00 GMT
-<span class="token key atrule">Content-Type</span><span class="token punctuation">:</span> text/html
-<span class="token key atrule">Content-Length</span><span class="token punctuation">:</span> <span class="token number">2048</span>
-(更新后的HTML内容)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+<li>分发开始时，只有服务器有文件，然而在服务器传输完F的每一个部分后，这个F都已经在这个P2P网络中了，即使这个服务器不进行上传，其它对等方依旧可以帮助完成，故至少需要F&#x2F;u的时间。</li>
+<li>同样完成在最慢的客户下载完为止，则至少要有F&#x2F;dmin。</li>
+<li>实际上系统整体的总上载能力&#x3D;服务器的上载速率 + 对等方的上载速率和。故完成所有分发也要NF，最少时间是NF&#x2F;(u + sum(u))</li>
 </ul>
+<p>D &#x3D; max(NF&#x2F;(u + sum(u)), F&#x2F;dmin, F&#x2F;u)</p>
+<p>根据数据模拟，可以得到，在N不断增长的情况下，P2P相比CS结构，完成的时间将越来越有优势。</p>
+<p>这体现P2P体系结构的拓展性，在对等方的不断加入后，这个系统会更加有效率。</p>
+<h2 id="BitTorrent"><a href="#BitTorrent" class="headerlink" title="BitTorrent"></a>BitTorrent</h2><p>BitToiTent是一种用于文件分发的流行P2P协议。</p>
+<p>洪流（torrent）：参与一个特定文件分发的所有对等方的集合</p>
+<p>文件块（chunk）：指在P2P文件分发过程中，将一个大文件拆分成的较小部分。（例如256KB、512KB或1MB）</p>
+<h3 id="工作机制"><a href="#工作机制" class="headerlink" title="工作机制"></a>工作机制</h3><p>一个对等方A没有任何文件，后加入一个洪流时，不断获得越来越多的文件块，在获得一个文件块后，A也开始为其他没有这个文件块的对等方上载文件块。直到这个A获取完所有文件块，就已经下载好，它可以选择退出，也可以选择继续为其他对等方上载文件块。并且在下载中途也可以退出，进入只会下载没有的文件块直到结束。</p>
+<h3 id="追踪器Tracker"><a href="#追踪器Tracker" class="headerlink" title="追踪器Tracker"></a>追踪器Tracker</h3><p>每个torrent都有几个基础设施节点Tracker，当一个对等方加入某个torrent的时候，它就会向Tracker注册自己，并且周期性地通知Tracker它在该torrent中。</p>
+<p>Tracker如其名，负责跟踪参与在这个torrent中的所有对等方。一个给定的torrent可能在任何时刻具有数以百计或数以千计的对等方。</p>
+<p>当有对等方加入torrent时，Tracker要记录它并且从torrent所有对等方取出一个子集交给这个对等方。</p>
+<h3 id="邻近对等方"><a href="#邻近对等方" class="headerlink" title="邻近对等方"></a>邻近对等方</h3><p>当一个对等方A加入这个torrent时，它会从Tracker中获得一个torrent对等方子集，对等方会向子集中的所有对等方尝试建立TCP连接，成功连接的对等方我们称作“邻近对等方”，在此后，可能会有邻进对等方退出，也可能会有子集之外的对等方来与A进行TCP连接，邻近对等方会不断变化。</p>
+<p>每个对等方都会有文件的不同部分，A将周期性询问每个邻近对等方他们具有的块列表。并且从这些邻近对等方中请求A还没有的块。</p>
+<p>所以A要处理两个问题，向谁要哪些块，向谁提供自己的哪些块</p>
+<h3 id="最稀缺优先技术（Rarest-First）"><a href="#最稀缺优先技术（Rarest-First）" class="headerlink" title="最稀缺优先技术（Rarest First）"></a>最稀缺优先技术（Rarest First）</h3><p>要哪些块？</p>
+<p>对于所有邻近对等方，A已经获取了它们所拥有的块的信息，A就优先去请求最稀缺的文件块，这样可以均衡每个块在torrent中的量已达到平均。</p>
+<h3 id="Tit-for-Tat-策略"><a href="#Tit-for-Tat-策略" class="headerlink" title="Tit-for-Tat 策略"></a>Tit-for-Tat 策略</h3><p>给哪些块？</p>
+<p>这种策略确保对等体之间的公平性和效率。A在决定响应哪个请求时，会优先考虑那些能够以最高速率向她提供数据的邻居。</p>
+<ul>
+<li>疏通（unchoked）：A持续记录每个邻近对等方的传输速率，确定最高流速的4个对等方，这四个对等方被称为疏通（unchoked）。即即允许这些邻居从她那里下载数据。</li>
+<li>Optimistic Unchoking：每过30秒，她也要随机地选择另外一个邻居并向其发送块。</li>
+<li>堵塞（Choking）：除了unchoked和随机选择的一个，所有其他相邻对等方均被“阻塞”，即它们不能从Alice接收到任何块。</li>
+</ul>
+<p>在P2P工作的时候，每个对等方都要储存一些数据，比如当有对等方询问是否有某个文件块时就应当作出回复。但是对于数据记录来说，这是有多个点，并且每个点都会进入和退出。</p>
+<p>所以我们为了便于记录，可以使用DHT。</p>
+<p>节点需要能够有效地查找和访问存储在其他节点上的数据。DHT通过将数据的查找和路由任务分布到网络中的各个节点上，实现了高效的数据查找和访问。</p>
+<h2 id="分布式哈希表（DHTs）"><a href="#分布式哈希表（DHTs）" class="headerlink" title="分布式哈希表（DHTs）"></a>分布式哈希表（DHTs）</h2><p>在P2P系统中，每个对等方只存储少量键值对。对等方可以通过特定键查询数据库，找到存储该键值对的对等方并返回结果。对等方也可以向数据库中插入新的键值对。这种数据库称为分布式哈希表（DHT）。在P2P文件共享应用中，DHT用于存储文件块与拥有这些块的对等方IP的关联。</p>
+<h3 id="标识符分配"><a href="#标识符分配" class="headerlink" title="标识符分配"></a>标识符分配</h3><p>我们为每个对等方分配一个标识符，该标识符是在一个固定范围内的整数，范围是<code>[0, 2^n - 1]</code>，其中<code>n</code>是一个确定的值。这样的标识符可以使用<code>n</code>位表示。我们使用一个哈希函数将非整数值转换为整数值。假设所有对等方都可以使用这个函数。对于键的分配：我们将每个<code>(键, 值)</code>对分配给标识符最接近该键的对等方，即该键的最接近的后继者对等方。为了避免每个对等方都跟踪所有其他对等方（可扩展性问题），我们使用可以使用环形DHT。</p>
+<h3 id="环形DHT"><a href="#环形DHT" class="headerlink" title="环形DHT"></a>环形DHT</h3><p>如果我们将节点组织成一个环，每个节点只需跟踪其后继者和前驱者（模<code>2^n</code>）。</p>
+<p>在环中，一个节点会问k键由谁负责，然后顺时针发送消息绕环。节点可以确定自己是否负责（最接近）该键。如果不是，它将消息传递给其后继者。当消息到达负责该键的节点时，它可以向查询节点发送消息，表明它负责该键。</p>
+<p>使用此系统，平均发送<code>N/2</code>条消息（N &#x3D; 节点数）。在设计DHT时，总是存在每个节点的邻居数与解析单个查询所需的DHT消息数之间的权衡。（如果每个节点跟踪所有其他节点则需要1条消息；如果每个节点只知道2个邻居则需要<code>N/2</code>条消息）。</p>
+<p>为了改进我们的环形DHT，我们可以添加快捷方式，使每个节点不仅跟踪其直接后继者和前驱者，还跟踪环中分散的相对较少的快捷节点。有多少快捷邻居？研究表明，DHT可以设计为每个节点的邻居数和每次查询所需的消息数都是<code>O(log *N*)</code>（<code>N</code>为节点数）。</p>
+<h3 id="节点流动"><a href="#节点流动" class="headerlink" title="节点流动"></a>节点流动</h3><p>在P2P系统中，节点会增加和减少。为了在这种不稳定下保持DHT覆盖网络，我们要求每个节点跟踪（知道IP地址）其前驱者和后继者，并定期验证其两个后继者是否在线。如果一个节点突然离开，其后继者和前驱者需要更新其信息。前驱者将其第一个后继者替换为第二个后继者，并询问其即时后继者的标识符和IP地址。</p>
+<p>如果一个节点加入呢？如果它只知道一个节点，它会问该节点它的前驱者和后继者是谁。消息将到达前驱者，前驱者将发送新加入节点其前驱者和后继者信息。新加入的节点可以加入DHT，将其前驱者的后继者作为自己的后继者，并通知其前驱者更改其后继者信息。</p>
 
         </article>
         <section class="post-near">
             <ul>
                 
-                    <li>上一篇: <a href="/2024/06/05/computer-network-note3/">计算机网络笔记3——电子邮件</a></li>
+                    <li>上一篇: 看完啦 (つд⊂)</li>
                 
                 
-                    <li>下一篇: <a href="/2024/06/02/computer-network-note1/">计算机网络笔记1——网络概述</a></li>
+                    <li>下一篇: <a href="/2024/06/07/computer-network-note4/">计算机网络笔记4——DNS服务</a></li>
                 
             </ul>
         </section>
         
             <section class="post-tags">
-            <a class="-none-link" href="/tags/http/" rel="tag">http</a><a class="-none-link" href="/tags/web%E7%BC%93%E5%AD%98/" rel="tag">web缓存</a><a class="-none-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a>
+            <a class="-none-link" href="/tags/BitTorrent/" rel="tag">BitTorrent</a><a class="-none-link" href="/tags/P2P/" rel="tag">P2P</a><a class="-none-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a>
             </section>
         
     
