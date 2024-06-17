@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>ACM程序课算法笔记19——矩阵快速幂 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="ACM程序课算法笔记19——矩阵快速幂"/>
+    
+<meta name="generator" content="Hexo 6.0.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>ACM程序课算法笔记19——矩阵快速幂</h2>
+            <div class="post-meta">
+                <time class="date">2024.06.18</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1 id="ACM程序课算法笔记19——矩阵快速幂"><a href="#ACM程序课算法笔记19——矩阵快速幂" class="headerlink" title="ACM程序课算法笔记19——矩阵快速幂"></a>ACM程序课算法笔记19——矩阵快速幂</h1><p>矩阵快速幂是对递推式的一种高效解决方法。</p>
+<p>主要的解决问题是类似于斐波那契数列 f(n) &#x3D; f(n - 1) + f(n - 2) 的使用。</p>
+<p>不过我们要先进行矩阵基本运算在代码中的体现。</p>
+<h2 id="矩阵运算"><a href="#矩阵运算" class="headerlink" title="矩阵运算"></a>矩阵运算</h2><pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">mat</span> <span class="token punctuation">&#123;</span>
+  LL a<span class="token punctuation">[</span>sz<span class="token punctuation">]</span><span class="token punctuation">[</span>sz<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+  <span class="token function">mat</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token function">memset</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span> a<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+  mat <span class="token keyword">operator</span><span class="token operator">-</span><span class="token punctuation">(</span><span class="token keyword">const</span> mat<span class="token operator">&amp;</span> T<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+    mat res<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">-</span> T<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">%</span> MOD<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  mat <span class="token keyword">operator</span><span class="token operator">+</span><span class="token punctuation">(</span><span class="token keyword">const</span> mat<span class="token operator">&amp;</span> T<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+    mat res<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">+</span> T<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">%</span> MOD<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  mat <span class="token keyword">operator</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token keyword">const</span> mat<span class="token operator">&amp;</span> T<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+    mat res<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> r<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> k <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>k<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        r <span class="token operator">=</span> a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span>
+          res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">+=</span> T<span class="token punctuation">.</span>a<span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">*</span> r<span class="token punctuation">,</span> res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">%=</span> MOD<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  mat <span class="token keyword">operator</span><span class="token operator">^</span><span class="token punctuation">(</span>LL x<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+    mat res<span class="token punctuation">,</span> bas<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span> bas<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">%</span> MOD<span class="token punctuation">;</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span>x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>x <span class="token operator">&amp;</span> <span class="token number">1</span><span class="token punctuation">)</span> res <span class="token operator">=</span> res <span class="token operator">*</span> bas<span class="token punctuation">;</span>
+      bas <span class="token operator">=</span> bas <span class="token operator">*</span> bas<span class="token punctuation">;</span>
+      x <span class="token operator">>>=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>上面的矩阵乘法运算是优于下面这个的，优于成块空间的优化导致。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">mat <span class="token keyword">operator</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token keyword">const</span> mat<span class="token operator">&amp;</span> T<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+  mat res<span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>j<span class="token punctuation">)</span>
+      <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> k <span class="token operator">&lt;</span> sz<span class="token punctuation">;</span> <span class="token operator">++</span>k<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token function">mul</span><span class="token punctuation">(</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">,</span> T<span class="token punctuation">.</span>a<span class="token punctuation">[</span>k<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        res<span class="token punctuation">.</span>a<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">%=</span> MOD<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="问题提出"><a href="#问题提出" class="headerlink" title="问题提出"></a>问题提出</h2><p>我们希望在代码角度解决类似于斐波那契数列求第n项的问题</p>
+<p>可得</p>
+<p>$a_1 &#x3D; a_2 &#x3D; 1\a_n &#x3D; a_{n - 1} + a_{n -2} (n &gt; 2)$</p>
+<p>求an项的通项公式</p>
+<h2 id="递推公式和矩阵思想"><a href="#递推公式和矩阵思想" class="headerlink" title="递推公式和矩阵思想"></a>递推公式和矩阵思想</h2><p>对于以上问题，我们就需要使用矩阵的思想，构建以下矩阵</p>
+<p>$\begin{pmatrix}<br>a_{n}\<br>a_{n - 1}\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 1 \<br>1 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>a_{n - 1}\<br>a_{n - 2}\<br>\end{pmatrix}$<br>此时，我们可以发现其中的间接矩阵是我们构建的，并且能让式子成立，并且这就是一个矩阵的递推公式，是一个乘积的形式，每项也就变成了幂次这个间接矩阵。</p>
+<p>首项 也就是 1 1了。</p>
+<p>拆解这个东西我们就可以发现</p>
+<p>$a_n &#x3D; 1 \times a_{n - 1} + 1 \times a_{n -2}\<br>a_{n - 1} &#x3D; 1 \times a_{n - 1}$</p>
+<p>这是一个构造的实际例子。为了更便于后序的理解和方法总结，以下再给出6个题目尝试去构造。</p>
+<h2 id="矩阵构造"><a href="#矩阵构造" class="headerlink" title="矩阵构造"></a>矩阵构造</h2><h3 id="练习一"><a href="#练习一" class="headerlink" title="练习一"></a>练习一</h3><p>求f(n)，并且其中有以下递推式</p>
+<p>$f(n) &#x3D; 3 * f(n - 1) + 5 * f(n - 3) + 9 * f(n - 4)$</p>
+<h3 id="构造一"><a href="#构造一" class="headerlink" title="构造一"></a>构造一</h3><p>对于本题，f(n)借力于f(n - 3) f(n - 4)，不妨我们将它们都直入于矩阵</p>
+<p>$\begin{pmatrix}<br>f(n)\<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>3 &amp; 0 &amp; 5 &amp; 9 \<br>1 &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 1 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>f(n - 4)\<br>\end{pmatrix}$</p>
+<p>矩阵的构造实际上就是为前一项的多个式能够配到后一项。</p>
+<p>可以得到以上矩阵式，我们可以发现，为了让f(n)能够顺利的获取到前面的项，我们就保存了它们，并且让它们出现在前一项。</p>
+<p>需要注意的是，我们使用了f(n - 2)它看似无用，实际上是为了保证中间能顺利递推下去。</p>
+<p>总结为：<strong>它需要什么，我们就存什么</strong></p>
+<h3 id="练习二"><a href="#练习二" class="headerlink" title="练习二"></a>练习二</h3><p>求f(n)，并且其中有以下递推式</p>
+<p>$f(n) &#x3D; a * f(n - 1) + b * f(n - 3) + c$</p>
+<h3 id="构造二"><a href="#构造二" class="headerlink" title="构造二"></a>构造二</h3><p>对于本体，引入了一个常数，这无疑干扰和打破了我们原来计算的规律，但是常数终究是常数，按照构造一的结论，因为需要c，我们就把c一起存起来就好了</p>
+<p>$\begin{pmatrix}<br>f(n)\<br>f(n - 1)\<br>f(n - 2)\<br>c\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>a &amp; 0 &amp; b &amp; 1 \<br>1 &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 0 &amp; 1\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>c\<br>\end{pmatrix}$</p>
+<p>以上构造式中，最后一行是c的构造，可以发现 0 0 0 1是一种恒定不变的形式，顺利达成。</p>
+<h3 id="练习三"><a href="#练习三" class="headerlink" title="练习三"></a>练习三</h3><p>求f(n)，并且其中有以下递推式</p>
+<p>$f(n) &#x3D; f(n - 1) + 2 * f(n - 2) + n^3$</p>
+<p>其中f(1) &#x3D; 1 f(2) &#x3D; 2</p>
+<h3 id="构造三"><a href="#构造三" class="headerlink" title="构造三"></a>构造三</h3><p>该构造的特点就是，引入的常量变成了一个变量，不同于常量，变量是会变化的，因此我们就需要找到这个变量的变化递推式。</p>
+<p>$n^3 &#x3D; (n - 1 + 1) ^ 3 &#x3D; (n - 1) ^ 3 + 3(n - 1) ^ 2 + 3(n - 1) + 1$<br>$n^2 &#x3D; (n - 1 + 1) ^ 2 &#x3D; (n - 1) ^ 2 + 2(n - 1) + 1$<br>$n &#x3D; (n - 1) + 1$</p>
+<p>1 &#x3D; 1</p>
+<p>$\begin{pmatrix}<br>f(n)\<br>f(n - 1)\<br>n^3\<br>n^2\<br>n\<br>1\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 2 &amp; 1 &amp; 3 &amp; 3 &amp; 1\<br>1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 1 &amp; 3 &amp; 3 &amp; 1\<br>0 &amp; 0 &amp; 0 &amp; 1 &amp; 2 &amp; 1\<br>0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 1\<br>0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1)\<br>f(n - 2)\<br>(n - 1)^3\<br>(n - 1)^2\<br>n - 1\<br>1\<br>\end{pmatrix}$</p>
+<p>以上构造可以发现，如果是变量，就和原来的f(x)一样，只不过这个变量的递推式更加隐蔽，但是变量已经告诉我们了，我们就可以求出变量的递推式。</p>
+<h3 id="练习四"><a href="#练习四" class="headerlink" title="练习四"></a>练习四</h3><p>有以下递推式</p>
+<p>$f(n) &#x3D; f(n - 1) + f(n - 2) + f(n - 3)$</p>
+<p>$f(0) &#x3D; f(1) &#x3D; f(2) &#x3D; 1$</p>
+<p>已知a, b 求 f(a) + f(a + 1) + … + f(b - 1) + f(b)的值。</p>
+<h3 id="构造四"><a href="#构造四" class="headerlink" title="构造四"></a>构造四</h3><p>这下高级了，想让我们求区间和，但是对于区间和来说，我们应当立马联想到前缀和，两个前缀和就可以得到区间和。</p>
+<p>好了，这下前缀和成为了我们的目的值，此时不妨引入T(n)代表前0~n的f值的前缀和。</p>
+<p>$T(n) &#x3D; T(n - 1) + f(n) &#x3D;  T(n - 1) + f(n - 1) + f(n - 2) + f(n - 3)$</p>
+<p>$\begin{pmatrix}<br>T(n)\<br>f(n)\<br>f(n - 1)\<br>f(n - 2)\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 1 &amp; 1 &amp; 1\<br>0 &amp; 1 &amp; 1 &amp; 1\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 1 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>T(n - 1)\<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>\end{pmatrix}$</p>
+<p>很巧妙的构造，我们引入了前缀和，并且很好的使用了前缀和的构造式</p>
+<h3 id="练习五"><a href="#练习五" class="headerlink" title="练习五"></a>练习五</h3><p>f(0) &#x3D; f(1) &#x3D; 1</p>
+<p>f(n) &#x3D; X * f(n - 1) + Y * f(n - 2)</p>
+<p>S(n) 为 A(i)^2的和 i从0~n</p>
+<h3 id="构造五"><a href="#构造五" class="headerlink" title="构造五"></a>构造五</h3><p>S(n)更加抽象，作为新引入的值，也是我们的目的值，它使用了平方，但实际上我们只要继续抓住规律，写出S(n)的构造式即可轻松解决</p>
+<p>$S(n) &#x3D; S(n - 1) + f(n) ^ 2 &#x3D; S(n - 1) + (X * f(n - 1) + Y * f(n - 2)) ^ 2&#x3D;\S(n - 1) + X^2f(n - 1)^2 + 2XYf(n - 1)f(n - 2) + Y^2f(n - 2)^ 2$</p>
+<p>$f(n)^2 &#x3D; X^2f(n - 1)^2 + 2XYf(n - 1)f(n - 2) + Y^2f(n - 2)^ 2$</p>
+<p>就有以下构造</p>
+<p>$\begin{pmatrix}<br>S(n)\<br>f(n)^2\<br>f(n)f(n - 1)\<br>f(n - 1)^2\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; X^2 &amp; 2XY &amp; Y^2\<br>0 &amp; X^2 &amp; 2XY &amp; Y^2\<br>0 &amp; X &amp; Y &amp; 0\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>S(n - 1)\<br>f(n - 1)^2\<br>f(n - 1)f(n - 2)\<br>f(n - 2)^2\<br>\end{pmatrix}$</p>
+<p>此时我们甚至没有f(n)项，因为我们的目的是S(n)，所以f(n)就是一个工具，为了便于使用，应该更加灵活。</p>
+<h3 id="练习六"><a href="#练习六" class="headerlink" title="练习六"></a>练习六</h3><p>一个01循环串,长度为L(L&lt;&#x3D;100)，这个串每秒都会进行一次变换，变换规则是:如果左边是1，则改变自己的状态，否则保持不变。给定初始状态，问n秒以后这个串的状态。</p>
+<h3 id="构造六"><a href="#构造六" class="headerlink" title="构造六"></a>构造六</h3><p>题目已经是具体化的题目了，先进行抽象化，我们可以得到</p>
+<p>$f(n, L) &#x3D; f(n - 1, L - 1) + f(n - 1,L) (mod2)$</p>
+<p>建立的构造如下</p>
+<p>$\begin{pmatrix}<br>f(n, 1)\<br>f(n, 2)\<br>\dots\<br>f(n, L)\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 0 &amp; \dots &amp; 0 &amp; 1\<br>1 &amp; 1 &amp; \dots &amp; 0 &amp; 0\<br>\dots &amp; \dots &amp; \dots &amp; 1 &amp; 0\<br>0 &amp; 0 &amp; \dots &amp; 1 &amp; 1\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1, 1)\<br>f(n - 1, 2)\<br>\dots\<br>f(n - 1, L)\<br>\end{pmatrix}$</p>
+<p>构造是一件很灵活的事情，不能只拘泥于简单的递推上，要自己构建自己需要的值的构造式，才能得到构造矩阵。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/06/11/computer-network-note6/">计算机网络笔记6——视频流和内容分发网</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" rel="tag">快速幂</a><a class="-none-link" href="/tags/%E7%9F%A9%E9%98%B5/" rel="tag">矩阵</a><a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/06/18/acm-class-note19/">ACM程序课算法笔记19——矩阵快速幂</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/11/computer-network-note6/">计算机网络笔记6——视频流和内容分发网</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/10/computer-network-note5/">计算机网络笔记5——P2P</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/10/acm-class-note18/">ACM程序课算法笔记18——中国剩余定理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/07/computer-network-note4/">计算机网络笔记4——DNS服务</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/05/computer-network-note3/">计算机网络笔记3——电子邮件</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12.5px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/requests/" style="font-size: 12.5px;">requests</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 10px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12.5px;">源码阅读</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 17.5px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
