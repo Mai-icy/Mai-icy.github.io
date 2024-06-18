@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记9——后缀数组"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,11 +61,16 @@
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-9-后缀数组"><a href="#算法学习笔记-9-后缀数组" class="headerlink" title="算法学习笔记(9): 后缀数组"></a>算法学习笔记(9): 后缀数组</h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>后缀数组是对后缀的一个排序，每个后缀按照字典序进行排序，然后用两个数组来映射它们自己和它们的排名。</p>
+            <h1>算法学习笔记(9): 后缀数组</h1>
+<h2 id="定义">定义</h2>
+<p>后缀数组是对后缀的一个排序，每个后缀按照字典序进行排序，然后用两个数组来映射它们自己和它们的排名。</p>
 <p>同时，为了便于记录后缀，我们记字符串s的后缀s[i:]记为i，同时i和它的排名rank相互映射。这就是后缀数组。为了便于理解，在本文将此数组称为映射，这是它实际完成的任务，只是数组恰好作为这个工具。我们通常使用sa(rankToId) 和 rk(idToRank)两个映射来记录后缀数组。</p>
-<h2 id="如何构造后缀数组"><a href="#如何构造后缀数组" class="headerlink" title="如何构造后缀数组"></a>如何构造后缀数组</h2><h3 id="做法一：暴力法"><a href="#做法一：暴力法" class="headerlink" title="做法一：暴力法"></a>做法一：暴力法</h3><p><strong>复杂度：O(n^2logn)</strong></p>
+<h2 id="如何构造后缀数组">如何构造后缀数组</h2>
+<h3 id="做法一：暴力法">做法一：暴力法</h3>
+<p><strong>复杂度：O(n^2logn)</strong></p>
 <p>暴力排序，枚举出所有的后缀，在对所有的后缀进行排序。</p>
-<h3 id="做法二：倍增法"><a href="#做法二：倍增法" class="headerlink" title="做法二：倍增法"></a>做法二：倍增法</h3><p>复杂度：<strong>O(nlog^2n)</strong></p>
+<h3 id="做法二：倍增法">做法二：倍增法</h3>
+<p>复杂度：<strong>O(nlog^2n)</strong></p>
 <p>为了完成这个思想，先建设一个前提，首先要了解字典排序的特点，当被排序的两者长度不一时。</p>
 <p>当abc和b进行排序和123和2进行排序是不同的，进行等价的转换，实际上是123和200之间进行排序。虽然后缀的长度不同，实际上比较的时候，它们的长度是相同的。</p>
 <p>如果所有后缀都要进行排序，不妨我们让短一点的后缀在后面填充0，好了，这下子所有后缀的长度都一样了。</p>
@@ -116,17 +121,19 @@
 	<span class="token comment">// for (int i = 1; i &lt;= len; ++i) printf("%d ", idToRank[i]);</span>
   <span class="token comment">// 得到的RankToid和idToRank可自行选择方式返回获取</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="优化排序"><a href="#优化排序" class="headerlink" title="优化排序"></a>优化排序</h2><p>此处可以选择优化的排序，使排序从NLogN提升到N，这样复杂度就会降低到NLogN。</p>
+<h2 id="优化排序">优化排序</h2>
+<p>此处可以选择优化的排序，使排序从NLogN提升到N，这样复杂度就会降低到NLogN。</p>
 <p>通过做法2的思路，我们可以发现，我们的排序实际上被排序的元素只有两个标签值，称作双关键字。对此我们可以使用非比较排序的基数排序。</p>
 <p>在进行基数排序之前，需要了解基数排序和计数排序的基本内容。它们都属于非比较排序。</p>
-<h3 id="计数排序"><a href="#计数排序" class="headerlink" title="计数排序"></a>计数排序</h3><p>非比较排序就是不会进行元素之间的比较，计数排序使用了从空间角度上很暴力的手段。举一个例子就可以知道了。</p>
+<h3 id="计数排序">计数排序</h3>
+<p>非比较排序就是不会进行元素之间的比较，计数排序使用了从空间角度上很暴力的手段。举一个例子就可以知道了。</p>
 <p>对于排序序列 2 3 3 1 4 2 8</p>
 <p>计数排序直接维护一个大数组，此处可以取长度为10。记录所有0~9的元素出现个数，然后再从小到大依次输出记录的个数。</p>
 <p>此处记录了①有1个 ② 有2个 ③有2个④有2个⑧有1个。其余都是0个。按照顺序输出也就是</p>
 <p>1 2 2 3 3 4 4 8</p>
 <p>排序完成。</p>
-<h3 id="基数排序"><a href="#基数排序" class="headerlink" title="基数排序"></a>基数排序</h3><p>基数排序适用于多关键字排序，对于自然数来说，关键字就是不同的例如百位十位个位的值，而这个双关键字的情况，根据<strong>MSD 基数排序,</strong> 也就是从小的位到大的位进行排序。再结合计数排序，先按照第二关键字进行计数排序，取出所有，再对第一关键字进行排序即可。</p>
+<h3 id="基数排序">基数排序</h3>
+<p>基数排序适用于多关键字排序，对于自然数来说，关键字就是不同的例如百位十位个位的值，而这个双关键字的情况，根据<strong>MSD 基数排序,</strong> 也就是从小的位到大的位进行排序。再结合计数排序，先按照第二关键字进行计数排序，取出所有，再对第一关键字进行排序即可。</p>
 <p>以下就是基于基数排序的使排序复杂度降低到O(N)</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">buildSAArray</span><span class="token punctuation">(</span><span class="token keyword">const</span> string<span class="token operator">&amp;</span> input<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
 	<span class="token keyword">int</span> len <span class="token operator">=</span> input<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -220,22 +227,32 @@
 
     <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> len<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d "</span><span class="token punctuation">,</span> rankToid<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>根据以上代码的重新整理和总结，简化了许多以及使人更容易看懂。以下是一些注意点：</p>
 <p>在进行SA构建的中途idToRank和rankToid是不一定互相映射的，因为rankToId的index作为rank，rank是唯一的，然后idToRank中，如果两者一样，排名也会一样。至于为什么最后还是相互映射的，因为所有的后缀长度不一样，所以必定不会出现相同的情况。</p>
 <p>一开始的时候，idToRank并不是真正意义上的rank，实际上包括在过程中，rank的作用只需要是能体现两者之间的大小关系就可以。在每次排完后，会进行一次序列化，就会变成从1开始的排名。</p>
 <p>以上代码仅供参考理解，性能方面不敢保证，理解算法本质后可使用他人模板。</p>
-<h2 id="常数优化"><a href="#常数优化" class="headerlink" title="常数优化"></a>常数优化</h2><h3 id="第二关键字排序优化"><a href="#第二关键字排序优化" class="headerlink" title="第二关键字排序优化"></a>第二关键字排序优化</h3><p>第二关键字实际上是偏移后的位置，因为上面的考虑，第二关键字很多时候都是空，也就是等同于0的存在。对于计数排序，在计数完后再取出进行编号就会变得不那么必要了，因为它为0，就必定先出，可以直接进行序列化编号。</p>
-<h3 id="优化计数排序的范围"><a href="#优化计数排序的范围" class="headerlink" title="优化计数排序的范围"></a>优化计数排序的范围</h3><p>计数排序的缺点在于空间的使用以及需要遍历空间，然而我们说过，一旦出现相同，rank值可以一样，又因为计数排序的容器大小就是被排序元素种类的个数，所以有的时候不一定为len，可以用p获取种类数进行优化。</p>
-<h3 id="将-相互映射-保存"><a href="#将-相互映射-保存" class="headerlink" title="将 相互映射 保存"></a><strong>将 相互映射 保存</strong></h3><p>因为计算过程中的映射不统一，所以计算中经常出现idToRank[rankToid[i]]，可以直接保存这个关系，减少不连续内存访问</p>
-<h3 id="用函数替换重复判断"><a href="#用函数替换重复判断" class="headerlink" title="用函数替换重复判断"></a>用函数替换重复判断</h3><p>把 <code>oldrk[sa[i]] == oldrk[sa[i - 1]] &amp;&amp; oldrk[sa[i] + w] == oldrk[sa[i - 1] + w]</code></p>
+<h2 id="常数优化">常数优化</h2>
+<h3 id="第二关键字排序优化">第二关键字排序优化</h3>
+<p>第二关键字实际上是偏移后的位置，因为上面的考虑，第二关键字很多时候都是空，也就是等同于0的存在。对于计数排序，在计数完后再取出进行编号就会变得不那么必要了，因为它为0，就必定先出，可以直接进行序列化编号。</p>
+<h3 id="优化计数排序的范围">优化计数排序的范围</h3>
+<p>计数排序的缺点在于空间的使用以及需要遍历空间，然而我们说过，一旦出现相同，rank值可以一样，又因为计数排序的容器大小就是被排序元素种类的个数，所以有的时候不一定为len，可以用p获取种类数进行优化。</p>
+<h3 id="将-相互映射-保存"><strong>将 相互映射 保存</strong></h3>
+<p>因为计算过程中的映射不统一，所以计算中经常出现idToRank[rankToid[i]]，可以直接保存这个关系，减少不连续内存访问</p>
+<h3 id="用函数替换重复判断">用函数替换重复判断</h3>
+<p>把 <code>oldrk[sa[i]] == oldrk[sa[i - 1]] &amp;&amp; oldrk[sa[i] + w] == oldrk[sa[i - 1] + w]</code></p>
 <p>替换成 <code>cmp(sa[i], sa[i - 1], w)</code>，</p>
 <p><code>bool cmp(int x, int y, int w) &#123; return oldrk[x] == oldrk[y] &amp;&amp; oldrk[x + w] == oldrk[y + w]; &#125;</code>。</p>
-<h3 id="若排名都不相同可直接生成后缀数组"><a href="#若排名都不相同可直接生成后缀数组" class="headerlink" title="若排名都不相同可直接生成后缀数组"></a><strong>若排名都不相同可直接生成后缀数组</strong></h3><p>如果过程中，排名已经没有出现重复，那么实际上已经排序结束了。</p>
-<h3 id="O-N-参考"><a href="#O-N-参考" class="headerlink" title="O(N) 参考"></a>O(N) 参考</h3><h3 id="SA-IS"><a href="#SA-IS" class="headerlink" title="SA-IS"></a><strong>SA-IS</strong></h3><p>可以参考 <a target="_blank" rel="noopener" href="https://riteme.site/blog/2016-6-19/sais.html">诱导排序与 SA-IS 算法</a>，另外它的 <a target="_blank" rel="noopener" href="https://github.com/riteme/riteme.github.io/issues/28">评论页面</a> 也有参考价值。</p>
-<h3 id="DC3"><a href="#DC3" class="headerlink" title="DC3"></a><strong>DC3</strong></h3><p>可以参考[<a target="_blank" rel="noopener" href="https://wenku.baidu.com/view/5b886b1ea76e58fafab00374.html">2009] 后缀数组——处理字符串的有力工具 by. 罗穗骞</a>。</p>
-<h2 id="后缀数组的应用"><a href="#后缀数组的应用" class="headerlink" title="后缀数组的应用"></a><strong>后缀数组的应用</strong></h2><p>后缀数组通常和子串有关，因为子串实际上就是后缀的前缀。例如<strong>在字符串中找子串，</strong>因为有了后缀数组，可以直接二分去找。或者是利用好单调性，同时关注前缀关键词，有的时候，题目的前缀也就是反串的后缀。</p>
-<h2 id="用后缀数组构建height-数组"><a href="#用后缀数组构建height-数组" class="headerlink" title="用后缀数组构建height 数组"></a>用后缀数组构建<strong>height 数组</strong></h2><p><strong>LCP（最长公共前缀）：lcp(i, j) 后缀i和后缀j的最长公共前缀（的长度） height[i] &#x3D; lcp(sa[i], sa[i - 1])</strong></p>
+<h3 id="若排名都不相同可直接生成后缀数组"><strong>若排名都不相同可直接生成后缀数组</strong></h3>
+<p>如果过程中，排名已经没有出现重复，那么实际上已经排序结束了。</p>
+<h3 id="O-N-参考">O(N) 参考</h3>
+<h3 id="SA-IS"><strong>SA-IS</strong></h3>
+<p>可以参考 <a target="_blank" rel="noopener" href="https://riteme.site/blog/2016-6-19/sais.html">诱导排序与 SA-IS 算法</a>，另外它的 <a target="_blank" rel="noopener" href="https://github.com/riteme/riteme.github.io/issues/28">评论页面</a> 也有参考价值。</p>
+<h3 id="DC3"><strong>DC3</strong></h3>
+<p>可以参考[<a target="_blank" rel="noopener" href="https://wenku.baidu.com/view/5b886b1ea76e58fafab00374.html">2009] 后缀数组——处理字符串的有力工具 by. 罗穗骞</a>。</p>
+<h2 id="后缀数组的应用"><strong>后缀数组的应用</strong></h2>
+<p>后缀数组通常和子串有关，因为子串实际上就是后缀的前缀。例如**在字符串中找子串，**因为有了后缀数组，可以直接二分去找。或者是利用好单调性，同时关注前缀关键词，有的时候，题目的前缀也就是反串的后缀。</p>
+<h2 id="用后缀数组构建height-数组">用后缀数组构建<strong>height 数组</strong></h2>
+<p><strong>LCP（最长公共前缀）：lcp(i, j) 后缀i和后缀j的最长公共前缀（的长度） height[i] = lcp(sa[i], sa[i - 1])</strong></p>
 <p>易得</p>
 <p><strong>height[rank[i]] ≥ height[rank[i - 1]] - 1</strong></p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">for</span> <span class="token punctuation">(</span>i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> k <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> n<span class="token punctuation">;</span> <span class="token operator">++</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
@@ -244,15 +261,20 @@
   <span class="token keyword">while</span> <span class="token punctuation">(</span>s<span class="token punctuation">[</span>i <span class="token operator">+</span> k<span class="token punctuation">]</span> <span class="token operator">==</span> s<span class="token punctuation">[</span>sa<span class="token punctuation">[</span>rk<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">]</span> <span class="token operator">+</span> k<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">++</span>k<span class="token punctuation">;</span>
   height<span class="token punctuation">[</span>rk<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> k<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="height-数组应用"><a href="#height-数组应用" class="headerlink" title="height 数组应用"></a><strong>height 数组应用</strong></h2><h3 id="两子串最长公共前缀"><a href="#两子串最长公共前缀" class="headerlink" title="两子串最长公共前缀"></a><strong>两子串最长公共前缀</strong></h3><p><code>lcp(sa[i], sa[j]) = min(height[i + 1 ~ j])</code></p>
+<h2 id="height-数组应用"><strong>height 数组应用</strong></h2>
+<h3 id="两子串最长公共前缀"><strong>两子串最长公共前缀</strong></h3>
+<p><code>lcp(sa[i], sa[j]) = min(height[i + 1 ~ j])</code></p>
 <p>区间最值问题</p>
-<h3 id="比较一个字符串的两个子串的大小关系"><a href="#比较一个字符串的两个子串的大小关系" class="headerlink" title="比较一个字符串的两个子串的大小关系"></a><strong>比较一个字符串的两个子串的大小关系</strong></h3><p>设<code>A = S[a~b]</code> , <code>B = S[c~d]</code></p>
+<h3 id="比较一个字符串的两个子串的大小关系"><strong>比较一个字符串的两个子串的大小关系</strong></h3>
+<p>设<code>A = S[a~b]</code> , <code>B = S[c~d]</code></p>
 <p>if <code>lcp(a, c) ≥ min(|A|, |B|)</code> ，<code> A &lt; B = |A| &lt; |B|</code></p>
 <p>else<code> A &lt; B = rk[a] &lt; rk[c]</code></p>
-<h3 id="不同子串的数目"><a href="#不同子串的数目" class="headerlink" title="不同子串的数目"></a><strong>不同子串的数目</strong></h3><p>答案是<code>n(n +1) / 2 - sum(height[2:])</code></p>
-<h3 id="出现至少-k-次的子串的最大长度"><a href="#出现至少-k-次的子串的最大长度" class="headerlink" title="出现至少 k 次的子串的最大长度"></a><strong>出现至少 k 次的子串的最大长度</strong></h3><p>出现至少k次意味着后缀排序后有至少连续k个后缀以这个子串作为公共前缀。所以，求出每相邻k个的最小值，再求这些最小值的最大值就是答案。</p>
-<h3 id="某字符串在文本串中至少不重叠地出现了两次"><a href="#某字符串在文本串中至少不重叠地出现了两次" class="headerlink" title="某字符串在文本串中至少不重叠地出现了两次"></a><strong>某字符串在文本串中至少不重叠地出现了两次</strong></h3><p>可以二分目标串的长度|s|，将h数组划分成若干个连续 LCP 大于等于 |s| 的段，利用 RMQ 对每个段求其中出现的数中最大和最小的下标，若这两个下标的距离满足条件，则一定有长度为 |s| 的字符串不重叠地出现了两次。</p>
+<h3 id="不同子串的数目"><strong>不同子串的数目</strong></h3>
+<p>答案是<code>n(n +1) / 2 - sum(height[2:])</code></p>
+<h3 id="出现至少-k-次的子串的最大长度"><strong>出现至少 k 次的子串的最大长度</strong></h3>
+<p>出现至少k次意味着后缀排序后有至少连续k个后缀以这个子串作为公共前缀。所以，求出每相邻k个的最小值，再求这些最小值的最大值就是答案。</p>
+<h3 id="某字符串在文本串中至少不重叠地出现了两次"><strong>某字符串在文本串中至少不重叠地出现了两次</strong></h3>
+<p>可以二分目标串的长度|s|，将h数组划分成若干个连续 LCP 大于等于 |s| 的段，利用 RMQ 对每个段求其中出现的数中最大和最小的下标，若这两个下标的距离满足条件，则一定有长度为 |s| 的字符串不重叠地出现了两次。</p>
 
         </article>
         <section class="post-near">
@@ -320,5 +342,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

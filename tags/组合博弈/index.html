@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,10 @@
             <a href="/2023/12/02/acm-class-note5/">ACM程序课算法笔记5——组合博弈</a>
         </h2>
     
-        <p>ACM程序课算法笔记5——组合博弈问题引入问题：一共有10张牌，你与一个人进行游戏，每次只能取走1或2或3张牌，谁取走最后一张，你是先手，如何获胜。
-题解：根据以前的经验，我们能保证一轮取走4张...</p>
+        <p>ACM程序课算法笔记5——组合博弈
+问题引入
+问题：一共有10张牌，你与一个人进行游戏，每次只能取走1或2或3张牌，谁取走最后一张，你是先手，如何获胜。
+题解：根据以前的经验，我们能保证一轮取走...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.02</time>
@@ -117,5 +119,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

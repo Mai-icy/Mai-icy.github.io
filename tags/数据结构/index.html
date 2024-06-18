@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,10 @@
             <a href="/2023/12/15/learn-database-note1/">数据库学习笔记1——B+树</a>
         </h2>
     
-        <p>用途B+树的主要目的之一就是存储所有键值对，并确保键的有序性，以便于高效的查找操作。B+树是一种树状数据结构，其中所有的键值对都存储在叶子节点上，而内部节点仅包含用于导航的关键字。
+        <p>用途
+B+树的主要目的之一就是存储所有键值对，并确保键的有序性，以便于高效的查找操作。B+树是一种树状数据结构，其中所有的键值对都存储在叶子节点上，而内部节点仅包含用于导航的关键字。
 
-内部节点就...</p>
+内部节点...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.15</time>
@@ -116,5 +117,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

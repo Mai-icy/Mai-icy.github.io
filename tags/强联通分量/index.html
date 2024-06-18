@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,12 @@
             <a href="/2024/05/08/acm-class-note15/">ACM程序课算法笔记15——强联通分量</a>
         </h2>
     
-        <p>ACM程序课算法笔记15——强联通分量问题与目的强联通的点是指，A点能到达B点，且B点能到达A点。
+        <p>ACM程序课算法笔记15——强联通分量
+问题与目的
+强联通的点是指，A点能到达B点，且B点能到达A点。
 对于一个图，问有多少强联通分量？
-Kosaraju 算法获取目标图G1的反图G2（所有边反向）...</p>
+Kosaraju 算法
+获取目标图G1的反图G2（所有边...</p>
     
         <div class="post-meta">
             <time class="date">2024.05.08</time>
@@ -118,5 +121,20 @@ Kosaraju 算法获取目标图G1的反图G2（所有边反向）...</p>
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

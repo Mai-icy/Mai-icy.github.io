@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序设计课笔记1——贪心算法"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -63,8 +63,10 @@
         
             <blockquote>这篇文章上次修改于 235 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="ACM程序设计课笔记1——贪心算法"><a href="#ACM程序设计课笔记1——贪心算法" class="headerlink" title="ACM程序设计课笔记1——贪心算法"></a>ACM程序设计课笔记1——贪心算法</h1><p>表面理解：在对问题求解的时候每次都选择对当前情况的最优解（多次的局部最优解）。</p>
-<h2 id="基本步骤"><a href="#基本步骤" class="headerlink" title="基本步骤"></a>基本步骤</h2><ol>
+            <h1>ACM程序设计课笔记1——贪心算法</h1>
+<p>表面理解：在对问题求解的时候每次都选择对当前情况的最优解（多次的局部最优解）。</p>
+<h2 id="基本步骤">基本步骤</h2>
+<ol>
 <li>从问题的某个初始解出发。</li>
 <li>采用循环语句，当可以向求解目标前进一步时，就根据局部最优策略，得到一个部分解，缩小问题的范围或规模。</li>
 <li>将所有部分解综合起来，得到问题的最终解。</li>
@@ -72,33 +74,50 @@
 <blockquote>
 <p>贪心算法常见前提操作：排序</p>
 </blockquote>
-<h2 id="问题一：事件序列问题"><a href="#问题一：事件序列问题" class="headerlink" title="问题一：事件序列问题"></a>问题一：事件序列问题</h2><h3 id="题目描述"><a href="#题目描述" class="headerlink" title="题目描述"></a>题目描述</h3><p>已知N个事件的发生时刻和结束时刻。其中的一些事件在时间上有重合。找到一个事件序列，使事件序列的事件数目最多。</p>
-<h3 id="题解思路"><a href="#题解思路" class="headerlink" title="题解思路"></a>题解思路</h3><p>每次都取结束最早的事件。</p>
+<h2 id="问题一：事件序列问题">问题一：事件序列问题</h2>
+<h3 id="题目描述">题目描述</h3>
+<p>已知N个事件的发生时刻和结束时刻。其中的一些事件在时间上有重合。找到一个事件序列，使事件序列的事件数目最多。</p>
+<h3 id="题解思路">题解思路</h3>
+<p>每次都取结束最早的事件。</p>
 <p>证明（反证法）</p>
 <p>假设所有的最长序列都不包含最早结束事件，即可证明</p>
 <p>或者可以换个想法，每次取最早结束的事件，才能使后面选择更多的事件。</p>
-<h2 id="问题二：HDU-1050-Moving-tables"><a href="#问题二：HDU-1050-Moving-tables" class="headerlink" title="问题二：HDU 1050 Moving tables"></a>问题二：HDU 1050 Moving tables</h2><h3 id="题目描述-1"><a href="#题目描述-1" class="headerlink" title="题目描述"></a>题目描述</h3><p>有400个房间，编号从1-400，偶数号房间和奇数号房间在走廊的两侧，需要再两边搬东西，默认10分钟一次，如果搬过一张，则该路径被占用，每走过一条被占用的路，就要多10分钟</p>
-<h3 id="解题思路"><a href="#解题思路" class="headerlink" title="解题思路"></a>解题思路</h3><p>寻找最大重合度，创建一个走廊数组，每走过一个格子，就让这个格子的数值加一，再遍历一遍数组，找到最大的值，就是最大的重合度。</p>
+<h2 id="问题二：HDU-1050-Moving-tables">问题二：HDU 1050 Moving tables</h2>
+<h3 id="题目描述-2">题目描述</h3>
+<p>有400个房间，编号从1-400，偶数号房间和奇数号房间在走廊的两侧，需要再两边搬东西，默认10分钟一次，如果搬过一张，则该路径被占用，每走过一条被占用的路，就要多10分钟</p>
+<h3 id="解题思路">解题思路</h3>
+<p>寻找最大重合度，创建一个走廊数组，每走过一个格子，就让这个格子的数值加一，再遍历一遍数组，找到最大的值，就是最大的重合度。</p>
 <p>面对多次的数组区间修改，可以考虑到差分数组。</p>
-<h2 id="问题三：田忌赛马-经典版"><a href="#问题三：田忌赛马-经典版" class="headerlink" title="问题三：田忌赛马-经典版"></a>问题三：田忌赛马-经典版</h2><h3 id="题目描述-2"><a href="#题目描述-2" class="headerlink" title="题目描述"></a>题目描述</h3><p>输入国王和田忌的马，如果赢得一分，输了丢一分，平局不得，求最高分。</p>
-<h3 id="解题思路-1"><a href="#解题思路-1" class="headerlink" title="解题思路"></a>解题思路</h3><p>对于赛马，从故事中我们可以知道，田忌用最弱的马抵消了国王最强的马，实际上就是让自己的所有马功能最大化，赢不了的马，输给最强的，消耗对方能力，赢的了的马，就去赢。</p>
+<h2 id="问题三：田忌赛马-经典版">问题三：田忌赛马-经典版</h2>
+<h3 id="题目描述-3">题目描述</h3>
+<p>输入国王和田忌的马，如果赢得一分，输了丢一分，平局不得，求最高分。</p>
+<h3 id="解题思路-2">解题思路</h3>
+<p>对于赛马，从故事中我们可以知道，田忌用最弱的马抵消了国王最强的马，实际上就是让自己的所有马功能最大化，赢不了的马，输给最强的，消耗对方能力，赢的了的马，就去赢。</p>
 <p>面对贪心算法，我们可以每次考虑最强和最弱的马的情况，再根据上面的用马的法则，进行最大利用。</p>
 <p>比较两者最快马</p>
 <p>田忌&gt;国王，如果田忌能赢，则赢</p>
 <p>田忌&lt;国王，田忌用最弱马输一局</p>
-<p>田忌&#x3D;国王，则比较最慢马</p>
+<p>田忌=国王，则比较最慢马</p>
 <p>比较两者最慢马</p>
-<p>田忌&lt;&#x3D;国王，让田忌最慢比国王最快</p>
+<p>田忌&lt;=国王，让田忌最慢比国王最快</p>
 <p>田忌&gt;国王, 让田忌最慢赢国王最慢</p>
-<h2 id="思考题一：HDU-1800-Flying-to-the-Mars"><a href="#思考题一：HDU-1800-Flying-to-the-Mars" class="headerlink" title="思考题一：HDU 1800 Flying to the Mars"></a>思考题一：HDU 1800 Flying to the Mars</h2><h3 id="题目描述-3"><a href="#题目描述-3" class="headerlink" title="题目描述"></a>题目描述</h3><p>给一组数，分成x组，每组都是严格递增的，求x的最小值</p>
-<h3 id="解题思路-2"><a href="#解题思路-2" class="headerlink" title="解题思路"></a>解题思路</h3><p>同一等级士兵的最大人数，就是最小的组数</p>
-<h2 id="思考题二："><a href="#思考题二：" class="headerlink" title="思考题二："></a>思考题二：</h2><h3 id="题目描述-4"><a href="#题目描述-4" class="headerlink" title="题目描述"></a>题目描述</h3><p>键盘输入一个高精度的正整数ｎ&lt;240位，去掉任意s（s&lt;n）个数字后,将剩下的数字按原左右次序组成一个新的正整数。给定ｎ和ｓ，请编程输出最小的新正整数。</p>
+<h2 id="思考题一：HDU-1800-Flying-to-the-Mars">思考题一：HDU 1800 Flying to the Mars</h2>
+<h3 id="题目描述-4">题目描述</h3>
+<p>给一组数，分成x组，每组都是严格递增的，求x的最小值</p>
+<h3 id="解题思路-3">解题思路</h3>
+<p>同一等级士兵的最大人数，就是最小的组数</p>
+<h2 id="思考题二：">思考题二：</h2>
+<h3 id="题目描述-5">题目描述</h3>
+<p>键盘输入一个高精度的正整数ｎ&lt;240位，去掉任意s（s&lt;n）个数字后,将剩下的数字按原左右次序组成一个新的正整数。给定ｎ和ｓ，请编程输出最小的新正整数。</p>
 <p>###题解思路</p>
 <p>左到右遍历，一旦遇到左边数大于相邻的右边的数，则删去左边的。直到删除了s个。</p>
-<h2 id="思考题三：青蛙的邻居"><a href="#思考题三：青蛙的邻居" class="headerlink" title="思考题三：青蛙的邻居"></a>思考题三：青蛙的邻居</h2><h3 id="题目描述-5"><a href="#题目描述-5" class="headerlink" title="题目描述"></a>题目描述</h3><p>给你n个数字，代表了n个青蛙，每个青蛙对应的数字，代表他的邻居的数量，请问这个情况存在吗？</p>
-<h3 id="算法思路"><a href="#算法思路" class="headerlink" title="算法思路"></a>算法思路</h3><p>实际上就是n个节点，告诉了每个节点的度，问这n个节点是否<strong>可图</strong>（如果是某个无向图的序列，则该序列可图）</p>
+<h2 id="思考题三：青蛙的邻居">思考题三：青蛙的邻居</h2>
+<h3 id="题目描述-6">题目描述</h3>
+<p>给你n个数字，代表了n个青蛙，每个青蛙对应的数字，代表他的邻居的数量，请问这个情况存在吗？</p>
+<h3 id="算法思路">算法思路</h3>
+<p>实际上就是n个节点，告诉了每个节点的度，问这n个节点是否<strong>可图</strong>（如果是某个无向图的序列，则该序列可图）</p>
 <blockquote>
-<p> <strong>度序列</strong>: 把每个点的度按照顺序排起来的序列</p>
+<p><strong>度序列</strong>: 把每个点的度按照顺序排起来的序列</p>
 </blockquote>
 <p>度序列是否可图</p>
 <p><em><strong>Havel-Hakimi</strong></em>定理：</p>
@@ -171,5 +190,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,12 @@
             <a href="/2024/06/10/computer-network-note5/">计算机网络笔记5——P2P</a>
         </h2>
     
-        <p>计算机网络笔记5——P2PP2P连接是两个主机之间直接通信，现在没有客户端和服务器一说，两者都是对等方。
-P2P与客户-服务器结构对比客户-服务器结构分发时间
-定义一个文件有F大小，那么服务器如...</p>
+        <p>计算机网络笔记5——P2P
+P2P连接是两个主机之间直接通信，现在没有客户端和服务器一说，两者都是对等方。
+P2P与客户-服务器结构对比
+客户-服务器结构分发时间
+
+定义一个文件有F大小，那么服...</p>
     
         <div class="post-meta">
             <time class="date">2024.06.10</time>
@@ -118,5 +121,20 @@ P2P与客户-服务器结构对比客户-服务器结构分发时间
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

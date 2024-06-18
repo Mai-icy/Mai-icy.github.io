@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,10 @@
             <a href="/2024/04/16/acm-class-note12/">ACM程序课算法笔记12——树状数组</a>
         </h2>
     
-        <p>ACM程序课算法笔记12——树状数组引入对于数据储存，我们通常有求区间的需求，因此产生了不同的用于储存数据的数据结构，例如求区间和问题，我们会使用的前缀和数组。
-本次我们考虑的问题是：单点更新和...</p>
+        <p>ACM程序课算法笔记12——树状数组
+引入
+对于数据储存，我们通常有求区间的需求，因此产生了不同的用于储存数据的数据结构，例如求区间和问题，我们会使用的前缀和数组。
+本次我们考虑的问题是：单点更...</p>
     
         <div class="post-meta">
             <time class="date">2024.04.16</time>
@@ -117,5 +119,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

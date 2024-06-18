@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,12 @@
             <a href="/2023/10/27/acm-class-note2/">ACM程序课算法笔记2——递推求解</a>
         </h2>
     
-        <p>ACM程序课算法笔记2——递推求解基本方法
+        <p>ACM程序课算法笔记2——递推求解
+基本方法
+
 确认：能否容易的得到简单情况的解？
 假设：规模为N-1的情况已经得到解决。
-重点分析：当规模扩大到N时，如何枚举出所有的情况，并且要确保对于每一种子情...</p>
+重点分析：当规模扩大到N时，如何枚举出所有的情况，并且要确保对于每一种...</p>
     
         <div class="post-meta">
             <time class="date">2023.10.27</time>
@@ -119,5 +121,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记2——基环树&amp;字典树"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,15 +61,18 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 190 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 191 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="算法学习笔记-2-基环树-amp-字典树"><a href="#算法学习笔记-2-基环树-amp-字典树" class="headerlink" title="算法学习笔记(2): 基环树&amp;字典树"></a>算法学习笔记(2): 基环树&amp;字典树</h1><h1 id="基环树"><a href="#基环树" class="headerlink" title="基环树"></a>基环树</h1><p>若一个图有n个节点，n-1条边，那么这个图一定无环，此时若再增加一条边，必定会出现一条环。</p>
+            <h1>算法学习笔记(2): 基环树&amp;字典树</h1>
+<h1>基环树</h1>
+<p>若一个图有n个节点，n-1条边，那么这个图一定无环，此时若再增加一条边，必定会出现一条环。</p>
 <p>由此可得 n个节点，n条边，必定有个环，去掉这个环的每个边，剩余的就是多颗树。</p>
 <p>对于一个这样的图我们就称为基环树</p>
 <blockquote>
 <p>基环树实际上是图而不是树</p>
 </blockquote>
-<h2 id="无向图上的基环树"><a href="#无向图上的基环树" class="headerlink" title="无向图上的基环树"></a>无向图上的基环树</h2><pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
+<h2 id="无向图上的基环树">无向图上的基环树</h2>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
 1<span class="token text string">((1))</span>
 2<span class="token text string">((2))</span>
 3<span class="token text string">((3))</span>
@@ -86,11 +89,12 @@
 1 <span class="token arrow operator">---</span> 2
 6 <span class="token arrow operator">---</span> 2
 7 <span class="token arrow operator">---</span> 5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>图中的3 4 5形成一个环，这就是基环树的基本特征</p>
 <p>同时，如果图不一定全联通，那就有多个基环树组成，有几个联通分量就有几个基环树</p>
-<h2 id="有向图上的基环树"><a href="#有向图上的基环树" class="headerlink" title="有向图上的基环树"></a>有向图上的基环树</h2><p>同样是n个节点，n条边作为前提条件</p>
-<h3 id="内向基环树"><a href="#内向基环树" class="headerlink" title="内向基环树"></a>内向基环树</h3><p>若每个点都只有一条出度，该图为内向基环树</p>
+<h2 id="有向图上的基环树">有向图上的基环树</h2>
+<p>同样是n个节点，n条边作为前提条件</p>
+<h3 id="内向基环树">内向基环树</h3>
+<p>若每个点都只有一条出度，该图为内向基环树</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
 1<span class="token text string">((1))</span>
 2<span class="token text string">((2))</span>
@@ -108,9 +112,9 @@
 1 <span class="token arrow operator">---></span> 2
 6 <span class="token arrow operator">---></span> 2
 7 <span class="token arrow operator">---></span> 5<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>除了环以外的树枝上的节点都指向其树的父节点</p>
-<h3 id="外向基环树"><a href="#外向基环树" class="headerlink" title="外向基环树"></a>外向基环树</h3><p>若每个点都只有一条入度，该图为内向基环树</p>
+<h3 id="外向基环树">外向基环树</h3>
+<p>若每个点都只有一条入度，该图为内向基环树</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> RL
 1<span class="token text string">((1))</span>
 2<span class="token text string">((2))</span>
@@ -129,9 +133,10 @@
 2 <span class="token arrow operator">---></span> 6
 5 <span class="token arrow operator">---></span> 7
 4 <span class="token arrow operator">---></span> 2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>除了环以外的树枝上的节点都是树的父节点指向子节点。</p>
-<h2 id="寻找环"><a href="#寻找环" class="headerlink" title="寻找环"></a>寻找环</h2><h3 id="tarjan-算法"><a href="#tarjan-算法" class="headerlink" title="tarjan 算法"></a>tarjan 算法</h3><p>搜索每个节点，标记节点的 DFN 值，并记录每个结点的前驱；</p>
+<h2 id="寻找环">寻找环</h2>
+<h3 id="tarjan-算法">tarjan 算法</h3>
+<p>搜索每个节点，标记节点的 DFN 值，并记录每个结点的前驱；</p>
 <p>若搜索到一条返祖边，则从当前节点沿前驱节点回溯至边的另一端点，则回溯路上的所有节点均为环上的节点；</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">vector &lt;edge&gt; g[MAXN];
 int dfn[MAXN], cnt, fa[MAXN], loop[MAXN], len;
@@ -150,8 +155,8 @@ void dfs_loop(int i) &#123;
 		&#125;
 	&#125;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="拓扑排序"><a href="#拓扑排序" class="headerlink" title="拓扑排序"></a>拓扑排序</h3><p>记录每个节点的度数，进行拓扑排序；</p>
+<h3 id="拓扑排序">拓扑排序</h3>
+<p>记录每个节点的度数，进行拓扑排序；</p>
 <p>则入度 ≥ 2 的点即为环上的点；</p>
 <p>则拓扑排序后度数不为 0 的节点即为环上的点；</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void topo_loop() &#123;
@@ -172,8 +177,8 @@ void dfs_loop(int i) &#123;
     &#125;
     return;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h1 id="字典树"><a href="#字典树" class="headerlink" title="字典树"></a>字典树</h1><p>字典树，又称Trie树、前缀树，是一种树形结构，用于统计、排序、和保存大量字符串。所以经常被搜索引擎系统用于文本词频统计。它的优点是：利用字符串的公共前缀来减少查询时间，最大限度地减少无谓的字符串比较。</p>
+<h1>字典树</h1>
+<p>字典树，又称Trie树、前缀树，是一种树形结构，用于统计、排序、和保存大量字符串。所以经常被搜索引擎系统用于文本词频统计。它的优点是：利用字符串的公共前缀来减少查询时间，最大限度地减少无谓的字符串比较。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">&#x2F;&#x2F; Trie节点
 struct TrieNode &#123;
     unordered_map&lt;char, TrieNode*&gt; children;
@@ -240,7 +245,6 @@ public:
         delete root;
     &#125;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>每一个节点就是一个字符，可以储存多个字符的前缀情况。</p>
 
         </article>
@@ -309,5 +313,20 @@ public:
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

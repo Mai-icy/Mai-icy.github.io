@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="Python库requests源码阅读笔记 - 学习收获篇"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,12 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 495 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 496 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="requests源码阅读笔记"><a href="#requests源码阅读笔记" class="headerlink" title="requests源码阅读笔记"></a>requests源码阅读笔记</h1><h2 id="requests的使用方面"><a href="#requests的使用方面" class="headerlink" title="requests的使用方面"></a>requests的使用方面</h2><h2 id="1"><a href="#1" class="headerlink" title="1"></a>1</h2><p>可将<code>Response</code>实例直接置于条件判断中，转为bool为是否为200ok</p>
+            <h1>requests源码阅读笔记</h1>
+<h2 id="requests的使用方面">requests的使用方面</h2>
+<h2 id="1">1</h2>
+<p>可将<code>Response</code>实例直接置于条件判断中，转为bool为是否为200ok</p>
 <p>源码：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">__bool__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Returns True if :attr:`status_code` is less than 400.
@@ -74,9 +77,9 @@
     is **not** a check to see if the response code is ``200 OK``.
     """</span>
     <span class="token keyword">return</span> self<span class="token punctuation">.</span>ok<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>但我还是偏向于<code>raise_for_status()</code>方法</p>
-<h2 id="2"><a href="#2" class="headerlink" title="2"></a>2</h2><p>关于hook触发时机在</p>
+<h2 id="2">2</h2>
+<p>关于hook触发时机在</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python">  <span class="token keyword">def</span> <span class="token function">send</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> request<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
       <span class="token triple-quoted-string string">"""Send a given PreparedRequest.
 
@@ -101,7 +104,6 @@
       <span class="token comment"># Response manipulation hooks</span>
       r <span class="token operator">=</span> dispatch_hook<span class="token punctuation">(</span><span class="token string">"response"</span><span class="token punctuation">,</span> hooks<span class="token punctuation">,</span> r<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>的<code>dispatch_hook</code>函数内</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">dispatch_hook</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> hooks<span class="token punctuation">,</span> hook_data<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Dispatches a hook dictionary on a given piece of data."""</span>
@@ -115,10 +117,10 @@
             <span class="token keyword">if</span> _hook_data <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
                 hook_data <span class="token operator">=</span> _hook_data
     <span class="token keyword">return</span> hook_data<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>并可以给hook附带参数</p>
 <p>hook的使用参见资料</p>
-<h2 id="3"><a href="#3" class="headerlink" title="3"></a>3</h2><p>添加重试次数的方法</p>
+<h2 id="3">3</h2>
+<p>添加重试次数的方法</p>
 <pre class="line-numbers language-none"><code class="language-none">:param max_retries: The maximum number of retries each connection
     should attempt. Note, this applies only to failed DNS lookups, socket
     connections and connection timeouts, never to requests where data has
@@ -133,35 +135,38 @@ Usage::
   &gt;&gt;&gt; s &#x3D; requests.Session()
   &gt;&gt;&gt; a &#x3D; requests.adapters.HTTPAdapter(max_retries&#x3D;3)
   &gt;&gt;&gt; s.mount(&#39;http:&#x2F;&#x2F;&#39;, a)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>https请求请使用<code>s.mount(&#39;https://&#39;, a)</code></p>
+<p>https请求请使用<code>s.mount('https://', a)</code></p>
 <blockquote>
 <p>关于重试：每个连接应该尝试的最大重试次数。注意，这只适用于DNS查找失败、套接字连接和连接超时，永远不会适用于数据已经到达服务器的请求。默认情况下，请求不会重试失败的连接。如果你需要精确控制重试请求的条件，导入urllib3的<code>Retry</code>类并传递它。</p>
 </blockquote>
 <p>还有其他参见结构篇中写到。</p>
-<h2 id="4"><a href="#4" class="headerlink" title="4"></a>4</h2><p>在需要的数据远小于收到数据大小的时候可这样使用：</p>
+<h2 id="4">4</h2>
+<p>在需要的数据远小于收到数据大小的时候可这样使用：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">with</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"https://www.baidu.com"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> response<span class="token punctuation">:</span>
 	data <span class="token operator">=</span> response<span class="token punctuation">.</span>status_code
     <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>  <span class="token comment"># get the data you want</span>
 <span class="token keyword">print</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span>
 <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span>  <span class="token comment"># use the data</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>可以确保大的数据被释放，防止后面用不到反而占用空间。</p>
-<h2 id="其他方面"><a href="#其他方面" class="headerlink" title="其他方面"></a>其他方面</h2><h2 id="1-1"><a href="#1-1" class="headerlink" title="1"></a>1</h2><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> urllib3<span class="token punctuation">.</span>util <span class="token keyword">import</span> parse_url
+<h2 id="其他方面">其他方面</h2>
+<h2 id="1-2">1</h2>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> urllib3<span class="token punctuation">.</span>util <span class="token keyword">import</span> parse_url
 url <span class="token operator">=</span> <span class="token string">"http://user:pass@www.baidu.com:77/path1?arg1=1&amp;arg2=2#frag"</span>
 scheme<span class="token punctuation">,</span> auth<span class="token punctuation">,</span> host<span class="token punctuation">,</span> port<span class="token punctuation">,</span> path<span class="token punctuation">,</span> query<span class="token punctuation">,</span> fragment <span class="token operator">=</span> parse_url<span class="token punctuation">(</span>url<span class="token punctuation">)</span>
 <span class="token keyword">print</span><span class="token punctuation">(</span>scheme<span class="token punctuation">,</span> auth<span class="token punctuation">,</span> host<span class="token punctuation">,</span> port<span class="token punctuation">,</span> path<span class="token punctuation">,</span> query<span class="token punctuation">,</span> fragment<span class="token punctuation">)</span>
 <span class="token operator">>></span><span class="token operator">></span> http user<span class="token punctuation">:</span><span class="token keyword">pass</span> www<span class="token punctuation">.</span>baidu<span class="token punctuation">.</span>com <span class="token number">77</span> <span class="token operator">/</span>path1 arg1<span class="token operator">=</span><span class="token number">1</span><span class="token operator">&amp;</span>arg2<span class="token operator">=</span><span class="token number">2</span> frag<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>url分为</p>
 <pre class="line-numbers language-none"><code class="language-none">scheme:&#x2F;&#x2F;[&lt;user&gt;:&lt;password&gt;@]host[:port] &#x2F; path &#x2F;query#fragment<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>方括号代表可选</p>
 <p>scheme：通信协议</p>
 <p>fragment：锚点</p>
-<h2 id="2-1"><a href="#2-1" class="headerlink" title="2"></a>2</h2><p>def isinstance(__obj: object,<br>               __class_or_tuple: type | Tuple[type | Tuple[Any, …], …])<br>  -&gt; bool</p>
+<h2 id="2-2">2</h2>
+<p>def isinstance(__obj: object,<br>
+__class_or_tuple: type | Tuple[type | Tuple[Any, …], …])<br>
+-&gt; bool</p>
 <p>第二个参数可以使用元组包含类型</p>
-<h2 id="3-1"><a href="#3-1" class="headerlink" title="3"></a>3</h2><p>一对多的字典添加元素用<code>register</code>这个词  删除就用<code>deregister</code></p>
+<h2 id="3-2">3</h2>
+<p>一对多的字典添加元素用<code>register</code>这个词  删除就用<code>deregister</code></p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">register_hook</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> event<span class="token punctuation">,</span> hook<span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Properly register a hook."""</span>
 
@@ -172,8 +177,8 @@ scheme<span class="token punctuation">,</span> auth<span class="token punctuatio
         self<span class="token punctuation">.</span>hooks<span class="token punctuation">[</span>event<span class="token punctuation">]</span><span class="token punctuation">.</span>append<span class="token punctuation">(</span>hook<span class="token punctuation">)</span>
     <span class="token keyword">elif</span> <span class="token builtin">hasattr</span><span class="token punctuation">(</span>hook<span class="token punctuation">,</span> <span class="token string">"__iter__"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
         self<span class="token punctuation">.</span>hooks<span class="token punctuation">[</span>event<span class="token punctuation">]</span><span class="token punctuation">.</span>extend<span class="token punctuation">(</span>h <span class="token keyword">for</span> h <span class="token keyword">in</span> hook <span class="token keyword">if</span> <span class="token builtin">isinstance</span><span class="token punctuation">(</span>h<span class="token punctuation">,</span> Callable<span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="4-1"><a href="#4-1" class="headerlink" title="4"></a>4</h2><p>IDNA规范（Internationalized Domain Names in Applications）</p>
+<h2 id="4-2">4</h2>
+<p>IDNA规范（Internationalized Domain Names in Applications）</p>
 <p>用于支持其他语言例如中文，日文域名的实现提出的规范</p>
 <p><a target="_blank" rel="noopener" href="https://pypi.org/project/idna/">pypi</a></p>
 <p>Basic functions are simply executed:</p>
@@ -182,19 +187,18 @@ scheme<span class="token punctuation">,</span> auth<span class="token punctuatio
 b&#39;xn--eckwd4c7c.xn--zckzah&#39;
 &gt;&gt;&gt; print(idna.decode(&#39;xn--eckwd4c7c.xn--zckzah&#39;))
 ドメイン.テスト<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="5"><a href="#5" class="headerlink" title="5"></a>5</h2><p>上下文管理器在requests里面的使用</p>
+<h2 id="5">5</h2>
+<p>上下文管理器在requests里面的使用</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">__enter__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token keyword">return</span> self
 
 <span class="token keyword">def</span> <span class="token function">__exit__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> <span class="token operator">*</span>args<span class="token punctuation">)</span><span class="token punctuation">:</span>
     self<span class="token punctuation">.</span>close<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>使用例：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">with</span> Session<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">as</span> session<span class="token punctuation">:</span>
     rep <span class="token operator">=</span> session<span class="token punctuation">.</span>get<span class="token punctuation">(</span>url<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h2 id="6"><a href="#6" class="headerlink" title="6"></a>6</h2><p><code>__getstate__</code> 和<code>__setstate__</code>魔法方法</p>
+<h2 id="6">6</h2>
+<p><code>__getstate__</code> 和<code>__setstate__</code>魔法方法</p>
 <p>用于序列化</p>
 <p><code>pickle.dumps(obj)</code>序列化对象obj的属性，若该对象的类没有<code>__getstate__</code> 方法， 则属性内容由<code>__dict__</code> 提供，否则由<code>__getstate__</code> 提供，使用<code>__getstate__</code> 可自定义序列化对象的属性或其他任意内容；</p>
 <blockquote>
@@ -220,9 +224,9 @@ b&#39;xn--eckwd4c7c.xn--zckzah&#39;
        <span class="token comment"># pickled objects do not have .raw</span>
        <span class="token builtin">setattr</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> <span class="token string">"_content_consumed"</span><span class="token punctuation">,</span> <span class="token boolean">True</span><span class="token punctuation">)</span>
        <span class="token builtin">setattr</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> <span class="token string">"raw"</span><span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>其中的<code>__attrs__</code>并不是魔法变量，作者定义的类静态变量</p>
-<h2 id="7"><a href="#7" class="headerlink" title="7"></a>7</h2><p><code>__nonzero__</code>是在python2中判断语句中触发的，python3中被<code>__bool__</code>取代</p>
+<h2 id="7">7</h2>
+<p><code>__nonzero__</code>是在python2中判断语句中触发的，python3中被<code>__bool__</code>取代</p>
 <p><a target="_blank" rel="noopener" href="https://docs.python.org/2/reference/datamodel.html#object.__nonzero">python2相关文档</a></p>
 <p><a target="_blank" rel="noopener" href="https://docs.python.org/3.0/reference/datamodel.html#object.__bool__">python3相关文档</a></p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">A</span><span class="token punctuation">:</span>
@@ -239,8 +243,8 @@ b&#39;xn--eckwd4c7c.xn--zckzah&#39;
 <span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
     <span class="token keyword">if</span> A<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
         <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="8"><a href="#8" class="headerlink" title="8"></a>8</h2><p>类内的<code>is_xxx</code>的表示状态的变量可以改为<code>property</code>属性值</p>
+<h2 id="8">8</h2>
+<p>类内的<code>is_xxx</code>的表示状态的变量可以改为<code>property</code>属性值</p>
 <p>可以减少一个成员变量，以防<code>__init__</code>函数内定义过乱</p>
 <p>源码示例：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token decorator annotation punctuation">@property</span>
@@ -257,8 +261,8 @@ b&#39;xn--eckwd4c7c.xn--zckzah&#39;
         codes<span class="token punctuation">.</span>moved_permanently<span class="token punctuation">,</span>
         codes<span class="token punctuation">.</span>permanent_redirect<span class="token punctuation">,</span>
     <span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="9"><a href="#9" class="headerlink" title="9"></a>9</h2><p><code>charset_normalizer</code> 和 <code>chardet</code>库</p>
+<h2 id="9">9</h2>
+<p><code>charset_normalizer</code> 和 <code>chardet</code>库</p>
 <p>用于判断bytes对应的编码</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">try</span><span class="token punctuation">:</span>
     <span class="token keyword">import</span> chardet
@@ -269,9 +273,10 @@ text <span class="token operator">=</span> <span class="token string">b'\xe4\xbd
 <span class="token keyword">print</span><span class="token punctuation">(</span>chardet<span class="token punctuation">.</span>detect<span class="token punctuation">(</span>text<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token string">"encoding"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
 
 <span class="token operator">>></span><span class="token operator">></span> utf<span class="token operator">-</span><span class="token number">8</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="10"><a href="#10" class="headerlink" title="10"></a>10</h2><p>尽量使用 <code>var is None</code>或者<code>var is not None</code>意思明确</p>
-<h2 id="11"><a href="#11" class="headerlink" title="11"></a>11</h2><p><code>setdefault</code>配合省略关键词参数<code>**kwargs</code>很方便</p>
+<h2 id="10">10</h2>
+<p>尽量使用 <code>var is None</code>或者<code>var is not None</code>意思明确</p>
+<h2 id="11">11</h2>
+<p><code>setdefault</code>配合省略关键词参数<code>**kwargs</code>很方便</p>
 <p>示例：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python">  <span class="token keyword">def</span> <span class="token function">send</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> request<span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
       <span class="token triple-quoted-string string">"""Send a given PreparedRequest.
@@ -286,25 +291,28 @@ text <span class="token operator">=</span> <span class="token string">b'\xe4\xbd
       <span class="token keyword">if</span> <span class="token string">"proxies"</span> <span class="token keyword">not</span> <span class="token keyword">in</span> kwargs<span class="token punctuation">:</span>
           kwargs<span class="token punctuation">[</span><span class="token string">"proxies"</span><span class="token punctuation">]</span> <span class="token operator">=</span> resolve_proxies<span class="token punctuation">(</span>request<span class="token punctuation">,</span> self<span class="token punctuation">.</span>proxies<span class="token punctuation">,</span> self<span class="token punctuation">.</span>trust_env<span class="token punctuation">)</span>
 <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="12"><a href="#12" class="headerlink" title="12"></a>12</h2><p>连接池概念</p>
-<h2 id="13"><a href="#13" class="headerlink" title="13"></a>13</h2><p>CA以及SSL证书概念</p>
+<h2 id="12">12</h2>
+<p>连接池概念</p>
+<h2 id="13">13</h2>
+<p>CA以及SSL证书概念</p>
 <p>验证证书流程</p>
 <p>证书概念：证书用于验证网站合法性，和纸质证书概念相同，电子证书也用于查看网站是否安全。</p>
 <p>如何验证证书：</p>
 <p><a target="_blank" rel="noopener" href="https://blog.csdn.net/liangweimei/article/details/111677290">参考资料1</a>    <a target="_blank" rel="noopener" href="https://blog.csdn.net/qwe1765667234/article/details/124554074">参考资料2</a></p>
-<h2 id="14"><a href="#14" class="headerlink" title="14"></a>14</h2><p>threading.local()</p>
+<h2 id="14">14</h2>
+<p>threading.local()</p>
 <p>获取<code>ThreadLocal</code>对象</p>
 <p>不同的线程访问这个对象使用的空间都是线程自己的空间。</p>
-<h2 id="15"><a href="#15" class="headerlink" title="15"></a>15</h2><p>如果一个变量为空就设置为某默认值</p>
+<h2 id="15">15</h2>
+<p>如果一个变量为空就设置为某默认值</p>
 <p>有以下写法：</p>
 <pre class="line-numbers language-none"><code class="language-none">hooks &#x3D; hooks or &#123;&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<h2 id="16"><a href="#16" class="headerlink" title="16"></a>16</h2><p>判断变量是否为函数</p>
+<h2 id="16">16</h2>
+<p>判断变量是否为函数</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">if</span> <span class="token builtin">hasattr</span><span class="token punctuation">(</span>hooks<span class="token punctuation">,</span> <span class="token string">"__call__"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h2 id="17"><a href="#17" class="headerlink" title="17"></a>17</h2><p>从kwargs中取值：</p>
+<h2 id="17">17</h2>
+<p>从kwargs中取值：</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">custom_function</span><span class="token punctuation">(</span><span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
     foo <span class="token operator">=</span> kwargs<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">'foo'</span><span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">)</span>
     bar <span class="token operator">=</span> kwargs<span class="token punctuation">.</span>pop<span class="token punctuation">(</span><span class="token string">'bar'</span><span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">)</span>
@@ -314,9 +322,9 @@ text <span class="token operator">=</span> <span class="token string">b'\xe4\xbd
     foo <span class="token operator">=</span> kwargs<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'foo'</span><span class="token punctuation">)</span>
     bar <span class="token operator">=</span> kwargs<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'bar'</span><span class="token punctuation">)</span>
     <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>使用哪个取决于代码需求，没有最佳实践</p>
-<h2 id="18"><a href="#18" class="headerlink" title="18"></a>18</h2><p><code>@contextlib.contextmanager</code>上下文修饰器</p>
+<h2 id="18">18</h2>
+<p><code>@contextlib.contextmanager</code>上下文修饰器</p>
 <p>类似于类的上下文修饰器，只不过此时上下文处于一个函数中</p>
 <p>使用例如下</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> contextlib
@@ -330,17 +338,17 @@ text <span class="token operator">=</span> <span class="token string">b'\xe4\xbd
 <span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">'__main__'</span><span class="token punctuation">:</span>
     <span class="token keyword">with</span> test1<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
         <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"中间执行的代码块"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="19"><a href="#19" class="headerlink" title="19"></a>19</h2><p><code>frozenset()</code>内置函数</p>
+<h2 id="19">19</h2>
+<p><code>frozenset()</code>内置函数</p>
 <p>返回一个冻结的集合，冻结后集合不能再添加或删除任何元素。</p>
 <p>语法：</p>
 <pre class="line-numbers language-none"><code class="language-none">class frozenset([iterable])<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <blockquote>
 <p>为什么需要冻结的集合（即<strong>不可变的集合</strong>）呢？因为在集合的关系中，有<strong>集合的中的元素是另一个集合</strong>的情况，但是<strong>普通集合（set）本身是可变的</strong>，那么它的实例就<strong>不能放在另一个集合中</strong>（set中的元素必须是不可变类型）。</p>
 <p>所以，frozenset提供了不可变的集合的功能，当<strong>集合不可变</strong>时，它就<strong>满足了作为集合中的元素的要求</strong>，就可以放在另一个集合中了。</p>
 </blockquote>
-<h2 id="20"><a href="#20" class="headerlink" title="20"></a>20</h2><p>一个简单的猜测编码</p>
+<h2 id="20">20</h2>
+<p>一个简单的猜测编码</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token comment"># Null bytes; no need to recreate these on each call to guess_json_utf</span>
 _null <span class="token operator">=</span> <span class="token string">"\x00"</span><span class="token punctuation">.</span>encode<span class="token punctuation">(</span><span class="token string">"ascii"</span><span class="token punctuation">)</span>  <span class="token comment"># encoding to ASCII for Python 3</span>
 _null2 <span class="token operator">=</span> _null <span class="token operator">*</span> <span class="token number">2</span>
@@ -377,9 +385,6 @@ _null3 <span class="token operator">=</span> _null <span class="token operator">
             <span class="token keyword">return</span> <span class="token string">"utf-32-le"</span>
         <span class="token comment"># Did not detect a valid UTF-32 ascii-range character</span>
     <span class="token keyword">return</span> <span class="token boolean">None</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
 
         </article>
         <section class="post-near">
@@ -447,5 +452,20 @@ _null3 <span class="token operator">=</span> _null <span class="token operator">
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

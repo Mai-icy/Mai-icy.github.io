@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,13 @@
             <a href="/2023/12/22/acm-class-note7/">ACM程序课算法笔记7——母函数</a>
         </h2>
     
-        <p>ACM程序课算法笔记7——母函数定义母函数实际上就是一个多项式和其系数表达的关系，
+        <p>ACM程序课算法笔记7——母函数
+定义
+母函数实际上就是一个多项式和其系数表达的关系，
 对于多项式x2 + 2x + 1就是序列1 2 1的母函数
-母函数的基础转化问题若有1克、2克、3克、4克的砝...</p>
+母函数的基础转化
+问题
+若有1克、2克、3克、...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.22</time>
@@ -118,5 +122,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

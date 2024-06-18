@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记1——极角排序"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,16 +61,19 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 197 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 198 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="算法学习笔记1——极角排序"><a href="#算法学习笔记1——极角排序" class="headerlink" title="算法学习笔记1——极角排序"></a>算法学习笔记1——极角排序</h1><h2 id="基础含义"><a href="#基础含义" class="headerlink" title="基础含义"></a>基础含义</h2><p>对于一个平面的多个点，选择一个点作为<strong>极点</strong>O，再从O出去一条射线定为<strong>极轴</strong>OX（一般把X轴正半轴作为极轴），对于每个平面上的点我们有一种新的表示方法：<strong>极坐标（γ、θ）</strong>，γ为线段OP的长度，θ为OP与OX所夹的角。</p>
+            <h1>算法学习笔记1——极角排序</h1>
+<h2 id="基础含义">基础含义</h2>
+<p>对于一个平面的多个点，选择一个点作为<strong>极点</strong>O，再从O出去一条射线定为<strong>极轴</strong>OX（一般把X轴正半轴作为极轴），对于每个平面上的点我们有一种新的表示方法：<strong>极坐标（γ、θ）</strong>，γ为线段OP的长度，θ为OP与OX所夹的角。</p>
 <p>极角排序顾名思义就是根据极坐标的角度值进行排序，对于一个中心点，类似于雷达一样，按照雷达扫描的顺序进行排序的点。</p>
-<p><strong>平面叉乘</strong>：对于向量<em>u</em>&#x3D;(u1，u2)和 <em>v</em>&#x3D;(v1,v2) 它们的叉乘定义如下：<em>u</em> x <em>v</em> &#x3D; u1v2 - u2v1 &#x3D; |OU||OV|sin a 并且</p>
+<p><strong>平面叉乘</strong>：对于向量<em>u</em>=(u1，u2)和 <em>v</em>=(v1,v2) 它们的叉乘定义如下：<em>u</em> x <em>v</em> = u1v2 - u2v1 = |OU||OV|sin a 并且</p>
 <p>当 <em>u</em> x <em>v</em> &gt; 0, v在p的右方向 即向量u在向量v的顺时针方向</p>
 <p>当 <em>u</em> x <em>v</em> &lt; 0, v在p的左方向 即向量u在向量v的逆时针方向</p>
-<p>当 <em>u</em> x <em>v</em> &#x3D; 0, 两个向量共线</p>
-<p>abs(u1v2 - u2v1) &#x3D; 2 S△OUV</p>
-<h2 id="极角排序常用方法："><a href="#极角排序常用方法：" class="headerlink" title="极角排序常用方法："></a><strong>极角排序常用方法：</strong></h2><p>要求输入为多个点的(x, y)坐标，按照某个点例如(0, 0)进行极角排序。</p>
+<p>当 <em>u</em> x <em>v</em> = 0, 两个向量共线</p>
+<p>abs(u1v2 - u2v1) = 2 S△OUV</p>
+<h2 id="极角排序常用方法："><strong>极角排序常用方法：</strong></h2>
+<p>要求输入为多个点的(x, y)坐标，按照某个点例如(0, 0)进行极角排序。</p>
 <p>建立的基本结构体来总结以上的性质</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">struct Vector&#123;
     double x, y;
@@ -91,24 +94,20 @@ struct Point&#123;
         return Vector(&#123;x - other.x, y - other.y&#125;); &#x2F;&#x2F; 获得两点之间的向量
     &#125;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
 <p>对此我们有多种实现方法</p>
-<h3 id="方法1：利用atan2（）函数按极角从小到大排序。"><a href="#方法1：利用atan2（）函数按极角从小到大排序。" class="headerlink" title="方法1：利用atan2（）函数按极角从小到大排序。"></a>方法1：利用atan2（）函数按极角从小到大排序。</h3><p>介绍<code>atan2()</code>函数：</p>
+<h3 id="方法1：利用atan2（）函数按极角从小到大排序。">方法1：利用atan2（）函数按极角从小到大排序。</h3>
+<p>介绍<code>atan2()</code>函数：</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">double atan2(double y, double x); &#x2F;&#x2F; 函数原型<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>与简单的 <code>atan(y/x)</code> 不同，<code>atan2</code> 能够正确处理各个象限内的角度，并避免由于除零操作引起的错误。它能够通过坐标的符号来确定角度所在的象限。</p>
-<p>对于<code>atan(y/x)</code>，由于仅仅使用 <code>y</code> 和 <code>x</code> 的比值，<code>atan(y/x)</code> 无法确定角度所在的象限，因此需要额外的逻辑来处理。它的值域在−<em>π&#x2F;2</em> 到 +<em>π&#x2F;2</em></p>
+<p>对于<code>atan(y/x)</code>，由于仅仅使用 <code>y</code> 和 <code>x</code> 的比值，<code>atan(y/x)</code> 无法确定角度所在的象限，因此需要额外的逻辑来处理。它的值域在−<em>π/2</em> 到 +<em>π/2</em></p>
 <p>对于<code>atan2(y, x)</code></p>
 <p><code>atan2</code> 是为了弥补 <code>atan(y/x)</code> 的不足而设计的。它接受两个参数 <code>y</code> 和 <code>x</code>，并根据它们的符号来确定角度所在的象限，避免了由于 <code>x</code> 接近零而引起的问题。<code>atan2</code> 返回的角度范围通常是 −<em>π</em> 到 <em>π</em>。</p>
 <pre class="line-numbers language-none"><code class="language-none">double angle &#x3D; std::atan2(y, x);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <ol>
-<li>第一象限：<code>atan2</code> 返回值在 0 到 π&#x2F;2 之间（开区间）。</li>
-<li>第二象限：<code>atan2</code> 返回值在 -π&#x2F;2 到 0 之间（闭区间）。</li>
-<li>第三象限：<code>atan2</code> 返回值在 -π 到 -π&#x2F;2 之间（闭区间）。</li>
-<li>第四象限：<code>atan2</code> 返回值在 π&#x2F;2 到 π 之间（开区间）。</li>
+<li>第一象限：<code>atan2</code> 返回值在 0 到 π/2 之间（开区间）。</li>
+<li>第二象限：<code>atan2</code> 返回值在 -π/2 到 0 之间（闭区间）。</li>
+<li>第三象限：<code>atan2</code> 返回值在 -π 到 -π/2 之间（闭区间）。</li>
+<li>第四象限：<code>atan2</code> 返回值在 π/2 到 π 之间（开区间）。</li>
 </ol>
 <p>在进行atan2的比较之前我们需要先判断象限，然后再进行比较</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int Quadrant(const Point &amp; a)　　&#x2F;&#x2F; 象限排序，注意包含四个坐标轴
@@ -132,8 +131,8 @@ bool cmp3(const Point &amp; a, const Point &amp; b)  &#x2F;&#x2F; 先按象限�
         return cmp1(a, b);
     else Quadrant(a) &lt; Quadrant(b);
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="方法2：利用叉积性质小到大排序"><a href="#方法2：利用叉积性质小到大排序" class="headerlink" title="方法2：利用叉积性质小到大排序"></a>方法2：利用叉积性质小到大排序</h3><p>叉积正负性可以判断位于左侧还是右侧，利于排序。</p>
+<h3 id="方法2：利用叉积性质小到大排序">方法2：利用叉积性质小到大排序</h3>
+<p>叉积正负性可以判断位于左侧还是右侧，利于排序。</p>
 <pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">bool cmp(const Point &amp; a, const Point &amp; b) 
 &#123;
     Point p(&#123;0, 0&#125;); &#x2F;&#x2F; 原点
@@ -143,10 +142,9 @@ bool cmp3(const Point &amp; a, const Point &amp; b)  &#x2F;&#x2F; 先按象限�
         return a.x &lt; b.x;
     else return v1 ^ v2 &gt; 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
-<h2 id="极角排序的应用："><a href="#极角排序的应用：" class="headerlink" title="极角排序的应用："></a>极角排序的应用：</h2><h3 id="1-凸包问题（Graham扫描法）"><a href="#1-凸包问题（Graham扫描法）" class="headerlink" title="1.凸包问题（Graham扫描法）"></a>1.凸包问题（Graham扫描法）</h3><p>假设平面上有多个点，过某些点作一个多边形，使这个多边形能把所有点都“包”起来。当这个多边形是凸多边形的时候，我们就叫它“凸包”。</p>
+<h2 id="极角排序的应用：">极角排序的应用：</h2>
+<h3 id="1-凸包问题（Graham扫描法）">1.凸包问题（Graham扫描法）</h3>
+<p>假设平面上有多个点，过某些点作一个多边形，使这个多边形能把所有点都“包”起来。当这个多边形是凸多边形的时候，我们就叫它“凸包”。</p>
 <p>给定多个点，求形成凸包的点有哪些？</p>
 <p>对于这种问题，我们就可以采用极角排序</p>
 <p>首先，<strong>最左下角</strong>的一个点是必然在凸包上的。我们以这个点为极点进行<strong>极角排序</strong>。按照极角排序的顺序将多个点依次相连，可以获得到一个多边形，这个多边形不一定是凸多边形，但是包含了所有的点。</p>
@@ -176,7 +174,6 @@ Points chull(Points &amp;ps)
     &#125;
     return H;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 
         </article>
         <section class="post-near">
@@ -244,5 +241,20 @@ Points chull(Points &amp;ps)
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

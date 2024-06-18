@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,12 @@
             <a href="/2023/10/27/acm-class-note1/">ACM程序设计课笔记1——贪心算法</a>
         </h2>
     
-        <p>ACM程序设计课笔记1——贪心算法表面理解：在对问题求解的时候每次都选择对当前情况的最优解（多次的局部最优解）。
+        <p>ACM程序设计课笔记1——贪心算法
+表面理解：在对问题求解的时候每次都选择对当前情况的最优解（多次的局部最优解）。
 基本步骤
+
 从问题的某个初始解出发。
-采用循环语句，当可以向求解目标前进一步时，就...</p>
+采用循环语句，当可以向求解目标前进一步时...</p>
     
         <div class="post-meta">
             <time class="date">2023.10.27</time>
@@ -119,5 +121,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

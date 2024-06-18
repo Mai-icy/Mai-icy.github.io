@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="C Primer Plus 笔记2"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,14 +61,16 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 290 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 291 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="C-Primer-Plus-笔记2"><a href="#C-Primer-Plus-笔记2" class="headerlink" title="C Primer Plus 笔记2"></a>C Primer Plus 笔记2</h1><h3 id="11-5-字符串函数"><a href="#11-5-字符串函数" class="headerlink" title="11.5 字符串函数"></a>11.5 字符串函数</h3><p>略，见表</p>
-<h3 id="11-9-把字符串转换为数字"><a href="#11-9-把字符串转换为数字" class="headerlink" title="11.9 把字符串转换为数字"></a>11.9 把字符串转换为数字</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">int atoi(const char *str);
+            <h1>C Primer Plus 笔记2</h1>
+<h3 id="11-5-字符串函数">11.5 字符串函数</h3>
+<p>略，见表</p>
+<h3 id="11-9-把字符串转换为数字">11.9 把字符串转换为数字</h3>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">int atoi(const char *str);
 double atof(const char *str);
 long atol(const char *str);
 &#x2F;&#x2F; 等等<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>它们会先忽略前面的空格字符（例如空格、制表符、换行符等）。然后会一直解析到第一个非空白字符，把之前的整数部分转换返回。如果字符串为空，或者不包含可解析的整数，<code>atoi()</code> 返回0。</p>
 <blockquote>
 <p>C语言对这种行为未定义，是不安全的。</p>
@@ -77,7 +79,6 @@ long atol(const char *str);
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">long strtol(const char *restrict nptr, char **restrict endptr, int base);
 float strtof(const char *restrict nptr, char **restrict endptr);
 double strtod(const char *restrict nptr, char **restrict endptr);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <ul>
 <li><code>nptr</code>：要转换的字符串。</li>
 <li><code>endptr</code>：一个指向字符指针的指针，用于指示转换结束的位置。如果不需要这个信息，可以将该参数设置为 <code>NULL</code>。</li>
@@ -99,47 +100,44 @@ if ((result &#x3D;&#x3D; LONG_MAX || result &#x3D;&#x3D; LONG_MIN) &amp;&amp; er
     printf(&quot;Value: %ld\n&quot;, result);
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <ul>
 <li><code>strtol()</code> 函数在转换时会忽略前导空格字符。</li>
 <li>在使用 <code>strtol()</code> 前，应确保包含 <code>&lt;stdlib.h&gt;</code> 头文件。</li>
 </ul>
-<h3 id="12-1-2-链接"><a href="#12-1-2-链接" class="headerlink" title="12.1.2 链接"></a>12.1.2 链接</h3><p>链接（Linkage）指的是标识符（如变量、函数、常量等）在不同文件之间的可见性和访问性。</p>
+<h3 id="12-1-2-链接">12.1.2 链接</h3>
+<p>链接（Linkage）指的是标识符（如变量、函数、常量等）在不同文件之间的可见性和访问性。</p>
 <p>有三种类型的链接：外部链接、内部链接和无链接。</p>
 <p><strong>外部链接（External Linkage）：</strong> 可以被其他文件引用。在不同编译单元中声明并定义相同名称的外部链接标识符会引起链接错误。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">int global_var &#x3D; 10; &#x2F;&#x2F; 具有外部链接
 
 &#x2F;&#x2F; 文件2.c
 extern int global_var; &#x2F;&#x2F; 引用外部链接的标识符<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p><strong>内部链接（Internal Linkage）：</strong> 无法被其他文件引用，在不同编译单元中可以有相同名称的内部链接标识符。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">static int local_var &#x3D; 5; &#x2F;&#x2F; 具有内部链接
 
 &#x2F;&#x2F; 文件2.c
 static int local_var &#x3D; 15; &#x2F;&#x2F; 在不同编译单元中也可以有同名的内部链接标识符<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p><strong>无链接（No Linkage）：</strong> 无链接的标识符只在当前作用域内可见，不能被其他编译单元引用。通常，局部变量和函数参数都具有无链接。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">void func() &#123;
     int local &#x3D; 20; &#x2F;&#x2F; 无链接的局部变量
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="12-1-4-自动变量"><a href="#12-1-4-自动变量" class="headerlink" title="12.1.4 自动变量"></a>12.1.4 自动变量</h3><p>默认情况下，声明在块或者函数头中的额任何变量都属于自动储存类别。</p>
+<h3 id="12-1-4-自动变量">12.1.4 自动变量</h3>
+<p>默认情况下，声明在块或者函数头中的额任何变量都属于自动储存类别。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">int main(void)&#123;
 	auto int plox;
     &#x2F;&#x2F; 显式使用关键词auto 有意覆盖一个外部变量定义，强调不要改为其它储存类别
     ...
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="12-1-5-寄存器变量"><a href="#12-1-5-寄存器变量" class="headerlink" title="12.1.5 寄存器变量"></a>12.1.5 寄存器变量</h3><p><strong><code>register</code> 关键字：</strong> 在C语言中，可以使用 <code>register</code> 关键字来建议编译器将一个变量存储在寄存器中。这个关键字并不是强制性的，编译器可以选择忽略它。编译器会根据实际情况决定是否将变量存储在寄存器中，所以 <code>register</code> 关键字在现代编译器中的作用有限。</p>
+<h3 id="12-1-5-寄存器变量">12.1.5 寄存器变量</h3>
+<p><strong><code>register</code> 关键字：</strong> 在C语言中，可以使用 <code>register</code> 关键字来建议编译器将一个变量存储在寄存器中。这个关键字并不是强制性的，编译器可以选择忽略它。编译器会根据实际情况决定是否将变量存储在寄存器中，所以 <code>register</code> 关键字在现代编译器中的作用有限。</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">register</span> <span class="token keyword">int</span> x<span class="token punctuation">;</span> <span class="token comment">// 提示编译器将 x 存储在寄存器中</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>访问可以更快，减少内存占用，但是寄存器数量有限，不适用于所有变量（不能储存地址）。减低可移植性。</p>
-<h3 id="12-1-7-外部链接的静态变量"><a href="#12-1-7-外部链接的静态变量" class="headerlink" title="12.1.7 外部链接的静态变量"></a>12.1.7 外部链接的静态变量</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">&#x2F;&#x2F; file1.c
+<h3 id="12-1-7-外部链接的静态变量">12.1.7 外部链接的静态变量</h3>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">&#x2F;&#x2F; file1.c
 int traveler &#x3D; 1;
 
 &#x2F;&#x2F; file2.c
 int stayhome &#x3D; 1;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">&#x2F;&#x2F; main.c
 extern int traveler;   &#x2F;&#x2F; 引用 file1.c 中的 traveler
 extern int stayhome;   &#x2F;&#x2F; 引用 file2.c 中的 stayhome
@@ -148,9 +146,10 @@ int main(void) &#123;
     &#x2F;&#x2F; 使用 traveler 和 stayhome
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="12-1-11-储存类别和函数"><a href="#12-1-11-储存类别和函数" class="headerlink" title="12.1.11 储存类别和函数"></a>12.1.11 储存类别和函数</h3><p>用static定义的函数相当于文件内的私有函数，不能被引用，而不用static定义的函数则相当于公有函数，可以被引用。</p>
-<h3 id="12-2-随机数函数和静态变量"><a href="#12-2-随机数函数和静态变量" class="headerlink" title="12.2 随机数函数和静态变量"></a>12.2 随机数函数和静态变量</h3><p>随机数函数文件有以下内容</p>
+<h3 id="12-1-11-储存类别和函数">12.1.11 储存类别和函数</h3>
+<p>用static定义的函数相当于文件内的私有函数，不能被引用，而不用static定义的函数则相当于公有函数，可以被引用。</p>
+<h3 id="12-2-随机数函数和静态变量">12.2 随机数函数和静态变量</h3>
+<p>随机数函数文件有以下内容</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">static unsigned long int next &#x3D; 1;
 
 int rand0(void) &#123;
@@ -161,9 +160,9 @@ int rand0(void) &#123;
 void srand0(unsigned int seed) &#123;
     next &#x3D; seed;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>这个next很有类中的私有成员变量的味道，srand0就很像setter</p>
-<h3 id="12-4-分配内存：malloc-和-free"><a href="#12-4-分配内存：malloc-和-free" class="headerlink" title="12.4 分配内存：malloc() 和 free()"></a>12.4 分配内存：malloc() 和 free()</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">double * ptd;
+<h3 id="12-4-分配内存：malloc-和-free">12.4 分配内存：malloc() 和 free()</h3>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">double * ptd;
 ptd &#x3D; (double *) malloc(30 * sizeof(double));
 &#x2F;&#x2F; 定义一个30长度的double数组
 free(ptd) &#x2F;&#x2F; 配套使用free返还内存
@@ -171,7 +170,6 @@ free(ptd) &#x2F;&#x2F; 配套使用free返还内存
 int (* p3) [m];
 p3 &#x3D; (int (*) [m]) malloc (n * m * sizeof(int)) 
 &#x2F;&#x2F; 创建一个m x n 的二维数组<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>如果分配失败，会返回一个<code>NULL</code>指针。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">&#x2F;&#x2F; 分配一个包含 5 个 int 元素的数组，并初始化为零
 int *array &#x3D; (int *)calloc(5, sizeof(int));
@@ -184,22 +182,23 @@ if (array !&#x3D; NULL) &#123;
 &#125; else &#123;
     printf(&quot;Memory allocation failed.\n&quot;);
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>calloc的特点是会初始化元素为0.</p>
-<h3 id="12-5-ANSI-C-类型限定符"><a href="#12-5-ANSI-C-类型限定符" class="headerlink" title="12.5 ANSI C 类型限定符"></a>12.5 ANSI C 类型限定符</h3><p>当把全局变量放在头文件时，应当注意使用static声明全局变量，如果没有static，那么在两个不同的C文件引用这个头文件将会导致每个文件都有一个相同标识符的定义式声明，C不允许这个情况。</p>
-<h4 id="volatile-类型限定符"><a href="#volatile-类型限定符" class="headerlink" title="volatile 类型限定符"></a>volatile 类型限定符</h4><p><code>volatile</code>告诉编译器不要对被声明为<code>volatile</code>的变量进行优化，因为这些变量的值可能会在程序的意料之外的情况下发生改变。</p>
+<h3 id="12-5-ANSI-C-类型限定符">12.5 ANSI C 类型限定符</h3>
+<p>当把全局变量放在头文件时，应当注意使用static声明全局变量，如果没有static，那么在两个不同的C文件引用这个头文件将会导致每个文件都有一个相同标识符的定义式声明，C不允许这个情况。</p>
+<h4 id="volatile-类型限定符">volatile 类型限定符</h4>
+<p><code>volatile</code>告诉编译器不要对被声明为<code>volatile</code>的变量进行优化，因为这些变量的值可能会在程序的意料之外的情况下发生改变。</p>
 <p>例如：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">val1 &#x3D; x;
 &#x2F;&#x2F; 中间略（x未修改）
 val2 &#x3D; x;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>编译器会发现使用了两次x但没有修改x的值，于是编译器可能把x优化在寄存器里，在val2读取时采用寄存器上的x，这个过程称为<code>高速缓存</code>，指定<code>volatile</code>即显式说明不要使用该优化。</p>
 <p><code>volatile</code>主要用于以下两种情况：</p>
 <ol>
 <li><strong>硬件寄存器和外部设备访问：</strong> 当你在程序中访问硬件寄存器或外部设备的状态时，这些状态可能会在任何时候发生变化，但是编译器在优化代码时可能会认为这些变量不会变化，从而导致错误的优化。通过使用<code>volatile</code>关键字，你告诉编译器不要对这些变量进行优化，以确保每次访问时都会读取最新的值。</li>
 <li><strong>多线程或中断环境：</strong> 在多线程或中断处理程序中，一个变量的值可能会被其他线程或中断修改，而编译器可能会进行优化，认为变量的值在自身线程中不会改变。使用<code>volatile</code>可以确保每次访问都从内存中读取最新的值，而不是从寄存器或缓存中读取。</li>
 </ol>
-<h4 id="restrict-类型限定符"><a href="#restrict-类型限定符" class="headerlink" title="restrict 类型限定符"></a>restrict 类型限定符</h4><p>restrict 只能声明为指针，意味着在指针的生命周期内，该指针是访问对象的<strong>唯一</strong>途径，没有其他指针可以同时指向同一个对象。这样的声明允许编译器在优化代码时进行更激进的优化，以提高性能。可以使用在获取的动态内存指针中。</p>
+<h4 id="restrict-类型限定符">restrict 类型限定符</h4>
+<p>restrict 只能声明为指针，意味着在指针的生命周期内，该指针是访问对象的<strong>唯一</strong>途径，没有其他指针可以同时指向同一个对象。这样的声明允许编译器在优化代码时进行更激进的优化，以提高性能。可以使用在获取的动态内存指针中。</p>
 <ol>
 <li>不能在同一个函数中使用<code>restrict</code>来声明多个指向相同类型对象的指针</li>
 <li>在指针的生命周期内要求指针不会被别名。</li>
@@ -215,24 +214,32 @@ for (n &#x3D; 0; n &lt; 10; n++)&#123;
     par[n] +&#x3D; 3;
     restar[n] +&#x3D; 3;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>编译器会优化为<code>restar[n] += 8;</code> 但是par不能这么做，因为ar也修改了par的内存。</p>
-<h4 id="Atomic类型限定符"><a href="#Atomic类型限定符" class="headerlink" title="_Atomic类型限定符"></a>_Atomic类型限定符</h4><p>在C11中，你可以使用 <code>&lt;stdatomic.h&gt;</code> 中的库函数和宏来执行原子操作，通常用于多线程</p>
-<h3 id="12-5-5-新旧关键词的位置"><a href="#12-5-5-新旧关键词的位置" class="headerlink" title="12.5.5 新旧关键词的位置"></a>12.5.5 新旧关键词的位置</h3><p>“c99允许把类型限定符放在方框当中”</p>
+<h4 id="Atomic类型限定符">_Atomic类型限定符</h4>
+<p>在C11中，你可以使用 <code>&lt;stdatomic.h&gt;</code> 中的库函数和宏来执行原子操作，通常用于多线程</p>
+<h3 id="12-5-5-新旧关键词的位置">12.5.5 新旧关键词的位置</h3>
+<p>“c99允许把类型限定符放在方框当中”</p>
 <p>关于这一点在书本P406，我在网上没有找到相应的使用，可能不常用。</p>
-<h3 id="13-2-标准I-x2F-O"><a href="#13-2-标准I-x2F-O" class="headerlink" title="13.2 标准I&#x2F;O"></a>13.2 标准I&#x2F;O</h3><h4 id="fopen-函数"><a href="#fopen-函数" class="headerlink" title="fopen()函数"></a>fopen()函数</h4><p>第二个参数是文件打开的模式，类似于python</p>
+<h3 id="13-2-标准I-O">13.2 标准I/O</h3>
+<h4 id="fopen-函数">fopen()函数</h4>
+<p>第二个参数是文件打开的模式，类似于python</p>
 <p>C11新增了带x的写模式</p>
 <p>以<code>wx</code>写模式打开文件，但只有在文件不存在的情况下才成功。如果文件已经存在，则打开操作将失败，返回 <code>NULL</code>。</p>
 <p>x模式具有独占特性：</p>
 <ul>
-<li><p><strong>原子性创建</strong>：在多线程或多进程环境中，如果多个实体同时尝试打开同一个文件以进行写入，使用 ‘x’ 模式可以确保只有一个实体能够成功，其他将会失败。</p>
+<li>
+<p><strong>原子性创建</strong>：在多线程或多进程环境中，如果多个实体同时尝试打开同一个文件以进行写入，使用 ‘x’ 模式可以确保只有一个实体能够成功，其他将会失败。</p>
 </li>
-<li><p><strong>避免竞态条件</strong>： 竞态条件是指多个进程或线程在没有适当同步的情况下访问共享资源，导致未定义的行为或数据损坏。使用 ‘x’ 模式可以防止多个实体同时尝试创建同一个文件。</p>
+<li>
+<p><strong>避免竞态条件</strong>： 竞态条件是指多个进程或线程在没有适当同步的情况下访问共享资源，导致未定义的行为或数据损坏。使用 ‘x’ 模式可以防止多个实体同时尝试创建同一个文件。</p>
 </li>
 </ul>
-<h4 id="getc-和-putc-函数"><a href="#getc-和-putc-函数" class="headerlink" title="getc() 和 putc() 函数"></a>getc() 和 putc() 函数</h4><p>与getchar()和putchar类似，多一个参数用于指定文件流。</p>
-<h4 id="fclose-函数"><a href="#fclose-函数" class="headerlink" title="fclose() 函数"></a>fclose() 函数</h4><p> fclose(fp) 用于关闭fp指定的文件，如果成功关闭将返回0否则是EOF。</p>
-<h4 id="指向标准文件的指针"><a href="#指向标准文件的指针" class="headerlink" title="指向标准文件的指针"></a>指向标准文件的指针</h4><table>
+<h4 id="getc-和-putc-函数">getc() 和 putc() 函数</h4>
+<p>与getchar()和putchar类似，多一个参数用于指定文件流。</p>
+<h4 id="fclose-函数">fclose() 函数</h4>
+<p>fclose(fp) 用于关闭fp指定的文件，如果成功关闭将返回0否则是EOF。</p>
+<h4 id="指向标准文件的指针">指向标准文件的指针</h4>
+<table>
 <thead>
 <tr>
 <th>标准文件</th>
@@ -240,7 +247,8 @@ for (n &#x3D; 0; n &lt; 10; n++)&#123;
 <th>通常使用的设备</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>标准输入</td>
 <td>stdin</td>
 <td>键盘</td>
@@ -255,14 +263,14 @@ for (n &#x3D; 0; n &lt; 10; n++)&#123;
 <td>stderr</td>
 <td>显示器</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>fprintf()与printf()类似，多了第一个参数为文件指针</p>
 <p>fscanf 同理</p>
 <p>rewind(fp) 函数用于将文件流的位置指示器（文件指针）重新设置为文件的开头，以便进行后续的读取操作。</p>
 <p>例如：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">fprintf(stderr, &quot;Failed to open error log file!\n&quot;);
 fscanf(stderr, &quot;Failed to open error log file!\n&quot;);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
 
 int main() &#123;
@@ -285,18 +293,21 @@ int main() &#123;
     return 0;
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="随机访问：fseek-和-ftell"><a href="#随机访问：fseek-和-ftell" class="headerlink" title="随机访问：fseek() 和 ftell()"></a>随机访问：fseek() 和 ftell()</h3><p><code>fseek()</code> 和 <code>ftell()</code> 是C标准库中用于文件定位的函数，它们允许您在文件中移动文件指针，以便进行特定位置的读取和写入操作。</p>
+<h3 id="随机访问：fseek-和-ftell">随机访问：fseek() 和 ftell()</h3>
+<p><code>fseek()</code> 和 <code>ftell()</code> 是C标准库中用于文件定位的函数，它们允许您在文件中移动文件指针，以便进行特定位置的读取和写入操作。</p>
 <ol>
-<li><p><strong><code>fseek()</code> 函数</strong>：</p>
+<li>
+<p><strong><code>fseek()</code> 函数</strong>：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">int fseek(FILE *stream, long offset, int origin);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <ul>
-<li><p><code>stream</code>: 指向已打开文件的文件指针。</p>
+<li>
+<p><code>stream</code>: 指向已打开文件的文件指针。</p>
 </li>
-<li><p><code>offset</code>: 要移动的偏移量，单位是字节。</p>
+<li>
+<p><code>offset</code>: 要移动的偏移量，单位是字节。</p>
 </li>
-<li><pre><code>origin
+<li>
+<pre><code>origin
 <pre class="line-numbers language-none"><code class="language-none">
      : 偏移量的参考点，可以是以下值之一：
 
@@ -310,27 +321,30 @@ int main() &#123;
 
    &#96;&#96;&#96;C
    long ftell(FILE *stream);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
 </code></pre>
 </li>
-<li><p><code>stream</code>: 指向已打开文件的文件指针。</p>
+<li>
+<p><code>stream</code>: 指向已打开文件的文件指针。</p>
 </li>
 </ul>
 <p><code>ftell()</code> 函数返回当前文件指针的偏移位置，即当前文件指针距离文件开头的字节数。如果出现错误，它返回 -1L。</p>
 </li>
 </ol>
-<h3 id="13-5-4-fgetpos-和-fsetpos-函数"><a href="#13-5-4-fgetpos-和-fsetpos-函数" class="headerlink" title="13.5.4 fgetpos() 和 fsetpos() 函数"></a>13.5.4 fgetpos() 和 fsetpos() 函数</h3><p><code>fgetpos()</code> 和 <code>fsetpos()</code> 是C标准库中用于文件位置的函数，它们允许您以更高级别的方式保存和恢复文件流的位置。这些函数对于处理二进制文件或在不同平台上移植代码时特别有用，因为它们可以保持文件位置的精确性。同时还可以避免long类型不够读取位置的问题。</p>
+<h3 id="13-5-4-fgetpos-和-fsetpos-函数">13.5.4 fgetpos() 和 fsetpos() 函数</h3>
+<p><code>fgetpos()</code> 和 <code>fsetpos()</code> 是C标准库中用于文件位置的函数，它们允许您以更高级别的方式保存和恢复文件流的位置。这些函数对于处理二进制文件或在不同平台上移植代码时特别有用，因为它们可以保持文件位置的精确性。同时还可以避免long类型不够读取位置的问题。</p>
 <ol>
-<li><p><strong><code>fgetpos()</code> 函数</strong>：</p>
+<li>
+<p><strong><code>fgetpos()</code> 函数</strong>：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">int fgetpos(FILE *stream, fpos_t *pos);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <ul>
 <li><code>pos</code>: 一个指向 <code>fpos_t</code> 类型对象的指针，用于保存当前文件指针的位置。</li>
 </ul>
 <p><code>fgetpos()</code> 函数用于获取当前文件指针的位置，并将其保存到指定的 <code>fpos_t</code> 对象中。它返回非零值表示失败，零表示成功。</p>
 </li>
-<li><p><strong><code>fsetpos()</code> 函数</strong>：</p>
+<li>
+<p><strong><code>fsetpos()</code> 函数</strong>：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">int fsetpos(FILE *stream, const fpos_t *pos);<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <ul>
 <li><code>pos</code>: 一个指向 <code>fpos_t</code> 类型对象的指针，用于指定要设置的文件指针的位置。</li>
 </ul>
@@ -338,8 +352,10 @@ int main() &#123;
 </li>
 </ol>
 <p><code>fpos_t</code> 是一个类型，用于存储文件指针的位置信息。它的实际定义可能因平台而异。</p>
-<h3 id="13-7-其他I-x2F-O函数"><a href="#13-7-其他I-x2F-O函数" class="headerlink" title="13.7 其他I&#x2F;O函数"></a>13.7 其他I&#x2F;O函数</h3><p>见p427</p>
-<h3 id="14-3-3-结构的初始化器"><a href="#14-3-3-结构的初始化器" class="headerlink" title="14.3.3 结构的初始化器"></a>14.3.3 结构的初始化器</h3><p>C99 和 C11 为结构提供了指定初始化器</p>
+<h3 id="13-7-其他I-O函数">13.7 其他I/O函数</h3>
+<p>见p427</p>
+<h3 id="14-3-3-结构的初始化器">14.3.3 结构的初始化器</h3>
+<p>C99 和 C11 为结构提供了指定初始化器</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct book book &#123;
     		char title[MAXTITLE];
     		char author[MAXAUTL];
@@ -351,19 +367,19 @@ struct book gift &#x3D; &#123; .value &#x3D; 25.99,
 struct book gift &#x3D; &#123; .value &#x3D; 18.90,
                      .author &#x3D; &quot;Philionna Pestle&quot;,
                      0.25&#125;; &#x2F;&#x2F; 此处value被0.25覆盖<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="14-4-结构数组"><a href="#14-4-结构数组" class="headerlink" title="14.4 结构数组"></a>14.4 结构数组</h3><p>如果在栈上分配大型的数据结构或数组，可能会导致栈空间不足。这是因为栈是一个相对较小的内存区域，适合存储小而局部的数据。应当注意栈的大小。如果不足，可以设置栈的大小或者动态内存分配。</p>
-<h3 id="14-7-5-结构和结构指针的选择"><a href="#14-7-5-结构和结构指针的选择" class="headerlink" title="14.7.5 结构和结构指针的选择"></a>14.7.5 结构和结构指针的选择</h3><p>写一个和结构相关的函数，使用结构指针作为参数返回结果，还是用结构作为参数和返回值</p>
+<h3 id="14-4-结构数组">14.4 结构数组</h3>
+<p>如果在栈上分配大型的数据结构或数组，可能会导致栈空间不足。这是因为栈是一个相对较小的内存区域，适合存储小而局部的数据。应当注意栈的大小。如果不足，可以设置栈的大小或者动态内存分配。</p>
+<h3 id="14-7-5-结构和结构指针的选择">14.7.5 结构和结构指针的选择</h3>
+<p>写一个和结构相关的函数，使用结构指针作为参数返回结果，还是用结构作为参数和返回值</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct vector sum_vector(struct vector, struct vector);
 ans &#x3D; sum_vector(a, b);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p>把结构作为参数传递的优点：函数处理副本，保护原数据，代码风格更清楚</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">void sum_vector(const struct vector *, const struct vector *, struct vector *)
 sum_vector(a, b, ans);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p>把指针作为参数和返回值的优点：兼容老版本的代码，减少传递结构的时间空间浪费（创建副本）还可以通过const来保证数据不会被修改</p>
 <p>通常，为了追求效率会使用指针，按值传递是小型结构常用的方法。</p>
-<h3 id="14-7-6-结构中的字符数组和字符指针"><a href="#14-7-6-结构中的字符数组和字符指针" class="headerlink" title="14.7.6 结构中的字符数组和字符指针"></a>14.7.6 结构中的字符数组和字符指针</h3><p>在结构中使用字符指针容易造成错误</p>
+<h3 id="14-7-6-结构中的字符数组和字符指针">14.7.6 结构中的字符数组和字符指针</h3>
+<p>在结构中使用字符指针容易造成错误</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct names&#123;char last[100]&#125;;
 struct pnames&#123;char * last&#125;;
 
@@ -371,9 +387,9 @@ struct names accountant;
 struct pnames attorney;
 scanf(&quot;%s&quot;, accountant.last);
 scanf(&quot;%s&quot;, attorney.last);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>我们可以发现如果是accountant，我们的数据储存在了last数组内，但是对于attorney，我们无法确定我们输入的字符内存在哪里，只能确定我们把一个指针赋给了last，关于这段字符串的储存就变成了未定义的行为。</p>
-<h3 id="14-7-6-结构中的字符数组和字符指针-1"><a href="#14-7-6-结构中的字符数组和字符指针-1" class="headerlink" title="14.7.6 结构中的字符数组和字符指针"></a>14.7.6 结构中的字符数组和字符指针</h3><p>但是使用字符数组会让结构变得很大，我们可以使用malloc()来分配动态内存来储存它们</p>
+<h3 id="14-7-6-结构中的字符数组和字符指针-2">14.7.6 结构中的字符数组和字符指针</h3>
+<p>但是使用字符数组会让结构变得很大，我们可以使用malloc()来分配动态内存来储存它们</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">char buffer[100];
 printf(&quot;Enter last name for attorney: &quot;);
 scanf(&quot;%s&quot;, buffer);
@@ -390,15 +406,14 @@ if (attorney.last !&#x3D; NULL) &#123;
 
 &#x2F;&#x2F; Don&#39;t forget to free allocated memory
 free(attorney.last);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="14-7-9-伸缩型数组成员"><a href="#14-7-9-伸缩型数组成员" class="headerlink" title="14.7.9 伸缩型数组成员"></a>14.7.9 伸缩型数组成员</h3><p>伸缩型数组成员用于动态分配结构体内部数组的技术。它允许你在结构体的末尾定义一个数组成员，但是这个数组的大小在运行时可以根据需要进行分配。</p>
+<h3 id="14-7-9-伸缩型数组成员">14.7.9 伸缩型数组成员</h3>
+<p>伸缩型数组成员用于动态分配结构体内部数组的技术。它允许你在结构体的末尾定义一个数组成员，但是这个数组的大小在运行时可以根据需要进行分配。</p>
 <p>伸缩型数组成员的定义形式为：</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">MyStruct</span> <span class="token punctuation">&#123;</span>
     <span class="token comment">// 其他成员</span>
     <span class="token class-name">size_t</span> length<span class="token punctuation">;</span>  <span class="token comment">// 记录数组的长度</span>
     <span class="token keyword">char</span> data<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>    <span class="token comment">// 伸缩型数组成员</span>
 <span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>这里，<code>data</code> 是一个伸缩型数组成员。注意以下几点：</p>
 <ol>
 <li>伸缩型数组成员必须是最后一个成员。因为在内存中，该数组的大小是在结构体的末尾决定的，从而允许动态分配。</li>
@@ -438,20 +453,19 @@ int main() &#123;
     return 0;
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>伸缩型数组成员的特殊处理要求:</p>
 <ul>
 <li>不能用结构进行赋值或者拷贝</li>
 <li>不要按值方式把这种结构传递给结构</li>
 <li>不要使用带伸缩型树组成员的结构作为数字成员或者另一个结构的成员</li>
 </ul>
-<h3 id="struct-hack"><a href="#struct-hack" class="headerlink" title="struct hack"></a>struct hack</h3><p>“Struct Hack” 是一种在C语言中用于动态分配结构体内数组的技巧，类似于伸缩型数组成员。它的名字可能听起来有些奇怪，但它是一种早期的、有些非正式的技术，用于实现变长数组在结构体内的存储。这个技巧的原理是，通过在结构体内部定义一个长度为1的数组，然后动态地分配实际所需的大小，从而实现在结构体中存储变长的数组。</p>
+<h3 id="struct-hack">struct hack</h3>
+<p>“Struct Hack” 是一种在C语言中用于动态分配结构体内数组的技巧，类似于伸缩型数组成员。它的名字可能听起来有些奇怪，但它是一种早期的、有些非正式的技术，用于实现变长数组在结构体内的存储。这个技巧的原理是，通过在结构体内部定义一个长度为1的数组，然后动态地分配实际所需的大小，从而实现在结构体中存储变长的数组。</p>
 <p>这个技巧的一般形式如下：</p>
 <pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">MyStruct</span> <span class="token punctuation">&#123;</span>
     <span class="token comment">// 其他成员</span>
     <span class="token keyword">char</span> data<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span> <span class="token comment">// 虚拟数组，长度为1，实际长度会动态分配</span>
 <span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>这里的 <code>data</code> 是一个长度为1的数组，但它实际上在运行时会根据需要被分配更多的内存，以适应实际的数据大小。</p>
 <p>使用 “Struct Hack” 需要特殊的内存分配和释放技巧。通常的做法是，在分配内存时分配额外的空间来容纳整个结构体以及数组部分的数据，然后在实际使用时，通过偏移量访问数组部分的数据。</p>
 <p>以下是一个使用 “Struct Hack” 的简单示例，用于存储可变长度的字符串：</p>
@@ -493,9 +507,9 @@ int main() &#123;
     
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>尽管 “Struct Hack” 技巧在过去可能有用，但现代C标准中已经不推荐使用，因为它可能会违反内存对齐规则，并且可能与某些编译器优化冲突。在现代C语言中，更推荐使用伸缩型数组成员或更加安全的动态内存分配和管理方法。</p>
-<h3 id="14-8-保存结构为文件"><a href="#14-8-保存结构为文件" class="headerlink" title="14.8 保存结构为文件"></a>14.8 保存结构为文件</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">struct book &#123;
+<h3 id="14-8-保存结构为文件">14.8 保存结构为文件</h3>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">struct book &#123;
     char title[40];
     char author[40];
     float value;
@@ -505,33 +519,26 @@ book primer &#x3D; &#123;&quot;qwq&quot;, &quot;qaq&quot;, 12.34&#125;;
 fprintf(file, &quot;%s %s %.2f\n&quot;, primer.title, primer.author, value);
 
 fwrite(&amp;primer, sizeof(book), 1, file);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
-<h3 id="14-11-枚举类型"><a href="#14-11-枚举类型" class="headerlink" title="14.11 枚举类型"></a>14.11 枚举类型</h3><p>假设有以下声明：</p>
+<h3 id="14-11-枚举类型">14.11 枚举类型</h3>
+<p>假设有以下声明：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">enum feline &#123;cat, lynx &#x3D; 10, puma, tiger&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>对于默认值 cat 为 0，puma 为 11， tiger 为 12.</p>
-<h3 id="14-11-5-共享名称空间"><a href="#14-11-5-共享名称空间" class="headerlink" title="14.11.5 共享名称空间"></a>14.11.5 共享名称空间</h3><p>在C语言中，结构名和变量名并不在一个命名空间，所以以下是合法的</p>
+<h3 id="14-11-5-共享名称空间">14.11.5 共享名称空间</h3>
+<p>在C语言中，结构名和变量名并不在一个命名空间，所以以下是合法的</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct rect &#123;double x; double y;&#125;;
 int rect;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p>但在C++中，这种写法不合法，因为它把标记名和变量名放在相同的命名空间。</p>
-<h3 id="14-12-typedef-简介"><a href="#14-12-typedef-简介" class="headerlink" title="14.12 typedef 简介"></a>14.12 typedef 简介</h3><p>与<code>define</code>预处理器不同的功能</p>
+<h3 id="14-12-typedef-简介">14.12 typedef 简介</h3>
+<p>与<code>define</code>预处理器不同的功能</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#define STRING char *
 typedef char * STRING;
 
 STRING name, sign; &#x2F;&#x2F; 根据这个用例就可以发现了<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-
-
 <p>typedef 对于结构的使用</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">typedef struct &#123;double x; double y;&#125; rect;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>typedef并没有创建新的类型，而是对存在的匿名类型赋予了一个名称。</p>
 <p>typedef 的复杂使用</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">typedef char (* FRPTC()) [5];<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p><code>char (*FRPTC())[5]</code>: 这是一个函数声明，表示函数名为<code>FRPTC</code>，该函数没有参数，返回一个指向长度为5的字符数组的指针。</p>
 <p>用例如下</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
@@ -554,8 +561,8 @@ int main() &#123;
 
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="4-13-复杂声明"><a href="#4-13-复杂声明" class="headerlink" title="4.13 复杂声明"></a>4.13 复杂声明</h3><p>以下是一些比较复杂的声明：</p>
+<h3 id="4-13-复杂声明">4.13 复杂声明</h3>
+<p>以下是一些比较复杂的声明：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">int board[8][8];
 int ** ptr;
 int * risks[10];
@@ -563,7 +570,6 @@ int (* rusks)[10];
 int *oof[3][4];
 int (* uuf)[3][4];
 int (* uof[3])[4];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>对于复杂的声明，关键是理解优先级：</p>
 <p>数组名后面的<code>[]</code>和函数名后面的<code>()</code>拥有相同的优先级，优先级高于<code>*</code></p>
 <p><code>int * risks[10];</code>代表一个指针数组</p>
@@ -576,7 +582,8 @@ int (* uof[3])[4];<span aria-hidden="true" class="line-numbers-rows"><span></spa
 <p>对于<code>int (* uuf)[3][4];</code></p>
 <p><code>*</code>先和uuf结合，代表我们定义的是一个指针所以uuf是一个指向3x4int的指针</p>
 <p>对于<code>int (* uof[3])[4];</code>表示一个名为<code>uof</code>的数组，包含3个元素，每个元素都是指向长度为4的整型数组的指针。</p>
-<h3 id="15-1-2-有符号整数"><a href="#15-1-2-有符号整数" class="headerlink" title="15.1.2 有符号整数"></a>15.1.2 有符号整数</h3><p>以一个一字节的数做例子（共8个位）</p>
+<h3 id="15-1-2-有符号整数">15.1.2 有符号整数</h3>
+<p>以一个一字节的数做例子（共8个位）</p>
 <p><strong>符号量表示法</strong>：用第一位来表示符号，剩下的7位表示数字，例如10000001表示-1，00000001表示1，因此表示范围为-127~127。但是缺点在于有两个0，+0和-0容易混淆，并且用两个位表示一个数浪费。并且不利于加法计算。</p>
 <p><strong>二进制反码</strong>：正数的表示与符号量表示相同（0~127），负数的补码是通过以下步骤得到的：</p>
 <ol>
@@ -591,9 +598,10 @@ int (* uof[3])[4];<span aria-hidden="true" class="line-numbers-rows"><span></spa
 <li>对取反后的二进制表示加1</li>
 </ol>
 <p>使用补码表示可以使加法和减法运算在硬件中变得更加简单，因为减法可以转化为加法操作。此外，补码还解决了在普通的二进制表示中存在的“两个零”的问题，即+0和-0。在补码中，只有一个表示零的方式，即全零的二进制。因此它的表示范围在-128~127</p>
-<h3 id="15-3-C按位运算符"><a href="#15-3-C按位运算符" class="headerlink" title="15.3 C按位运算符"></a>15.3 C按位运算符</h3><p><strong>掩码</strong>：<code>按位与</code>运算符常用于掩码，将掩码与目标值进行与运算，掩码的0将会覆盖原来的值而1就代表原来的值，这体现了掩码的用法。</p>
+<h3 id="15-3-C按位运算符">15.3 C按位运算符</h3>
+<p><strong>掩码</strong>：<code>按位与</code>运算符常用于掩码，将掩码与目标值进行与运算，掩码的0将会覆盖原来的值而1就代表原来的值，这体现了掩码的用法。</p>
 <p><code>flags &amp;MASK</code></p>
-<p><strong>打开位（设置位）</strong>：打开其中的一个特定位，不改动其它位，用到<code>按位或</code>运算符，MASK中1的位置表示打开的位置， 0表示不动的位置 </p>
+<p><strong>打开位（设置位）</strong>：打开其中的一个特定位，不改动其它位，用到<code>按位或</code>运算符，MASK中1的位置表示打开的位置， 0表示不动的位置</p>
 <p><code>flags | MASK</code></p>
 <p><strong>关闭位（清空位）</strong>：不影响其它位的情况下，关闭指定的位，MASK中1表示要关闭的位，0表示不变的位</p>
 <p><code>flag &amp; ~MASK</code></p>
@@ -602,9 +610,10 @@ int (* uof[3])[4];<span aria-hidden="true" class="line-numbers-rows"><span></spa
 <p><strong>检查位</strong>：检查指定的位是否为1,MASK中的1表示检查该位是否为1,0表示不检查</p>
 <p><code>(flags &amp; MASK) == MASK</code></p>
 <blockquote>
-<p>&amp;的优先级低于&#x3D;&#x3D;</p>
+<p>&amp;的优先级低于==</p>
 </blockquote>
-<h3 id="15-4-位字段"><a href="#15-4-位字段" class="headerlink" title="15.4 位字段"></a>15.4 位字段</h3><p>位字段（Bit Field）是在计算机编程中用来存储和操作数据的一种技术。它允许你将一个或多个连续的二进制位组合在一起，表示某种特定的信息或属性。位字段通常用于节省内存空间，以及在数据结构中紧凑地存储和访问多个布尔值或小范围整数。</p>
+<h3 id="15-4-位字段">15.4 位字段</h3>
+<p>位字段（Bit Field）是在计算机编程中用来存储和操作数据的一种技术。它允许你将一个或多个连续的二进制位组合在一起，表示某种特定的信息或属性。位字段通常用于节省内存空间，以及在数据结构中紧凑地存储和访问多个布尔值或小范围整数。</p>
 <p>在位字段中，每个二进制位都被分配给一个特定的含义或标志。通过位运算，你可以在一个位字段中设置、清除、读取和修改特定的位，以实现对数据的精细控制。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct Flags &#123;
     unsigned int flag1 : 1;
@@ -612,63 +621,61 @@ int (* uof[3])[4];<span aria-hidden="true" class="line-numbers-rows"><span></spa
     unsigned int flag3 : 1;
     unsigned int flag4 : 1;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>但是声明的总位数不能超过<code>unsigned int</code>数据类型的位数</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct Flags &#123;
     unsigned int flag1 : 1;
     unsigned int : 0; &#x2F;&#x2F; unnamed bit-field
     unsigned int flag2 : 1;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>未命名的位域，它的位宽为0。这实际上是一种典型的技巧，用于在结构体中引入对齐和填充。然而，这种用法在不同的编译器上可能会有不同的结果。</p>
-<h3 id="15-4-2-位字段和按位运算符"><a href="#15-4-2-位字段和按位运算符" class="headerlink" title="15.4.2 位字段和按位运算符"></a>15.4.2 位字段和按位运算符</h3><p>对于这两者，我们只需要选择其中之一就可以了，但也有联结两种方法的写法（不推荐这样做）</p>
+<h3 id="15-4-2-位字段和按位运算符">15.4.2 位字段和按位运算符</h3>
+<p>对于这两者，我们只需要选择其中之一就可以了，但也有联结两种方法的写法（不推荐这样做）</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">union Views&#123;
 	struct Flags st_flag;
     unsigned int us_flag;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="15-5-对齐特性（c11）"><a href="#15-5-对齐特性（c11）" class="headerlink" title="15.5 对齐特性（c11）"></a>15.5 对齐特性（c11）</h3><p>在内存布局中，填充字节（padding bytes）用于对齐数据元素以满足对齐要求。填充字节的大小取决于数据元素的对齐要求和相邻数据元素之间的距离。通常情况下，填充字节的大小是使数据元素的地址满足对齐要求的最小值。</p>
+<h3 id="15-5-对齐特性（c11）">15.5 对齐特性（c11）</h3>
+<p>在内存布局中，填充字节（padding bytes）用于对齐数据元素以满足对齐要求。填充字节的大小取决于数据元素的对齐要求和相邻数据元素之间的距离。通常情况下，填充字节的大小是使数据元素的地址满足对齐要求的最小值。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct Example &#123;
     char a;
     int b;
 &#125;;
 &#x2F;&#x2F; 储存在内存中可能为    | a | padding | b     |<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>意思是，b身为一个int，假设它的对齐要求是4字节，而a作为char只要求一个字节，为了保证b的对齐<code>padding</code>作为一个用于对齐的填充字节可能占3字节。</p>
 <p><strong><code>_Alignas</code> 关键字：</strong> <code>_Alignas</code> 关键字用于指定一个变量、结构体成员或数组的对齐要求。你可以将它放置在声明的前面，以指定所需的对齐方式。例如：（要求整个结构的对齐）</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">_Alignas(16) struct Example &#123;
     char a;
     int b;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>在这个例子中，<code>struct Example</code> 要求按照16字节对齐。</p>
 <p><strong><code>_Alignof</code> 运算符：</strong> <code>_Alignof</code> 运算符返回给定类型的对齐要求。例如：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">size_t alignment &#x3D; _Alignof(struct Example);
 size_t alignment2 &#x3D; _Alignof(float);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p><strong><code>alignas</code> 编译器指令：</strong> 除了 <code>_Alignas</code> 关键字外，C11还引入了 <code>_Alignas</code> 编译器指令，用于在声明的后面指定对齐要求。例如：（要求其中的变量的对齐）</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">struct Example &#123;
     char a;
     int b;
 &#125; _Alignas(16);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="16-1-C语言编译"><a href="#16-1-C语言编译" class="headerlink" title="16.1 C语言编译"></a>16.1 C语言编译</h3><ol>
+<h3 id="16-1-C语言编译">16.1 C语言编译</h3>
+<ol>
 <li>将字符映射到字符集，处理多字节字符和三字符序列以支持字符扩展</li>
 <li>定位每个反斜杠后面跟着换行符的实例，并删除它们。将物理行转换为逻辑行。</li>
 <li>编译器把文本划分成预处理记号序列，空白序列和注释序列。用空白字符替换注释。</li>
 </ol>
-<h3 id="16-2-1-记号"><a href="#16-2-1-记号" class="headerlink" title="16.2.1 记号"></a>16.2.1 记号</h3><p>从技术角度，宏的替换体可以看做是记号型字符串，而不是字符型字符串。</p>
-<h3 id="16-3-1-用宏参数创建字符串"><a href="#16-3-1-用宏参数创建字符串" class="headerlink" title="16.3.1 用宏参数创建字符串"></a>16.3.1 用宏参数创建字符串</h3><p>双引号内的字符串不会被变量替代。例如：</p>
+<h3 id="16-2-1-记号">16.2.1 记号</h3>
+<p>从技术角度，宏的替换体可以看做是记号型字符串，而不是字符型字符串。</p>
+<h3 id="16-3-1-用宏参数创建字符串">16.3.1 用宏参数创建字符串</h3>
+<p>双引号内的字符串不会被变量替代。例如：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#define PSQR(x) printf(&quot;The square of X is %d.\n&quot;, ((X)*(X)));
 
 PSQR(8);
 &#x2F;&#x2F; 输出为 &quot;The square of X is 64.\n&quot; <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="16-3-2-预处理器粘合剂-运算符"><a href="#16-3-2-预处理器粘合剂-运算符" class="headerlink" title="16.3.2 预处理器粘合剂: ##运算符"></a>16.3.2 预处理器粘合剂: ##运算符</h3><p>与#运算符类似，##运算符可用于类函数宏的替换部分，可以把两个记号变为一个记号</p>
+<h3 id="16-3-2-预处理器粘合剂-运算符">16.3.2 预处理器粘合剂: ##运算符</h3>
+<p>与#运算符类似，##运算符可用于类函数宏的替换部分，可以把两个记号变为一个记号</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#define XNAME(n) x ## n
 int XNAME(1) &#x3D; 10; &#x2F;&#x2F; 会被替换为 int x1 &#x3D; 10;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h3 id="16-3-3-变参宏：…和-VA-ARG"><a href="#16-3-3-变参宏：…和-VA-ARG" class="headerlink" title="16.3.3 变参宏：…和_VA_ARG_"></a>16.3.3 变参宏：…和_<em>VA_ARG</em>_</h3><pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
+<h3 id="16-3-3-变参宏：…和-VA-ARG">16.3.3 变参宏：…和_<em>VA_ARG</em>_</h3>
+<pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
 
 #define SUM(...) sum(__VA_ARGS__)
 
@@ -690,21 +697,24 @@ int main() &#123;
     printf(&quot;Total: %d\n&quot;, total); &#x2F;&#x2F; 输出: Total: 10
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="16-6-3-条件编译"><a href="#16-6-3-条件编译" class="headerlink" title="16.6.3 条件编译"></a>16.6.3 条件编译</h3><ol>
+<h3 id="16-6-3-条件编译">16.6.3 条件编译</h3>
+<ol>
 <li>#ifdef、#else、#endif指令</li>
 <li>#ifndef指令</li>
 <li>#if和#elif指令</li>
 </ol>
-<h3 id="16-6-4-预定义宏"><a href="#16-6-4-预定义宏" class="headerlink" title="16.6.4 预定义宏"></a>16.6.4 预定义宏</h3><ol>
+<h3 id="16-6-4-预定义宏">16.6.4 预定义宏</h3>
+<ol>
 <li><code>__LINE__</code>：这个宏会在编译时展开为包含它的源文件中的当前行号。</li>
 <li><code>__FILE__</code>：这个宏会在编译时展开为包含它的源文件的文件名。</li>
 <li><code>__DATE__</code>：这个宏会在编译时展开为一个字符串，表示编译日期。</li>
 <li><code>__TIME__</code>：这个宏会在编译时展开为一个字符串，表示编译时间。</li>
 <li><code>__STDC__</code>：这个宏通常被定义为1，表示编译器符合C标准。</li>
 </ol>
-<h3 id="16-6-5-line和-error"><a href="#16-6-5-line和-error" class="headerlink" title="16.6.5 #line和#error"></a>16.6.5 #line和#error</h3><ol>
-<li><p><code>#line</code> 指令：</p>
+<h3 id="16-6-5-line和-error">16.6.5 #line和#error</h3>
+<ol>
+<li>
+<p><code>#line</code> 指令：</p>
 <ul>
 <li><code>#line</code> 指令用于更改编译器生成的行号和文件名信息，这对于调试和错误报告很有用。</li>
 <li>语法：<code>#line linenumber &quot;filename&quot;</code></li>
@@ -713,7 +723,8 @@ int main() &#123;
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#line 100 &quot;mycode.c&quot;
 printf(&quot;This line will be treated as if it is on line 100 of &#39;mycode.c&#39;\n&quot;);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
 </li>
-<li><p><code>#error</code> 指令：</p>
+<li>
+<p><code>#error</code> 指令：</p>
 <ul>
 <li><code>#error</code> 指令用于在编译时生成错误消息。当编译器遇到 <code>#error</code> 指令时，它将停止编译，并将指定的错误消息输出到编译器的错误消息中。</li>
 <li>语法：<code>#error error_message</code></li>
@@ -723,17 +734,17 @@ printf(&quot;This line will be treated as if it is on line 100 of &#39;mycode.c&
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#ifdef DEBUG
 #error Debugging is not allowed in this build.
 #endif<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>在上述示例中，如果在编译时定义了 <code>DEBUG</code> 宏，那么编译将会停止，并显示错误消息 “Debugging is not allowed in this build.”。</p>
 </li>
 </ol>
-<h3 id="16-6-6-pragma"><a href="#16-6-6-pragma" class="headerlink" title="16.6.6 #pragma"></a>16.6.6 #pragma</h3><p><code>#pragma</code> 是一个预处理器指令，它用于向编译器发出特定于编译器或平台的指令。例如：</p>
+<h3 id="16-6-6-pragma">16.6.6 #pragma</h3>
+<p><code>#pragma</code> 是一个预处理器指令，它用于向编译器发出特定于编译器或平台的指令。例如：</p>
 <p><strong>控制编译选项</strong>：<code>#pragma</code> 可以用于设置特定的编译选项或优化，这些选项通常是编译器特定的。例如，您可以使用 <code>#pragma</code> 指令来设置编译器优化级别。</p>
 <pre class="line-numbers language-none"><code class="language-none">cCopy code
 #pragma GCC optimize(&quot;O2&quot;)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p>C99还提供了_Pragma预处理运算符</p>
-<h3 id="16-6-7-泛型选择（C11）"><a href="#16-6-7-泛型选择（C11）" class="headerlink" title="16.6.7 泛型选择（C11）"></a>16.6.7 泛型选择（C11）</h3><p>C11添加了”泛型选择表达式”  在C11标准中，引入了 <code>_Generic</code> 关键字，用于实现泛型选择表达式。它允许根据表达式的类型来选择不同的操作。例如：</p>
+<h3 id="16-6-7-泛型选择（C11）">16.6.7 泛型选择（C11）</h3>
+<p>C11添加了&quot;泛型选择表达式&quot;  在C11标准中，引入了 <code>_Generic</code> 关键字，用于实现泛型选择表达式。它允许根据表达式的类型来选择不同的操作。例如：</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
 
 #define print_type(x) _Generic((x), \
@@ -753,8 +764,8 @@ int main() &#123;
     
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="16-8-Noreturn"><a href="#16-8-Noreturn" class="headerlink" title="16.8 _Noreturn"></a>16.8 _Noreturn</h3><p><code>noreturn</code> 是一个函数属性，用于告诉编译器该函数不会返回到调用它的地方。这通常用于标识那些执行诸如终止程序、引发异常或永远不会正常返回的函数。(通常类似exit函数)</p>
+<h3 id="16-8-Noreturn">16.8 _Noreturn</h3>
+<p><code>noreturn</code> 是一个函数属性，用于告诉编译器该函数不会返回到调用它的地方。这通常用于标识那些执行诸如终止程序、引发异常或永远不会正常返回的函数。(通常类似exit函数)</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 
@@ -769,13 +780,13 @@ int main() &#123;
     return 0;
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="16-10-3-tgmath-h-库（C99）"><a href="#16-10-3-tgmath-h-库（C99）" class="headerlink" title="16.10.3 tgmath.h 库（C99）"></a>16.10.3 tgmath.h 库（C99）</h3><p>定义了泛型类型宏，会自动把sqrt转为对应的例如sqrtl等</p>
+<h3 id="16-10-3-tgmath-h-库（C99）">16.10.3 tgmath.h 库（C99）</h3>
+<p>定义了泛型类型宏，会自动把sqrt转为对应的例如sqrtl等</p>
 <p>如果不想使用宏函数，可以用括号把函数名括起来</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">y &#x3D; sqrt(9);
 y &#x3D; (sqrt)(9);<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<h3 id="16-11-1-exit-和-atexit-函数"><a href="#16-11-1-exit-和-atexit-函数" class="headerlink" title="16.11.1 exit() 和 atexit() 函数"></a>16.11.1 exit() 和 atexit() 函数</h3><p><code>exit()</code>一般以0值返回作为正常结束，非零值表示终止失败，但是不同的系统可能有不同的值为了保证可移植性，设置了<code>EXIT_SUCCESS</code>的宏变量表示成功终止 </p>
+<h3 id="16-11-1-exit-和-atexit-函数">16.11.1 exit() 和 atexit() 函数</h3>
+<p><code>exit()</code>一般以0值返回作为正常结束，非零值表示终止失败，但是不同的系统可能有不同的值为了保证可移植性，设置了<code>EXIT_SUCCESS</code>的宏变量表示成功终止</p>
 <p><code>atexit()</code> 函数用于注册一个或多个函数在程序正常退出时调用（如清理内存），函数以一个函数指针作为参数，多个函数会按照注册的顺序逆序执行。</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">void cleanup1() &#123;
     &#x2F;&#x2F; 执行清理操作1
@@ -796,17 +807,18 @@ int main() &#123;
     &#x2F;&#x2F; 正常退出程序
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <blockquote>
 <p>书本p555 - 注意C和C++中的void*</p>
 <p>两者对待void指针有不同，C++要求在void指针赋值给其他类型指针需要强制转换，C没有这样的要求。</p>
 </blockquote>
-<h3 id="16-12-1-assert的用法"><a href="#16-12-1-assert的用法" class="headerlink" title="16.12.1 assert的用法"></a>16.12.1 assert的用法</h3><p>使用assert()的好处不仅能表示文件和出问题的行号，在头文件中加入</p>
+<h3 id="16-12-1-assert的用法">16.12.1 assert的用法</h3>
+<p>使用assert()的好处不仅能表示文件和出问题的行号，在头文件中加入</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">#define NDEBUG<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>还能禁用assert()</p>
-<h3 id="16-12-2-Static-assert-C11"><a href="#16-12-2-Static-assert-C11" class="headerlink" title="16.12.2 _Static_assert (C11)"></a>16.12.2 _Static_assert (C11)</h3><p>它可以导致程序无法通过编译，接受两个参数，第一个是整型常量表达式，第二个参数是一个字符串。如果第一个表达式的值为0(或_False)，编译器会显示字符串，而且不编译该程序。</p>
-<h3 id="16-14-可变参数：stdarg-h"><a href="#16-14-可变参数：stdarg-h" class="headerlink" title="16.14 可变参数：stdarg.h"></a>16.14 可变参数：stdarg.h</h3><ol>
+<h3 id="16-12-2-Static-assert-C11">16.12.2 _Static_assert (C11)</h3>
+<p>它可以导致程序无法通过编译，接受两个参数，第一个是整型常量表达式，第二个参数是一个字符串。如果第一个表达式的值为0(或_False)，编译器会显示字符串，而且不编译该程序。</p>
+<h3 id="16-14-可变参数：stdarg-h">16.14 可变参数：stdarg.h</h3>
+<ol>
 <li><code>va_list</code>：<code>va_list</code> 是一个类型，用于声明一个参数列表。它是一个指向参数列表的指针，通常在函数内部使用。</li>
 <li><code>va_start</code>：<code>va_start</code> 宏用于初始化 <code>va_list</code>，以便在函数中访问参数列表的参数。它接受两个参数，第一个参数是 <code>va_list</code>，第二个参数是最后一个已知的固定参数的名称。</li>
 <li><code>va_arg</code>：<code>va_arg</code> 宏用于从参数列表中获取下一个参数的值。它接受两个参数，第一个参数是 <code>va_list</code>，第二个参数是要获取的参数的类型。</li>
@@ -837,7 +849,6 @@ int main() &#123;
 
     <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>在这个示例中，<code>average</code> 函数接受一个整数 <code>count</code> 和一系列整数参数，并计算它们的平均值。<code>va_list</code> 用于处理参数列表，<code>va_start</code> 初始化 <code>va_list</code>，<code>va_arg</code> 用于逐个获取参数值，<code>va_end</code> 清理 <code>va_list</code>。</p>
 <p>对于可变参数函数，需要将省略号作为最后一个参数，并且至少要求有一个形参。</p>
 
@@ -907,5 +918,20 @@ int main() &#123;
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

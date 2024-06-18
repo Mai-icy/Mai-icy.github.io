@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,13 @@
             <a href="/2023/12/21/learn-algorithm-note4/">算法学习笔记4——莫比乌斯反演前置知识</a>
         </h2>
     
-        <p>算法学习笔记(4): 莫比乌斯反演前置知识数论函数
+        <p>算法学习笔记(4): 莫比乌斯反演前置知识
+数论函数
+
 定义在所有正整数上的函数被称为算数函数（数论函数）
 
-积性函数当函数f属于数论函数，且 对于任意互质的正整数p，q 有f(pq) = f(p)...</p>
+积性函数
+当函数f属于数论函数，且 对于任意互质的正整数p，q 有f(pq) = f...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.21</time>
@@ -119,5 +122,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记18——中国剩余定理"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,28 +61,34 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记18——中国剩余定理"><a href="#ACM程序课算法笔记18——中国剩余定理" class="headerlink" title="ACM程序课算法笔记18——中国剩余定理"></a>ACM程序课算法笔记18——中国剩余定理</h1><h2 id="问题引入"><a href="#问题引入" class="headerlink" title="问题引入"></a>问题引入</h2><p>《孙子算经》中有问「物不知数」：有物不知其数，三三数之剩二，五五数之剩三，七七数之剩二。问物几何？</p>
+            <h1>ACM程序课算法笔记18——中国剩余定理</h1>
+<h2 id="问题引入">问题引入</h2>
+<p>《孙子算经》中有问「物不知数」：有物不知其数，三三数之剩二，五五数之剩三，七七数之剩二。问物几何？</p>
 <p>即希望x同时满足多个模线性方程，然后求解。比如：</p>
 <p>x≡2(mod 3)</p>
 <p>x≡3(mod 5)</p>
 <p>x≡2(mod 7)</p>
 <p>同时明朝数学家程大位在《算法统宗》中给出：</p>
 <p>三人同行七十希，五树梅花廿一支，七子团圆正半月，除百零五便得知。</p>
-<p>2 x 70 + 3 x 21 + 2 x 15 &#x3D; 233 ；233 % 105 &#x3D; 23</p>
-<h2 id="中国剩余定理"><a href="#中国剩余定理" class="headerlink" title="中国剩余定理"></a>中国剩余定理</h2><p>中国剩余定理可求解如下形式的一元线性同余方程组</p>
+<p>2 x 70 + 3 x 21 + 2 x 15 = 233 ；233 % 105 = 23</p>
+<h2 id="中国剩余定理">中国剩余定理</h2>
+<p>中国剩余定理可求解如下形式的一元线性同余方程组</p>
 <p>x≡a1(mod m1)</p>
 <p>x≡a2(mod m2)</p>
 <p>…</p>
 <p>x≡an(mod mn)</p>
-<h3 id="前提"><a href="#前提" class="headerlink" title="前提"></a>前提</h3><p>若m,m2,m3,是两两互质的正整数</p>
-<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><ol>
-<li>先得到N &#x3D; ∏m &#x3D; m1m2m3…mn</li>
-<li>得到Mi &#x3D; N &#x2F; mi</li>
+<h3 id="前提">前提</h3>
+<p>若m,m2,m3,是两两互质的正整数</p>
+<h3 id="结论">结论</h3>
+<ol>
+<li>先得到N = ∏m = m1m2m3…mn</li>
+<li>得到Mi = N / mi</li>
 <li>xi 就是线性同余方程 Mixi  ≡ 1 (mod mn)的一个解，也就是Mi的逆元</li>
-<li>x &#x3D; a1M1x1+a2M2x2+…+anMnxn</li>
+<li>x = a1M1x1+a2M2x2+…+anMnxn</li>
 </ol>
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>限制条件的分析，为什么一定要互质？</p>
-<p>在求xi的时候，我们得到的同余方程是Mixi  ≡ 1 (mod mn)，要使它有解，也就是mn和Mi需要互质，它俩的gcd &#x3D; 1</p>
+<h3 id="分析">分析</h3>
+<p>限制条件的分析，为什么一定要互质？</p>
+<p>在求xi的时候，我们得到的同余方程是Mixi  ≡ 1 (mod mn)，要使它有解，也就是mn和Mi需要互质，它俩的gcd = 1</p>
 <p>答案的正确性分析</p>
 <p>对于Mi是所有的m的乘积，除了mi，所以在计算除了第i条同余方程的时候，Mi都会被其他的m直接除掉，因为是它们的倍数。所以在考虑第i条式子的时候，实际上就是 ai Mi xi ≡ ai (mod mi)也就是</p>
 <p>Mi xi ≡ 1(mod mi)，又因为xi和Mi是逆元，所以成立，答案合理。</p>
@@ -108,13 +114,15 @@ i64 <span class="token function">extendGcd</span><span class="token punctuation"
   <span class="token punctuation">&#125;</span>
   <span class="token keyword">return</span> <span class="token punctuation">(</span>ans <span class="token operator">%</span> N <span class="token operator">+</span> N<span class="token punctuation">)</span> <span class="token operator">%</span> N<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="局限性"><a href="#局限性" class="headerlink" title="局限性"></a>局限性</h3><p>也就是算法成立的前提，所有m之间要互质。</p>
-<h3 id="另一个角度看算法"><a href="#另一个角度看算法" class="headerlink" title="另一个角度看算法"></a>另一个角度看算法</h3><p>这是个人想法，算法本质上就是不断地让x适配某个同余方程，对x缝缝补补，比如我先让x适配第一个方程，再让x适配第二个方程，重点在于，适配方程的同时，我不能去导致其他同余方程的值变化。</p>
+<h3 id="局限性">局限性</h3>
+<p>也就是算法成立的前提，所有m之间要互质。</p>
+<h3 id="另一个角度看算法">另一个角度看算法</h3>
+<p>这是个人想法，算法本质上就是不断地让x适配某个同余方程，对x缝缝补补，比如我先让x适配第一个方程，再让x适配第二个方程，重点在于，适配方程的同时，我不能去导致其他同余方程的值变化。</p>
 <p>同余方程的特点是，只要我在x上加了m的倍数，改成立条件就不变。所以我每次为了适配方程i成立，我不能去修改其他同余方程的余数。有点像拼魔方，我一点点往后拼，都不破坏之前已经拼好的面。</p>
 <p>在适配的时候，我只要每次适配增加的值都是其他m的倍数，那么其他条件式的余数就都不会变了。然后根据这个增加值，直到这个式子成立。</p>
 <p>如果能理解这个原理，那么求一般情况也会更加简单</p>
-<h2 id="中国剩余定理一般情况"><a href="#中国剩余定理一般情况" class="headerlink" title="中国剩余定理一般情况"></a>中国剩余定理一般情况</h2><p>一般情况就指的是模数可能不互质。</p>
+<h2 id="中国剩余定理一般情况">中国剩余定理一般情况</h2>
+<p>一般情况就指的是模数可能不互质。</p>
 <p>但是有我们的另一个角度去思考算法，实际上问题也可以从这个角度出发。</p>
 <p>对于n条同余式子，如果不互质，就有可能出现无解的情况。</p>
 <p>同样使用适配的思路，先满足第一个式子，此时再去满足第二个式子的时候，只要让答案加上第一个式子模数的倍数即可。</p>
@@ -123,7 +131,7 @@ i64 <span class="token function">extendGcd</span><span class="token punctuation"
 <p>result + k lcm ≡ ai (mod mi)</p>
 <p>k lcm ≡ (ai - result) % mi (mod mi)</p>
 <p>求得k后</p>
-<p>result +&#x3D; k lcm</p>
+<p>result += k lcm</p>
 <p>即可。</p>
 
         </article>
@@ -192,5 +200,20 @@ i64 <span class="token function">extendGcd</span><span class="token punctuation"
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

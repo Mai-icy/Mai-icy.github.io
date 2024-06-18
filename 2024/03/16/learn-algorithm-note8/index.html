@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记8——同余"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,51 +61,67 @@
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-8-同余"><a href="#算法学习笔记-8-同余" class="headerlink" title="算法学习笔记(8): 同余"></a>算法学习笔记(8): 同余</h1><h3 id="前置知识："><a href="#前置知识：" class="headerlink" title="前置知识："></a>前置知识：</h3><ul>
-<li><strong>整除</strong>：当 A &#x2F; B 为一个整数， 则称 B 整除 A 符号记作：<code>B|A</code></li>
+            <h1>算法学习笔记(8): 同余</h1>
+<h3 id="前置知识：">前置知识：</h3>
+<ul>
+<li><strong>整除</strong>：当 A / B 为一个整数， 则称 B 整除 A 符号记作：<code>B|A</code></li>
 <li><strong>同余</strong>：同余是一种二元关系，需要第三者作为模也就是 <code>A % p == B % p</code>记作<code>A ≡ B (mod p) </code></li>
 <li><strong>逆元</strong>：若 <code>ab ≡ 1 (mod p)</code> ，则a、b互为逆元</li>
 <li><strong>剩余系</strong>：对于一个特定的正整数n，一个整数集中的数模n所得的余数域</li>
 </ul>
-<h3 id="基础性质："><a href="#基础性质：" class="headerlink" title="基础性质："></a>基础性质：</h3><ul>
-<li><p>自反性：<code>A ≡ A (mod p)</code></p>
+<h3 id="基础性质：">基础性质：</h3>
+<ul>
+<li>
+<p>自反性：<code>A ≡ A (mod p)</code></p>
 </li>
-<li><p>对称性：若 <code>A ≡ B (mod p)</code> 则有 <code>B ≡ A (mod p)</code> </p>
+<li>
+<p>对称性：若 <code>A ≡ B (mod p)</code> 则有 <code>B ≡ A (mod p)</code></p>
 </li>
-<li><p>传递性：若 <code>A ≡ B (mod p)</code>  <code>A ≡ C (mod p)</code>  则有 <code>B ≡ C (mod p)</code></p>
+<li>
+<p>传递性：若 <code>A ≡ B (mod p)</code>  <code>A ≡ C (mod p)</code>  则有 <code>B ≡ C (mod p)</code></p>
 </li>
 </ul>
 <p>当<code>A ≡ B (mod p)</code>  <code>C ≡ D (mod p)</code>  ，有</p>
 <ul>
-<li><p>加法： <code>A + C ≡ B + C (mod p)</code></p>
+<li>
+<p>加法： <code>A + C ≡ B + C (mod p)</code></p>
 </li>
-<li><p>减法： <code>A - C ≡ B - C (mod p)</code></p>
+<li>
+<p>减法： <code>A - C ≡ B - C (mod p)</code></p>
 </li>
-<li><p>乘法： <code>AC ≡ BC (mod p)</code></p>
+<li>
+<p>乘法： <code>AC ≡ BC (mod p)</code></p>
 </li>
-<li><p>同余的幂：k 和 m 大于0 都是整数</p>
+<li>
+<p>同余的幂：k 和 m 大于0 都是整数</p>
 </li>
 </ul>
-<p>$$<br>A \equiv B \pmod p \rightarrow A^k \equiv B^k \pmod p<br>$$</p>
-<h3 id="线性丢番图方程性质"><a href="#线性丢番图方程性质" class="headerlink" title="线性丢番图方程性质"></a>线性丢番图方程性质</h3><p><code>ax + by = c</code> 这是一个二元线性丢返图方程，其中 a、b、c是已知变量，x、y是未知数且要求是<strong>整数</strong>。</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=A%20%5Cequiv%20B%20%5Cpmod%20p%20%5Crightarrow%20A%5Ek%20%5Cequiv%20B%5Ek%20%5Cpmod%20p%0A"></p><h3 id="线性丢番图方程性质">线性丢番图方程性质</h3>
+<p><code>ax + by = c</code> 这是一个二元线性丢返图方程，其中 a、b、c是已知变量，x、y是未知数且要求是<strong>整数</strong>。</p>
 <blockquote>
 <p>该方程只有0解和无数解</p>
 </blockquote>
-<h4 id="定理一：ax-by-x3D-c-有解-←→-gcd-a-b-c"><a href="#定理一：ax-by-x3D-c-有解-←→-gcd-a-b-c" class="headerlink" title="定理一：ax + by &#x3D; c 有解  ←→  gcd (a, b) | c"></a>定理一：ax + by &#x3D; c 有解  ←→  gcd (a, b) | c</h4><p>设 d &#x3D; gcd (a, b)  则有 dm &#x3D; a ，d n &#x3D; b</p>
-<p>也就是d ( mx + n y ) &#x3D;  c 易得</p>
-<p>同时通解 x &#x3D; x0 + (b &#x2F; d) n         (n 为整数)</p>
-<h4 id="例题一："><a href="#例题一：" class="headerlink" title="例题一："></a>例题一：</h4><p>给定两个格点(x1, y1)   (x2, y2)，求线段上的整数坐标点数量。</p>
+<h4 id="定理一：ax-by-c-有解-←→-gcd-a-b-c">定理一：ax + by = c 有解  ←→  gcd (a, b) | c</h4>
+<p>设 d = gcd (a, b)  则有 dm = a ，d n = b</p>
+<p>也就是d ( mx + n y ) =  c 易得</p>
+<p>同时通解 x = x0 + (b / d) n         (n 为整数)</p>
+<h4 id="例题一：">例题一：</h4>
+<p>给定两个格点(x1, y1)   (x2, y2)，求线段上的整数坐标点数量。</p>
 <p>题解：</p>
-<p>先获得线段的方程 (y2 - y1) x + (x1 - x2) y &#x3D; y2x1 - y1x2</p>
-<p>对应 a b c d，可得 d &#x3D; gcd (|y2 - y1|, |x1 - x2|)</p>
-<p>x &#x3D; x1 + (x1 - x2) &#x2F; d * n    (x1 &lt; x &lt; x2)</p>
+<p>先获得线段的方程 (y2 - y1) x + (x1 - x2) y = y2x1 - y1x2</p>
+<p>对应 a b c d，可得 d = gcd (|y2 - y1|, |x1 - x2|)</p>
+<p>x = x1 + (x1 - x2) / d * n    (x1 &lt; x &lt; x2)</p>
 <p>可得n有d -1种取值，也就有d - 1个点。</p>
-<h4 id="PICK定理："><a href="#PICK定理：" class="headerlink" title="PICK定理："></a>PICK定理：</h4><p>如果有个多边形的四个点都是整数坐标，则其面积 S &#x3D; 边界上格点数 &#x2F; 2 + 内部格点数 - 1</p>
-<h3 id="扩展欧几里得算法"><a href="#扩展欧几里得算法" class="headerlink" title="扩展欧几里得算法"></a>扩展欧几里得算法</h3><p><strong>目的是求<code>ax + by = gcd(a,b)</code>的整数解</strong></p>
+<h4 id="PICK定理：">PICK定理：</h4>
+<p>如果有个多边形的四个点都是整数坐标，则其面积 S = 边界上格点数 / 2 + 内部格点数 - 1</p>
+<h3 id="扩展欧几里得算法">扩展欧几里得算法</h3>
+<p><strong>目的是求<code>ax + by = gcd(a,b)</code>的整数解</strong></p>
 <p>欧几里得算法又称作<strong>辗转相除法</strong>，对于两个数不断取余数，直到得出最大公因数的过程。</p>
-<p>例如我们求gcd(A, B); 有以下过程<br>$$<br>a &#x3D; r_0, b &#x3D; r_1\<br>r_0 &#x3D; r_1q_1 + r_2\<br>r_1 &#x3D; r_2q_2 + r_3\<br>\dots \<br>r_{i-1} &#x3D; r_iq_i + r_{i + 1}<br>\dots \<br>r_{n - 1} &#x3D; r_nq_n\<br>r_n &#x3D; \gcd(a, b)<br>$$</p>
-<p>其中，最后的rn就是gcd(A, B); 可知在计算gcd时，q值是毫无意义的，但是一旦结合以下式子，q的值就会被利用，从而该算法被称为“<strong>扩展</strong>”<br>$$<br>s_0 &#x3D; 1 , s_1 &#x3D; 0;\ \ \ \ \ t_0 &#x3D; 0, t_1 &#x3D; 1\<br>s_{i+1} &#x3D; s_{i - 1} - s_iq_i;\ \ \ \ \ \ t_{i + 1} &#x3D; t_{i - 1} - t_iq_i\<br>可推导出\ \ \ as_n + bt_n &#x3D; r_n<br>$$<br>又因为 rn &#x3D; gcd(A, B)，所以我们要求的x和y分别也就是sn和tn。它们也可以从递推公式中算出，即可获得解。这就是扩展欧几里得算法</p>
-<h4 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">using i64 &#x3D; long long;
+<p>例如我们求gcd(A, B); 有以下过程</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=a%20%3D%20r_0%2C%20b%20%3D%20r_1%5C%5C%0Ar_0%20%3D%20r_1q_1%20%2B%20r_2%5C%5C%0Ar_1%20%3D%20r_2q_2%20%2B%20r_3%5C%5C%0A%5Cdots%20%5C%5C%0Ar_%7Bi-1%7D%20%3D%20r_iq_i%20%2B%20r_%7Bi%20%2B%201%7D%0A%5Cdots%20%5C%5C%0Ar_%7Bn%20-%201%7D%20%3D%20r_nq_n%5C%5C%0Ar_n%20%3D%20%5Cgcd%28a%2C%20b%29%0A"></p><p>其中，最后的rn就是gcd(A, B); 可知在计算gcd时，q值是毫无意义的，但是一旦结合以下式子，q的值就会被利用，从而该算法被称为“<strong>扩展</strong>”</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=s_0%20%3D%201%20%2C%20s_1%20%3D%200%3B%5C%20%5C%20%5C%20%5C%20%5C%20t_0%20%3D%200%2C%20t_1%20%3D%201%5C%5C%0As_%7Bi%2B1%7D%20%3D%20s_%7Bi%20-%201%7D%20-%20s_iq_i%3B%5C%20%5C%20%5C%20%5C%20%5C%20%5C%20t_%7Bi%20%2B%201%7D%20%3D%20t_%7Bi%20-%201%7D%20-%20t_iq_i%5C%5C%0A%E5%8F%AF%E6%8E%A8%E5%AF%BC%E5%87%BA%5C%20%5C%20%5C%20as_n%20%2B%20bt_n%20%3D%20r_n%0A"></p><p>又因为 rn = gcd(A, B)，所以我们要求的x和y分别也就是sn和tn。它们也可以从递推公式中算出，即可获得解。这就是扩展欧几里得算法</p>
+<h4 id="代码实现">代码实现</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">using i64 &#x3D; long long;
 i64 extendGcd(i64 a, i64 b, i64 &amp;x, i64 &amp;y)&#123;
 	if(b &#x3D;&#x3D; 0)&#123;
 		x &#x3D; 1;
@@ -116,8 +132,8 @@ i64 extendGcd(i64 a, i64 b, i64 &amp;x, i64 &amp;y)&#123;
     y -&#x3D; a &#x2F; b * x;
     return d;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="线性丢番图方程求解"><a href="#线性丢番图方程求解" class="headerlink" title="线性丢番图方程求解"></a>线性丢番图方程求解</h3><p>已知线性丢番图方程的通解，此时需要得到一个特解作为前提。</p>
+<h3 id="线性丢番图方程求解">线性丢番图方程求解</h3>
+<p>已知线性丢番图方程的通解，此时需要得到一个特解作为前提。</p>
 <p>求特解使用了扩展欧几里得算法</p>
 <p>我们记 <code>d = gcd(a, b)</code>， 扩展欧几里得算法求的解也就是<code>ax0 + by0 = d</code></p>
 <p>线性丢番图方程是<code>ax + by = c</code>又因为<code>d|c</code>所以</p>
@@ -126,17 +142,20 @@ i64 extendGcd(i64 a, i64 b, i64 &amp;x, i64 &amp;y)&#123;
 <p><code>x1 = x0 * c / d</code> 和 <code>y1 = y0 * c / d</code></p>
 <p>可得通解为：</p>
 <p><code>x = x1 + (b / d) n</code>和 <code>y = y1 - (a / d) n</code></p>
-<h3 id="一元线性同余方程："><a href="#一元线性同余方程：" class="headerlink" title="一元线性同余方程："></a>一元线性同余方程：</h3><p>设x为未知数，给定a、b、m 求 x 满足 ax ≡ b ( mod m )</p>
-<p>已知他们同余，则m|ax - b 设 ax - b &#x3D; - y m (-y 是倍数)，也就是 ax + my &#x3D; b 一个线性丢番图方程。</p>
-<p>对于这个方程，一旦x有一解 x &#x3D; x1, 则有 x &#x3D; x1 + km 无数个解。故我们考虑解的个数为<strong>模m不同余数的解</strong></p>
-<h4 id="定理："><a href="#定理：" class="headerlink" title="定理："></a>定理：</h4><p>当<code>gcd(a, m) | b</code> 时有 <code>d - 1 </code>个 模m不同余数的解。通解记作：</p>
-<p>x &#x3D; x0 + (m &#x2F; d) n         [n取0, 1, 2, … d - 1]</p>
+<h3 id="一元线性同余方程：">一元线性同余方程：</h3>
+<p>设x为未知数，给定a、b、m 求 x 满足 ax ≡ b ( mod m )</p>
+<p>已知他们同余，则m|ax - b 设 ax - b = - y m (-y 是倍数)，也就是 ax + my = b 一个线性丢番图方程。</p>
+<p>对于这个方程，一旦x有一解 x = x1, 则有 x = x1 + km 无数个解。故我们考虑解的个数为<strong>模m不同余数的解</strong></p>
+<h4 id="定理：">定理：</h4>
+<p>当<code>gcd(a, m) | b</code> 时有 <code>d - 1 </code>个 模m不同余数的解。通解记作：</p>
+<p>x = x0 + (m / d) n         [n取0, 1, 2, … d - 1]</p>
 <p>当<code>gcd(a, m) = 1</code>时，有唯一的模m不同余的解。</p>
-<h4 id="例子：luogu1082-求逆"><a href="#例子：luogu1082-求逆" class="headerlink" title="例子：luogu1082 求逆"></a>例子：luogu1082 求逆</h4><p>求关于 x 的同余方程 ax ≡ 1 ( mod b ) 的最小正整数解。</p>
+<h4 id="例子：luogu1082-求逆">例子：luogu1082 求逆</h4>
+<p>求关于 x 的同余方程 ax ≡ 1 ( mod b ) 的最小正整数解。</p>
 <p>即求 <code>ax + by = 1</code></p>
-<p>题目要有解，故gcd(a, b) | 1也就是gcd(a, b) &#x3D; 1</p>
+<p>题目要有解，故gcd(a, b) | 1也就是gcd(a, b) = 1</p>
 <p>故可以使用拓展欧几里得算法算得特解x0</p>
-<p>通解也就是 x &#x3D; x0 + bn, 再找最小正整数解即可。</p>
+<p>通解也就是 x = x0 + bn, 再找最小正整数解即可。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">i64 <span class="token function">getAns</span><span class="token punctuation">(</span>i64 a<span class="token punctuation">,</span> i64 b<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
     i64 x<span class="token punctuation">,</span> y<span class="token punctuation">;</span>
     <span class="token function">extendGcd</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">,</span> x<span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Xans = x + n * (b / 1); 通解公式</span>
@@ -148,18 +167,23 @@ i64 extendGcd(i64 a, i64 b, i64 &amp;x, i64 &amp;y)&#123;
     cin <span class="token operator">>></span> a <span class="token operator">>></span> b<span class="token punctuation">;</span>
     cout <span class="token operator">&lt;&lt;</span> <span class="token function">getAns</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> b<span class="token punctuation">)</span> <span class="token operator">&lt;&lt;</span> endl<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="费马小定理"><a href="#费马小定理" class="headerlink" title="费马小定理"></a>费马小定理</h3><h4 id="内容：有n是素数，a与n互质，a-n-1-≡-1-mod-n"><a href="#内容：有n是素数，a与n互质，a-n-1-≡-1-mod-n" class="headerlink" title="内容：有n是素数，a与n互质，a^{n-1} ≡ 1 mod(n)"></a>内容：有n是素数，a与n互质，a^{n-1} ≡ 1 mod(n)</h4><p>也就是 a 与 a ^ {n - 2} 互为逆元。</p>
-<h3 id="用逆元解同余方程"><a href="#用逆元解同余方程" class="headerlink" title="用逆元解同余方程"></a>用逆元解同余方程</h3><p>对于求解同余方程 ax ≡ b (mod m)， 如果有 a mod m的一个逆，便可在原方程两端乘以这个逆设逆为T</p>
-<p>则有  aTx ≡ bT (mod m) 也就是 x &#x3D;  bT (mod m)</p>
-<h3 id="逆元作用"><a href="#逆元作用" class="headerlink" title="逆元作用"></a>逆元作用</h3><p>对于计算一些大数的运算，题目通常会取模以保证运算。</p>
+<h3 id="费马小定理">费马小定理</h3>
+<h4 id="内容：有n是素数，a与n互质，a-n-1-≡-1-mod-n">内容：有n是素数，a与n互质，a^{n-1} ≡ 1 mod(n)</h4>
+<p>也就是 a 与 a ^ {n - 2} 互为逆元。</p>
+<h3 id="用逆元解同余方程">用逆元解同余方程</h3>
+<p>对于求解同余方程 ax ≡ b (mod m)， 如果有 a mod m的一个逆，便可在原方程两端乘以这个逆设逆为T</p>
+<p>则有  aTx ≡ bT (mod m) 也就是 x =  bT (mod m)</p>
+<h3 id="逆元作用">逆元作用</h3>
+<p>对于计算一些大数的运算，题目通常会取模以保证运算。</p>
 <p>对于A * B * C 我们可以 A * B % MOD * C % MOD 确保计算的过程中不会溢出。</p>
-<p>但是对于除法，如果有A * B * C &#x2F; D  这种方法就不奏效了，因为在取模的过程中，原本可以被D整除的数就会损失，所以这个方法在除法上不可行。</p>
+<p>但是对于除法，如果有A * B * C / D  这种方法就不奏效了，因为在取模的过程中，原本可以被D整除的数就会损失，所以这个方法在除法上不可行。</p>
 <p>为了保证能正常的对大数相除取模，我们可以运用同余的原理</p>
-<p>例如 A &#x2F; B ≡ r (mod m)<br>$$<br>(a&#x2F;b) \bmod m &#x3D; (ab^{-1}) \bmod m &#x3D; (a \bmod m)( b^{-1} \bmod m) \bmod m<br>$$<br>因此，我们要找到b的逆元，一般的题目中m都是质数，也就是说<strong>在m为质数前提</strong>，根据费马小定理：</p>
-<p><strong>A &#x2F; B  (mod m)    &#x3D;  AB^(m - 2) mod m</strong></p>
+<p>例如 A / B ≡ r (mod m)</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=%28a%2Fb%29%20%5Cbmod%20m%20%3D%20(ab%5E%7B-1%7D)%20%5Cbmod%20m%20%3D%20(a%20%5Cbmod%20m)(%20b%5E%7B-1%7D%20%5Cbmod%20m)%20%5Cbmod%20m%0A"></p><p>因此，我们要找到b的逆元，一般的题目中m都是质数，也就是说<strong>在m为质数前提</strong>，根据费马小定理：</p>
+<p><strong>A / B  (mod m)    =  AB^(m - 2) mod m</strong></p>
 <p>至于B^(m - 2)可以使用快速幂即可</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>逆元在数字较大的题目中频繁出现，作为理解题目的前提，是解决难题的必会知识</p>
+<h3 id="总结">总结</h3>
+<p>逆元在数字较大的题目中频繁出现，作为理解题目的前提，是解决难题的必会知识</p>
 
         </article>
         <section class="post-near">
@@ -227,5 +251,20 @@ i64 extendGcd(i64 a, i64 b, i64 &amp;x, i64 &amp;y)&#123;
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

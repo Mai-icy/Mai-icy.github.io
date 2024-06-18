@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,11 @@
             <a href="/2023/11/20/acm-class-note4/">ACM程序课算法笔记4——背包问题</a>
         </h2>
     
-        <p>ACM程序课算法笔记4——背包问题基本模型给你一个容量为V的背包和若干种物品，在一定的限制条件下（每种物品都占用一定容量），问最多能放进多少价值的物品。
+        <p>ACM程序课算法笔记4——背包问题
+基本模型
+给你一个容量为V的背包和若干种物品，在一定的限制条件下（每种物品都占用一定容量），问最多能放进多少价值的物品。
 
-最典型最基本的动态规划问题，DP问题中...</p>
+最典型最基本的动态规划问题，DP问...</p>
     
         <div class="post-meta">
             <time class="date">2023.11.20</time>
@@ -118,5 +120,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

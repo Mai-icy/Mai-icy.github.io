@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记3——动态规划"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -63,20 +63,30 @@
         
             <blockquote>这篇文章上次修改于 235 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="ACM程序课算法笔记3——动态规划"><a href="#ACM程序课算法笔记3——动态规划" class="headerlink" title="ACM程序课算法笔记3——动态规划"></a>ACM程序课算法笔记3——动态规划</h1><h2 id="问题一：HDOJ2084——数塔问题"><a href="#问题一：HDOJ2084——数塔问题" class="headerlink" title="问题一：HDOJ2084——数塔问题"></a>问题一：HDOJ2084——数塔问题</h2><h3 id="问题描述："><a href="#问题描述：" class="headerlink" title="问题描述："></a>问题描述：</h3><p>有一个数塔，从顶部出发，要求找到一条从顶部到底部的一条路径，使路径上的和最大</p>
-<h3 id="解题思路："><a href="#解题思路：" class="headerlink" title="解题思路："></a>解题思路：</h3><p>如果去掉左上方一条或者右上方一条，就会变成新的塔，如果知道这两个新的塔的结果，就可以获取题目的答案。</p>
+            <h1>ACM程序课算法笔记3——动态规划</h1>
+<h2 id="问题一：HDOJ2084——数塔问题">问题一：HDOJ2084——数塔问题</h2>
+<h3 id="问题描述：">问题描述：</h3>
+<p>有一个数塔，从顶部出发，要求找到一条从顶部到底部的一条路径，使路径上的和最大</p>
+<h3 id="解题思路：">解题思路：</h3>
+<p>如果去掉左上方一条或者右上方一条，就会变成新的塔，如果知道这两个新的塔的结果，就可以获取题目的答案。</p>
 <p>将一个问题分解成了两个子问题。</p>
 <p>自顶而下的分析，自底而上的计算。</p>
 <p>状态转移方程：</p>
 <p><code>dp[i][j]</code>代表路径以i行第j个为起点的路径，路径的最大值（一开始储存了这个点的值）</p>
 <p><code>dp[i][j] = max(dp[i + 1][j], dp[i + 1][j + 1]) + dp[i][j]</code></p>
-<h2 id="问题二：HDOJ1176——免费馅饼"><a href="#问题二：HDOJ1176——免费馅饼" class="headerlink" title="问题二：HDOJ1176——免费馅饼"></a>问题二：HDOJ1176——免费馅饼</h2><h2 id="问题描述：-1"><a href="#问题描述：-1" class="headerlink" title="问题描述："></a>问题描述：</h2><p>有 0-10个格子，每个时间点，都会有n个馅饼从天而降，会告诉你每个时间点n个煎饼的位置，假设人默认站在5位置开始，每一个时间都只能移动一格，求最大能捡到的煎饼数量</p>
-<h2 id="解题思路：-1"><a href="#解题思路：-1" class="headerlink" title="解题思路："></a>解题思路：</h2><p>每个点都只有往下的三个选择，如果我先知道了往下的点能吃到的馅饼数量，就可以推出这个点</p>
+<h2 id="问题二：HDOJ1176——免费馅饼">问题二：HDOJ1176——免费馅饼</h2>
+<h2 id="问题描述：-2">问题描述：</h2>
+<p>有 0-10个格子，每个时间点，都会有n个馅饼从天而降，会告诉你每个时间点n个煎饼的位置，假设人默认站在5位置开始，每一个时间都只能移动一格，求最大能捡到的煎饼数量</p>
+<h2 id="解题思路：-2">解题思路：</h2>
+<p>每个点都只有往下的三个选择，如果我先知道了往下的点能吃到的馅饼数量，就可以推出这个点</p>
 <p>状态转移方程：</p>
 <p><code>dp[j][i]</code>代表了在第i时间，站在j位置的收获的最多馅饼数量（一开始有馅饼为1没有为0）</p>
 <p><code>dp[j][i] = max(dp[j][i + 1], dp[j + 1][i + 1], dp[j - 1][i + 1]) + dp[j][i];</code></p>
-<h2 id="问题三：最长有序子序列（LIS）"><a href="#问题三：最长有序子序列（LIS）" class="headerlink" title="问题三：最长有序子序列（LIS）"></a>问题三：最长有序子序列（LIS）</h2><h3 id="问题描述：-2"><a href="#问题描述：-2" class="headerlink" title="问题描述："></a>问题描述：</h3><p>给一个长度为n的数字序列，求最长的递增子序列长度</p>
-<h3 id="解题思路：-2"><a href="#解题思路：-2" class="headerlink" title="解题思路："></a>解题思路：</h3><p>先排除掉暴力的念头</p>
+<h2 id="问题三：最长有序子序列（LIS）">问题三：最长有序子序列（LIS）</h2>
+<h3 id="问题描述：-3">问题描述：</h3>
+<p>给一个长度为n的数字序列，求最长的递增子序列长度</p>
+<h3 id="解题思路：-3">解题思路：</h3>
+<p>先排除掉暴力的念头</p>
 <p>所有的最长子序列最后一个元素的情况只有n中（n是原序列长度）</p>
 <p>找到所有以每个数作为结尾的序列的长度中最长的长度储存，最前面的可以很简单的找到。而后面的可以根据前面的获得到。问题已解，时间复杂度O(n2)</p>
 <p>状态转移方程：</p>
@@ -85,26 +95,38 @@
 <blockquote>
 <p>当然，也有复杂度为O(N log N)的优化版</p>
 </blockquote>
-<h2 id="问题四：HDOJ1160——Fat-Mouse-‘s-speed"><a href="#问题四：HDOJ1160——Fat-Mouse-‘s-speed" class="headerlink" title="问题四：HDOJ1160——Fat Mouse ‘s speed"></a>问题四：HDOJ1160——Fat Mouse ‘s speed</h2><h3 id="问题描述：-3"><a href="#问题描述：-3" class="headerlink" title="问题描述："></a>问题描述：</h3><p>输入很多老鼠的重量和速度。输出n个老鼠的数量，n行表示编号，该编号的老鼠必须重量是递增的，速度是递减的。</p>
-<h3 id="解题思路：-3"><a href="#解题思路：-3" class="headerlink" title="解题思路："></a>解题思路：</h3><p>和问题三类似</p>
+<h2 id="问题四：HDOJ1160——Fat-Mouse-‘s-speed">问题四：HDOJ1160——Fat Mouse ‘s speed</h2>
+<h3 id="问题描述：-4">问题描述：</h3>
+<p>输入很多老鼠的重量和速度。输出n个老鼠的数量，n行表示编号，该编号的老鼠必须重量是递增的，速度是递减的。</p>
+<h3 id="解题思路：-4">解题思路：</h3>
+<p>和问题三类似</p>
 <p>状态转移方程：</p>
 <p><code>dp[i]</code>代表了以第i个数作为结尾的递增子序列最长的长度。</p>
 <p><code>dp[i] = max(dp[i],dp[j] + 1)</code>，其中j是0到i-1之间的任意一个数，且<code>weight[j] &lt; weight[i] and speed[j] &gt; speed[i]</code></p>
-<h2 id="问题五：HDOJ1087——super-jump"><a href="#问题五：HDOJ1087——super-jump" class="headerlink" title="问题五：HDOJ1087——super jump"></a>问题五：HDOJ1087——super jump</h2><h3 id="问题描述：-4"><a href="#问题描述：-4" class="headerlink" title="问题描述："></a>问题描述：</h3><p>给你一个数字序列，找到一条递增子序列，其所有点的和最大</p>
+<h2 id="问题五：HDOJ1087——super-jump">问题五：HDOJ1087——super jump</h2>
+<h3 id="问题描述：-5">问题描述：</h3>
+<p>给你一个数字序列，找到一条递增子序列，其所有点的和最大</p>
 <p>进阶版LIS</p>
-<h3 id="解题思路：-4"><a href="#解题思路：-4" class="headerlink" title="解题思路："></a>解题思路：</h3><p>和问题三类似</p>
+<h3 id="解题思路：-5">解题思路：</h3>
+<p>和问题三类似</p>
 <p>状态转移方程：</p>
 <p><code>dp[i]</code>代表了以第i个数作为结尾的递增子序列最大的路径值。初始为第 i 个数的值</p>
 <p><code>dp[i] = max(dp[i],dp[j] + dp[i])</code>，其中 j 是 0 到 i - 1 之间的任意一个数，且<code>nums[j] &lt; nums[i]</code></p>
-<h2 id="问题六：最长公共子序列"><a href="#问题六：最长公共子序列" class="headerlink" title="问题六：最长公共子序列"></a>问题六：最长公共子序列</h2><h3 id="问题描述：-5"><a href="#问题描述：-5" class="headerlink" title="问题描述："></a>问题描述：</h3><p>给你两个字符串，找到它们最长的相同子序列</p>
-<h3 id="解题思路：-5"><a href="#解题思路：-5" class="headerlink" title="解题思路："></a>解题思路：</h3><p>寻找这个问题的子问题，对于两个字符串的最长公共长度，通过判断最后的两个字符，我们可以找到方程一，如果不相同，可以找到方程2</p>
+<h2 id="问题六：最长公共子序列">问题六：最长公共子序列</h2>
+<h3 id="问题描述：-6">问题描述：</h3>
+<p>给你两个字符串，找到它们最长的相同子序列</p>
+<h3 id="解题思路：-6">解题思路：</h3>
+<p>寻找这个问题的子问题，对于两个字符串的最长公共长度，通过判断最后的两个字符，我们可以找到方程一，如果不相同，可以找到方程2</p>
 <p>状态转移方程：</p>
 <p>如果字符串1的第m个和字符串2的第n个相同</p>
 <p><code>dp[m][n] = dp[m - 1][n - 1] + 1</code></p>
 <p>否则</p>
 <p><code>dp[m][n] = max(dp[m][n - 1], dp[m -1][n])</code></p>
-<h2 id="问题七：HDOJ1421——搬寝室"><a href="#问题七：HDOJ1421——搬寝室" class="headerlink" title="问题七：HDOJ1421——搬寝室"></a>问题七：HDOJ1421——搬寝室</h2><h3 id="问题描述：-6"><a href="#问题描述：-6" class="headerlink" title="问题描述："></a>问题描述：</h3><p>提供n和k，给n个数字，找到k对的数，使这k对数的差的平方和最小</p>
-<h3 id="解题思路：-6"><a href="#解题思路：-6" class="headerlink" title="解题思路："></a>解题思路：</h3><p>选择的k对数字，每对数字都是大小排序后相邻的。前两个数和前四个数的选择方式</p>
+<h2 id="问题七：HDOJ1421——搬寝室">问题七：HDOJ1421——搬寝室</h2>
+<h3 id="问题描述：-7">问题描述：</h3>
+<p>提供n和k，给n个数字，找到k对的数，使这k对数的差的平方和最小</p>
+<h3 id="解题思路：-7">解题思路：</h3>
+<p>选择的k对数字，每对数字都是大小排序后相邻的。前两个数和前四个数的选择方式</p>
 <p>取一对</p>
 <p>两个数，一种情况</p>
 <p>三个数，有第三个和无第三个</p>
@@ -115,9 +137,12 @@
 <p>状态转移方程：</p>
 <p><code>dp[i][j]</code>代表前 i 个数字取 j 对，最小的差的平方和</p>
 <p><code>dp[i][j] = min(dp[i - 1][j], dp[i - 2][j - 1] + S)</code>  S是最小的两个数字的差的平方和。</p>
-<h2 id="问题八：HDOJ1058——Humble-Numbers"><a href="#问题八：HDOJ1058——Humble-Numbers" class="headerlink" title="问题八：HDOJ1058——Humble Numbers"></a>问题八：HDOJ1058——Humble Numbers</h2><h3 id="问题描述：-7"><a href="#问题描述：-7" class="headerlink" title="问题描述："></a>问题描述：</h3><p>质数因子只有2、3、5或7的数称为谦卑数。序列1、2、3、4、5、6、7、8、9、10、12、14、15、16、18、20、21、24、25、27这是前20个谦卑数。</p>
+<h2 id="问题八：HDOJ1058——Humble-Numbers">问题八：HDOJ1058——Humble Numbers</h2>
+<h3 id="问题描述：-8">问题描述：</h3>
+<p>质数因子只有2、3、5或7的数称为谦卑数。序列1、2、3、4、5、6、7、8、9、10、12、14、15、16、18、20、21、24、25、27这是前20个谦卑数。</p>
 <p>要求输入n，输出第n个谦卑数。</p>
-<h3 id="算法思路："><a href="#算法思路：" class="headerlink" title="算法思路："></a>算法思路：</h3><p>每个大的数都是由在数列里面小的数乘上 2， 3， 5，7</p>
+<h3 id="算法思路：">算法思路：</h3>
+<p>每个大的数都是由在数列里面小的数乘上 2， 3， 5，7</p>
 <p>所以得到以下状态转移方程</p>
 <p><code>dp[n] =  min(dp[a1] * 2, dp[a2] * 3, dp[a3] * 5, dp[a4] * 7)</code></p>
 <p>a1, a2, a3, a4分别代表了四个因数和其最小数（此最小数乘以这个因数要大于<code>dp[n - 1]</code>）</p>
@@ -188,5 +213,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

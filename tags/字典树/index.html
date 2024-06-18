@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,10 @@
             <a href="/2023/12/11/learn-algorithm-note2/">算法学习笔记2——基环树&amp;字典树</a>
         </h2>
     
-        <p>算法学习笔记(2): 基环树&amp;amp;字典树基环树若一个图有n个节点，n-1条边，那么这个图一定无环，此时若再增加一条边，必定会出现一条环。
-由此可得 n个节点，n条边，必定有个环，去掉这个环的...</p>
+        <p>算法学习笔记(2): 基环树&amp;amp;字典树
+基环树
+若一个图有n个节点，n-1条边，那么这个图一定无环，此时若再增加一条边，必定会出现一条环。
+由此可得 n个节点，n条边，必定有个环，去掉这个...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.11</time>
@@ -117,5 +119,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

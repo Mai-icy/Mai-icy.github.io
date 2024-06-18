@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,7 +61,9 @@
             <a href="/2023/10/10/asyncio-note/">Python异步底层原理</a>
         </h2>
     
-        <p>Python 异步基础以及原理深层理解概述python的异步是基于python的生成器机制，利用生成器的特性，可以完成在多个函数之间互相切换。我们可以关注到生成器的一个特性，就是在next了之后...</p>
+        <p>Python 异步基础以及原理深层理解
+概述
+python的异步是基于python的生成器机制，利用生成器的特性，可以完成在多个函数之间互相切换。我们可以关注到生成器的一个特性，就是在next了...</p>
     
         <div class="post-meta">
             <time class="date">2023.10.10</time>
@@ -79,10 +81,13 @@
             <a href="/2023/02/09/learn-requests-code-note2/">Python库requests源码阅读笔记 - 学习收获篇</a>
         </h2>
     
-        <p>requests源码阅读笔记requests的使用方面1可将Response实例直接置于条件判断中，转为bool为是否为200ok
+        <p>requests源码阅读笔记
+requests的使用方面
+1
+可将Response实例直接置于条件判断中，转为bool为是否为200ok
 源码：
 def __bool__(self):
-    &#34;&#34;&#34;...</p>
+    ...</p>
     
         <div class="post-meta">
             <time class="date">2023.02.09</time>
@@ -100,8 +105,10 @@ def __bool__(self):
             <a href="/2023/02/09/learn-requests-code-note1/">Python库requests源码阅读笔记 - 结构篇</a>
         </h2>
     
-        <p>requests源码阅读整理主要运行过程和思想程序目录（源码的代码内文件注释）：
-models.py: This module contains the primary objects that...</p>
+        <p>requests源码阅读整理
+主要运行过程和思想
+程序目录（源码的代码内文件注释）：
+models.py: This module contains the primary objects th...</p>
     
         <div class="post-meta">
             <time class="date">2023.02.09</time>
@@ -119,9 +126,11 @@ models.py: This module contains the primary objects that...</p>
             <a href="/2022/03/19/pynote1/">python - 选择更高效的容器(一)</a>
         </h2>
     
-        <p>python - 选择更高效的容器整理自fluent-python “当列表不是首选时”
+        <p>python - 选择更高效的容器
+整理自fluent-python “当列表不是首选时”
 注：此文暂不包括字典类对象
-python的常用容器《fluent-python》一书把python容器以...</p>
+python的常用容器
+《fluent-python》一书把python容...</p>
     
         <div class="post-meta">
             <time class="date">2022.03.19</time>
@@ -194,5 +203,20 @@ python的常用容器《fluent-python》一书把python容器以...</p>
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

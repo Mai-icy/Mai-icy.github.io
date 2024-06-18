@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="图算法笔记3 - 有向图算法"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -59,9 +59,10 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 778 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 779 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h2 id="有向图"><a href="#有向图" class="headerlink" title="有向图"></a>有向图</h2><p>特点：每条边都是有方向的，从一个顶点到另一个顶点</p>
+            <h2 id="有向图">有向图</h2>
+<p>特点：每条边都是有方向的，从一个顶点到另一个顶点</p>
 <p>术语：</p>
 <ul>
 <li><strong>指出</strong>：⓪→① 顶点0指出顶点1</li>
@@ -76,7 +77,8 @@
 <li><strong>强连通</strong>：对于⓪，①若存在⓪→① 的路径也存在①→⓪的路径，则称0，1强连通</li>
 <li><strong>强连通分量</strong>：对于同一强连通分量的顶点，任一两点都强连通</li>
 </ul>
-<h3 id="有向图基本API"><a href="#有向图基本API" class="headerlink" title="有向图基本API"></a>有向图基本API</h3><table>
+<h3 id="有向图基本API">有向图基本API</h3>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -84,7 +86,8 @@
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Digraph(int v)</td>
 <td>创建一个含有V个点无边的无向图</td>
 <td>构造函数</td>
@@ -114,9 +117,12 @@
 <td>该图的反向图</td>
 <td>Digraph</td>
 </tr>
-</tbody></table>
-<h4 id="概要"><a href="#概要" class="headerlink" title="概要"></a>概要</h4><p>有向图的基本api和无向图的区别在于有向图有reverse()函数用于生成一张反向图，其实现也十分简单。还有一点就是adj函数变成用于查询出度。这都是由于有向图的实现方式，有向图我们依旧使用邻接表数组，但是原来的边会记录两次，分别为该边连接的两点，但有向图为了体现边的有向性，将一条有向边只记录一次，记录在指出这条边的点。既然如此，reverse函数的实现也变得简单，只需要创建一个新有向图，遍历邻接表中的每一个点的出度（也就是遍历所有有向边）并将原本的有向边的尾记录为新的头。</p>
-<h4 id="Digraph头文件"><a href="#Digraph头文件" class="headerlink" title="Digraph头文件"></a>Digraph头文件</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class Digraph
+</tbody>
+</table>
+<h4 id="概要">概要</h4>
+<p>有向图的基本api和无向图的区别在于有向图有reverse()函数用于生成一张反向图，其实现也十分简单。还有一点就是adj函数变成用于查询出度。这都是由于有向图的实现方式，有向图我们依旧使用邻接表数组，但是原来的边会记录两次，分别为该边连接的两点，但有向图为了体现边的有向性，将一条有向边只记录一次，记录在指出这条边的点。既然如此，reverse函数的实现也变得简单，只需要创建一个新有向图，遍历邻接表中的每一个点的出度（也就是遍历所有有向边）并将原本的有向边的尾记录为新的头。</p>
+<h4 id="Digraph头文件">Digraph头文件</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class Digraph
 &#123;
 public:
     Digraph(int v);
@@ -139,8 +145,8 @@ private:
     int edge_num;
     Bag&lt;int&gt; *_adj;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="addEdge的改变"><a href="#addEdge的改变" class="headerlink" title="addEdge的改变"></a>addEdge的改变</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">inline void Digraph::addEdge(int v, int w)
+<h4 id="addEdge的改变">addEdge的改变</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">inline void Digraph::addEdge(int v, int w)
 &#123;
     for (int temp : adj(v))
         if (temp &#x3D;&#x3D; w)
@@ -150,8 +156,8 @@ private:
     _adj[v].add(w); &#x2F;&#x2F; 有向图只加一边
     edge_num++;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="reverse的实现"><a href="#reverse的实现" class="headerlink" title="reverse的实现"></a>reverse的实现</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Digraph Digraph::reverse()
+<h4 id="reverse的实现">reverse的实现</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Digraph Digraph::reverse()
 &#123;
     Digraph reverse_digraph(vertex_num);
     for (int i &#x3D; 0; i &lt; vertex_num; i++)
@@ -159,8 +165,9 @@ private:
             reverse_digraph.addEdge(v, i);
     return reverse_digraph;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="有向图算法"><a href="#有向图算法" class="headerlink" title="有向图算法"></a>有向图算法</h3><h4 id="有向图的可达性API"><a href="#有向图的可达性API" class="headerlink" title="有向图的可达性API"></a>有向图的可达性API</h4><table>
+<h3 id="有向图算法">有向图算法</h3>
+<h4 id="有向图的可达性API">有向图的可达性API</h4>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -168,7 +175,8 @@ private:
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>DirectedDFS(Digraph G, int s)</td>
 <td>找到和起点s连通的所有顶点</td>
 <td>构造函数</td>
@@ -183,9 +191,11 @@ private:
 <td>v和s(一组起点)是否连通</td>
 <td>bool</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>有向图的可达性也就是主要利用DFS和BFS的算法，会如同一下的有向图的寻路。</p>
-<h4 id="有向图的寻路API"><a href="#有向图的寻路API" class="headerlink" title="有向图的寻路API"></a>有向图的寻路API</h4><table>
+<h4 id="有向图的寻路API">有向图的寻路API</h4>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -193,7 +203,8 @@ private:
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Path(Digraph G, int s)</td>
 <td>创建一个含有V个点无边的无向图</td>
 <td>构造函数</td>
@@ -208,8 +219,10 @@ private:
 <td>s到v的路径，如果不存在，返回空序列</td>
 <td>int</td>
 </tr>
-</tbody></table>
-<h4 id="DFS"><a href="#DFS" class="headerlink" title="DFS"></a>DFS</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Path::Path(Digraph G, int s) : _marked(new bool[G.V()]&#123;false&#125;), edgeTo(new int[G.V()]), root_node(s)
+</tbody>
+</table>
+<h4 id="DFS">DFS</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Path::Path(Digraph G, int s) : _marked(new bool[G.V()]&#123;false&#125;), edgeTo(new int[G.V()]), root_node(s)
 &#123;
     dfs(G, s);
 &#125;
@@ -226,8 +239,8 @@ void Path::dfs(Digraph G, int s)
         &#125;
     &#125;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="BFS"><a href="#BFS" class="headerlink" title="BFS"></a>BFS</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Path::Path(Digraph G, int s) : _marked(new bool[G.V()]&#123;false&#125;), edgeTo(new int[G.V()]), root_node(s)
+<h4 id="BFS">BFS</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">Path::Path(Digraph G, int s) : _marked(new bool[G.V()]&#123;false&#125;), edgeTo(new int[G.V()]), root_node(s)
 &#123;
     bfs(G, s);
 &#125;
@@ -255,9 +268,9 @@ void Path::bfs(Digraph G, int s)
     &#125;
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：BFS和DFS在有向图中依旧可以使用，甚至代码几乎没有什么变化，此处作为复习。同理只有BFS的实现才是最短路径。</p>
-<h4 id="拓扑排序"><a href="#拓扑排序" class="headerlink" title="拓扑排序"></a>拓扑排序</h4><p>情景：此时你需要为一些任务进行排序，而且，这些任务中的部分包含先后顺序的要求，例如存在任务ABCD其中D需要在A之后完成，C要在A之前完成，B要在A之后完成。此时如何排序就成为一种实际问题。</p>
+<h4 id="拓扑排序">拓扑排序</h4>
+<p>情景：此时你需要为一些任务进行排序，而且，这些任务中的部分包含先后顺序的要求，例如存在任务ABCD其中D需要在A之后完成，C要在A之前完成，B要在A之后完成。此时如何排序就成为一种实际问题。</p>
 <p>对这种问题进行抽象化，将任务抽象化为一个顶点，之间的先后要求抽象成有向边此时我们可以得到</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
 A<span class="token text string">((A))</span>
@@ -268,7 +281,6 @@ D<span class="token text string">((D))</span>
 A <span class="token arrow operator">--></span> D
 C <span class="token arrow operator">--></span> A
 A <span class="token arrow operator">--></span> B<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>对于以上的描述，我们得到一张十分简单的有向图，虽然此时我们能一下分辨先后，但是如果有多个顶点，任务就复杂起来。我们需要一种算法，来解决这种问题。</p>
 <p>思考：为了确保任务的顺利完成，我们先要排除<strong>不可处理的情况</strong>。此时，对于可进行这种排序的有向图，它一定是无环的，若有环，例如对于任务ABC，如下图所示，根本无法进行排序。所以在解决问题之前，我们应该先排除有向环的存在。</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
@@ -278,8 +290,9 @@ C<span class="token text string">((C))</span>
 A <span class="token arrow operator">--></span> B
 B <span class="token arrow operator">--></span> C
 C <span class="token arrow operator">--></span> A<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="寻找有向环API"><a href="#寻找有向环API" class="headerlink" title="寻找有向环API"></a>寻找有向环API</h4><h4 id="有向图的寻路API-1"><a href="#有向图的寻路API-1" class="headerlink" title="有向图的寻路API"></a>有向图的寻路API</h4><table>
+<h4 id="寻找有向环API">寻找有向环API</h4>
+<h4 id="有向图的寻路API-2">有向图的寻路API</h4>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -287,7 +300,8 @@ C <span class="token arrow operator">--></span> A<span aria-hidden="true" class=
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>DirectedCycle(Digraph G)</td>
 <td>寻找有向环构造函数</td>
 <td>构造函数</td>
@@ -302,7 +316,8 @@ C <span class="token arrow operator">--></span> A<span aria-hidden="true" class=
 <td>有向环中的所有顶点（如果存在）</td>
 <td>Bag<int></int></td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>头文件</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class DirectedCycle
 &#123;
@@ -320,7 +335,6 @@ private:
     bool *onStack;
     int *edgeTo;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>思路：和无向图的搜索环类似，利用深度优先搜索，记录当前的路径，若出现重复顶点又不是根节点，即为环。此时要获取环，只需要利用edgeTo数组的链接即可。</p>
 <p>实现：</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">DirectedCycle::DirectedCycle(Digraph G) : marked(new bool[G.V()]), onStack(new bool[G.V()]), edgeTo(new int[G.V()])
@@ -359,8 +373,8 @@ void DirectedCycle::dfs(Digraph G, int s)
     &#125;
     onStack[s] &#x3D; false;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="拓扑排序-1"><a href="#拓扑排序-1" class="headerlink" title="拓扑排序"></a>拓扑排序</h4><p>解决了环的判定，此时我们就可以进入正题了，这种排序的名称为<strong>拓扑排序</strong></p>
+<h4 id="拓扑排序-2">拓扑排序</h4>
+<p>解决了环的判定，此时我们就可以进入正题了，这种排序的名称为<strong>拓扑排序</strong></p>
 <p>要求：给定一有向图，将所有的顶点排序，使所有顶点只能指向排在后面的点。</p>
 <p>示例：</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
@@ -376,15 +390,14 @@ void DirectedCycle::dfs(Digraph G, int s)
 9 <span class="token arrow operator">--></span> 10<span class="token punctuation">;</span> 9<span class="token arrow operator">--></span>12<span class="token punctuation">;</span> 11<span class="token arrow operator">--></span>12<span class="token punctuation">;</span>
 9 <span class="token arrow operator">--></span> 11<span class="token punctuation">;</span>
 8 <span class="token arrow operator">--></span>7 <span class="token punctuation">;</span> 7<span class="token arrow operator">--></span>6<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>以上图的排序结果(理想)：</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
 0<span class="token text string">((8))</span>
 1<span class="token text string">((7))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((0))</span><span class="token punctuation">;</span>5<span class="token text string">((6))</span><span class="token punctuation">;</span>6<span class="token text string">((9))</span><span class="token punctuation">;</span>7<span class="token text string">((10))</span><span class="token punctuation">;</span>8<span class="token text string">((11))</span><span class="token punctuation">;</span>9<span class="token text string">((12))</span><span class="token punctuation">;</span>10<span class="token text string">((1))</span>
 11<span class="token text string">((5))</span><span class="token punctuation">;</span>12<span class="token text string">((4))</span>
 0 <span class="token arrow operator">--></span> 1<span class="token punctuation">;</span>1 <span class="token arrow operator">--></span> 2<span class="token punctuation">;</span>2 <span class="token arrow operator">--></span> 3<span class="token punctuation">;</span>3 <span class="token arrow operator">--></span> 4<span class="token punctuation">;</span>4 <span class="token arrow operator">--></span> 5<span class="token punctuation">;</span>5 <span class="token arrow operator">--></span> 6<span class="token punctuation">;</span>6 <span class="token arrow operator">--></span> 7<span class="token punctuation">;</span>7 <span class="token arrow operator">--></span> 8<span class="token punctuation">;</span>8 <span class="token arrow operator">--></span> 9<span class="token punctuation">;</span>9 <span class="token arrow operator">--></span> 10<span class="token punctuation">;</span>10 <span class="token arrow operator">--></span> 11<span class="token punctuation">;</span>11 <span class="token arrow operator">--></span> 12<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="拓扑排序API"><a href="#拓扑排序API" class="headerlink" title="拓扑排序API"></a>拓扑排序API</h4><table>
+<h4 id="拓扑排序API">拓扑排序API</h4>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -392,7 +405,8 @@ void DirectedCycle::dfs(Digraph G, int s)
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>Topological(WeightedDigraph G)</td>
 <td>对有向图G的节点进行拓扑排序</td>
 <td>构造函数</td>
@@ -407,7 +421,8 @@ void DirectedCycle::dfs(Digraph G, int s)
 <td>返回拓扑排序的结果</td>
 <td>Bag<int></int></td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>头文件</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class Topological
 &#123;
@@ -425,7 +440,6 @@ private:
 
     void dfs(WeightedDigraph G, int v);
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>思路：</p>
 <p>1.根据拓扑排序遍历顶点</p>
 <p>2.每次dfs操作后将点加入栈</p>
@@ -449,13 +463,11 @@ void Topological::dfs(WeightedDigraph G, int v)
     &#125;
     resOrder.add(v);
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：主要的实现方法为DFS。首先，DFS会遍历所有的点，其次拓扑排序不一定只有一种结果。以下图为例。</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> LR
 
 0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
 0 <span class="token arrow operator">--></span> 4<span class="token punctuation">;</span> 1<span class="token arrow operator">--></span>0<span class="token punctuation">;</span> 3<span class="token arrow operator">--></span>0<span class="token punctuation">;</span> 2<span class="token arrow operator">--></span>3<span class="token punctuation">;</span> 1<span class="token arrow operator">--></span>2<span class="token punctuation">;</span> 2<span class="token arrow operator">--></span>4<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p><strong>当从0开始</strong>进行DFS(先0-&gt;4再1-&gt;2-&gt;3)被忽略的关系2 -&gt; 4 ; 3 -&gt; 0 ; 1 -&gt; 0;</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
 0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
@@ -463,25 +475,22 @@ void Topological::dfs(WeightedDigraph G, int v)
 2 <span class="token arrow operator">--></span> 3<span class="token punctuation">;</span>
 0 <span class="token arrow operator">--></span> 4<span class="token punctuation">;</span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p><strong>当从1开始</strong>，被忽略的关系3 -&gt; 0; 2-&gt;4</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
 0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
 1<span class="token arrow operator">--></span>0<span class="token arrow operator">--></span>4<span class="token punctuation">;</span>1<span class="token arrow operator">--></span>2<span class="token arrow operator">--></span>3<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p><strong>当从2开始</strong>，被忽略的关系1 -&gt; 0; 1 -&gt; 2; 2 -&gt; 4</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
 0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
 2<span class="token arrow operator">--></span>3<span class="token arrow operator">--></span>0<span class="token arrow operator">--></span>4<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p><strong>当从3开始</strong>，被忽略的关系1 -&gt; 0; 2 -&gt; 3; 2 -&gt; 4</p>
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> TB
 0<span class="token text string">((0))</span><span class="token punctuation">;</span>1<span class="token text string">((1))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
 3<span class="token arrow operator">--></span>0<span class="token arrow operator">--></span>4<span class="token punctuation">;</span> 1<span class="token arrow operator">--></span>2<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：以上可发现被无视的有向边均为新节点指向旧树。也就是说<strong>旧节点不可能再指向新节点</strong>，它们应当被放在排序的最后端。</p>
 <p>原因：DFS保证生成的树已为最深，确保遍历了每个点的指向，以保证不会再有旧节点指向新的节点，不会被指向的节点作为排序尾理所应当，故不断排入尾即可。最后再利用stack逆序。</p>
-<h4 id="有向图强连通分量API"><a href="#有向图强连通分量API" class="headerlink" title="有向图强连通分量API"></a>有向图强连通分量API</h4><table>
+<h4 id="有向图强连通分量API">有向图强连通分量API</h4>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -489,7 +498,8 @@ void Topological::dfs(WeightedDigraph G, int v)
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>SCC(WeightedDigraph G)</td>
 <td>查找G图中的</td>
 <td>构造函数</td>
@@ -509,7 +519,8 @@ void Topological::dfs(WeightedDigraph G, int v)
 <td>查看v点所在连通分量</td>
 <td>int</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>头文件</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class SCC
 &#123;
@@ -528,9 +539,9 @@ private:
     bool *marked;
     int _count &#x3D; 0;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>有向图也存在连通性问题，但在有向图中，被称为<strong>强连通性</strong>。在一条有向环中，各个顶点都互相强连通。</p>
-<h5 id="Kosaraju算法"><a href="#Kosaraju算法" class="headerlink" title="Kosaraju算法"></a>Kosaraju算法</h5><p>思路：</p>
+<h5 id="Kosaraju算法">Kosaraju算法</h5>
+<p>思路：</p>
 <p>1.利用DFS的拓扑排序（DFO）对G的反向图进行排序</p>
 <p>2.按照1得到的顺序对G进行DFS</p>
 <p>3.其中同一个DFS中遇到的点都在同一个强连通分量中</p>
@@ -557,7 +568,6 @@ void SCC::dfs(WeightedDigraph G, int v)
             dfs(G, w);
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：<strong>Kosaraju算法</strong>简单但难以理解，首先要理解DFO在有环图中的排序行为。</p>
 <p>深入<strong>拓扑排序DFO</strong></p>
 <p>1.DFO一棵树内关系</p>
@@ -570,7 +580,6 @@ void SCC::dfs(WeightedDigraph G, int v)
 <pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">graph</span> BT
 0<span class="token text string">((0))</span><span class="token punctuation">;</span>5<span class="token text string">((5))</span><span class="token punctuation">;</span>2<span class="token text string">((2))</span><span class="token punctuation">;</span>3<span class="token text string">((3))</span><span class="token punctuation">;</span>4<span class="token text string">((4))</span><span class="token punctuation">;</span>
 4<span class="token arrow operator">--></span>2<span class="token arrow operator">--></span>0<span class="token punctuation">;</span>3<span class="token arrow operator">--></span>5<span class="token arrow operator">--></span>0<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>例如②可以指向④，⑤可以指向③，这一点是DFO的特性，也保证了Kosaraju算法的正确性。</p>
 <p>第二步：</p>
 <p>当分析⑥的时候因⑥不可能被后面的任一节点指向。⑥自己成为一分量，分析①同理。</p>
@@ -642,5 +651,20 @@ void SCC::dfs(WeightedDigraph G, int v)
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

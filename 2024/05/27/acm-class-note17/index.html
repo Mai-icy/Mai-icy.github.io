@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记17——树链剖分"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,16 +61,21 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记17——树链剖分"><a href="#ACM程序课算法笔记17——树链剖分" class="headerlink" title="ACM程序课算法笔记17——树链剖分"></a>ACM程序课算法笔记17——<strong>树链剖分</strong></h1><h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><p>将一个树分割成若干条链即<strong>树链剖分</strong>。</p>
+            <h1>ACM程序课算法笔记17——<strong>树链剖分</strong></h1>
+<h2 id="定义">定义</h2>
+<p>将一个树分割成若干条链即<strong>树链剖分</strong>。</p>
 <p>树链剖分有多种形式，有重链剖分和长链剖分。至于如何剖分，实际上就是让每个点都选择一条边，并且这些边形成多个链条，重链剖分和长链剖分的区别在于选择哪一条边。</p>
-<h2 id="重链剖分"><a href="#重链剖分" class="headerlink" title="重链剖分"></a><strong>重链剖分</strong></h2><h3 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h3><ul>
+<h2 id="重链剖分"><strong>重链剖分</strong></h2>
+<h3 id="定义-2">定义</h3>
+<ul>
 <li><strong>重子节点</strong>：对于一个节点，有多个子节点，或者说多个子树，对于子树而言，size最大的子树的点我们称为<strong>重子节点</strong>。</li>
 <li><strong>轻子节点</strong>：相反，size最小的子树就是<strong>轻子节点</strong>。</li>
 <li><strong>重边</strong>：父节点连接到<strong>重子节点</strong>的边。</li>
 <li><strong>轻边</strong>：父节点连接到<strong>轻子节点</strong>的边。</li>
 <li><strong>重链</strong>：多条首尾相连的重边称为重链。</li>
 </ul>
-<h3 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h3><p>实现分成两部分，两次的dfs完成。</p>
+<h3 id="实现">实现</h3>
+<p>实现分成两部分，两次的dfs完成。</p>
 <p>第一次dfs获取：深度depth，父节点parent，子树大小size，重子节点hson。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">buildTree</span><span class="token punctuation">(</span><span class="token keyword">int</span> node<span class="token punctuation">,</span> <span class="token keyword">int</span> dep<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
 	hson<span class="token punctuation">[</span>node<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
@@ -86,7 +91,6 @@
 		<span class="token punctuation">&#125;</span>
 	<span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span> <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>第二次dfs获取：重链顶端top，新的一个id的双映射，ori2new，new2ori</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">dfs2</span><span class="token punctuation">(</span><span class="token keyword">int</span> node<span class="token punctuation">,</span> <span class="token keyword">int</span> topNode<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
   top<span class="token punctuation">[</span>node<span class="token punctuation">]</span> <span class="token operator">=</span> topNode<span class="token punctuation">;</span>
@@ -102,10 +106,11 @@
     <span class="token keyword">if</span> <span class="token punctuation">(</span>j <span class="token operator">!=</span> parent<span class="token punctuation">[</span>node<span class="token punctuation">]</span> <span class="token operator">and</span> j <span class="token operator">!=</span> hson<span class="token punctuation">[</span>node<span class="token punctuation">]</span><span class="token punctuation">)</span> 
 			<span class="token function">dfs2</span><span class="token punctuation">(</span>j<span class="token punctuation">,</span> j<span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="性质"><a href="#性质" class="headerlink" title="性质"></a>性质</h3><p>树链剖分的获得的id的双映射，使每个点获得了一个新的id，这个新的id有个特点，就是在一条重链上的点的id都是连续的，这样可以更好的用区间管理来批量修改一个重链上的点。一颗子树内的 新id 是连续的。这个特征源自于这个顺序是dfs序。</p>
+<h3 id="性质">性质</h3>
+<p>树链剖分的获得的id的双映射，使每个点获得了一个新的id，这个新的id有个特点，就是在一条重链上的点的id都是连续的，这样可以更好的用区间管理来批量修改一个重链上的点。一颗子树内的 新id 是连续的。这个特征源自于这个顺序是dfs序。</p>
 <p>树上的每个节点都属于或者仅属于一条重链，并且开头节点不一定为重子节点。</p>
-<h3 id="树链剖分求LCA"><a href="#树链剖分求LCA" class="headerlink" title="树链剖分求LCA"></a>树链剖分求LCA</h3><p>不断向上跳重链，当跳到同一条重链上时，深度较小的结点即为 LCA。</p>
+<h3 id="树链剖分求LCA">树链剖分求LCA</h3>
+<p>不断向上跳重链，当跳到同一条重链上时，深度较小的结点即为 LCA。</p>
 <p>向上跳重链时需要先跳所在重链顶端深度较大的那个。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">lca</span><span class="token punctuation">(</span><span class="token keyword">int</span> u<span class="token punctuation">,</span> <span class="token keyword">int</span> v<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
   <span class="token keyword">while</span> <span class="token punctuation">(</span>top<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">!=</span> top<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
@@ -116,8 +121,8 @@
   <span class="token punctuation">&#125;</span>
   <span class="token keyword">return</span> depth<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">></span> depth<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">?</span> v <span class="token operator">:</span> u<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="树上维护"><a href="#树上维护" class="headerlink" title="树上维护"></a>树上维护</h3><p>树上维护的需求可能有：对X子树的所有节点进行修改，对AB路径进行修改。</p>
+<h3 id="树上维护">树上维护</h3>
+<p>树上维护的需求可能有：对X子树的所有节点进行修改，对AB路径进行修改。</p>
 <p>1.对X子树的所有节点进行修改：</p>
 <p>已知我们的新id是dfs序，所以对于X子树来说，这个子树的所有节点新编号都是连续的。而且dfs来说，一个子树的根节点是这个子树中新序号最小的。再抓住我们已经知道的size数组。这个区间就是</p>
 <p>[x, x + size[x] - 1]</p>
@@ -298,5 +303,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

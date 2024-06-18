@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,12 @@
             <a href="/2023/10/27/acm-class-note3/">ACM程序课算法笔记3——动态规划</a>
         </h2>
     
-        <p>ACM程序课算法笔记3——动态规划问题一：HDOJ2084——数塔问题问题描述：有一个数塔，从顶部出发，要求找到一条从顶部到底部的一条路径，使路径上的和最大
-解题思路：如果去掉左上方一条或者右上...</p>
+        <p>ACM程序课算法笔记3——动态规划
+问题一：HDOJ2084——数塔问题
+问题描述：
+有一个数塔，从顶部出发，要求找到一条从顶部到底部的一条路径，使路径上的和最大
+解题思路：
+如果去掉左上方一条...</p>
     
         <div class="post-meta">
             <time class="date">2023.10.27</time>
@@ -117,5 +121,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

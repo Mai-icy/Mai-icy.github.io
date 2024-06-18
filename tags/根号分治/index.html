@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,9 @@
             <a href="/2024/01/31/learn-algorithm-note7/">算法学习笔记7——根号分治</a>
         </h2>
     
-        <p>算法学习笔记(7): 根号分治根号分治是一种对暴力的优化，类似于一种优雅的暴力。
-对于一个问题的解决，我们可能有多种暴力的思路，但对于暴力思路A来说，空间占用过大。对于暴力思路B来说，时间占用过...</p>
+        <p>算法学习笔记(7): 根号分治
+根号分治是一种对暴力的优化，类似于一种优雅的暴力。
+对于一个问题的解决，我们可能有多种暴力的思路，但对于暴力思路A来说，空间占用过大。对于暴力思路B来说，时间占用...</p>
     
         <div class="post-meta">
             <time class="date">2024.01.31</time>
@@ -117,5 +118,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,10 @@
             <a href="/2024/04/11/learn-algorithm-note9/">算法学习笔记9——后缀数组</a>
         </h2>
     
-        <p>算法学习笔记(9): 后缀数组定义后缀数组是对后缀的一个排序，每个后缀按照字典序进行排序，然后用两个数组来映射它们自己和它们的排名。
-同时，为了便于记录后缀，我们记字符串s的后缀s[i:]记为i...</p>
+        <p>算法学习笔记(9): 后缀数组
+定义
+后缀数组是对后缀的一个排序，每个后缀按照字典序进行排序，然后用两个数组来映射它们自己和它们的排名。
+同时，为了便于记录后缀，我们记字符串s的后缀s[i:]记...</p>
     
         <div class="post-meta">
             <time class="date">2024.04.11</time>
@@ -117,5 +119,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

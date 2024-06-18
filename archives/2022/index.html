@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,13 +61,16 @@
             <a href="/2022/05/17/graph-algorithm-note4/">图算法笔记4 - 加权图</a>
         </h2>
     
-        <p>加权图数据类型因为继承体系，我们将图分为有权图和无权图，又各自分为有向和无向。
-有权图依旧使用邻接表来实现。
+        <p>加权图
+数据类型
+因为继承体系，我们将图分为有权图和无权图，又各自分为有向和无向。
+有权图
+依旧使用邻接表来实现。
 基类头文件
 class BaseGraph
 &amp;#123;
 public:
-    B...</p>
+  ...</p>
     
         <div class="post-meta">
             <time class="date">2022.05.17</time>
@@ -83,13 +86,14 @@ public:
             <a href="/2022/05/02/graph-algorithm-note3/">图算法笔记3 - 有向图算法</a>
         </h2>
     
-        <p>有向图特点：每条边都是有方向的，从一个顶点到另一个顶点
+        <p>有向图
+特点：每条边都是有方向的，从一个顶点到另一个顶点
 术语：
 
 指出：⓪→① 顶点0指出顶点1
 出度：对于⓪→①→②  0和1 都各有一条出度
 入度：1 和 2 都各有一条入度
-头：一条有向边...</p>
+头：一条有向...</p>
     
         <div class="post-meta">
             <time class="date">2022.05.02</time>
@@ -105,8 +109,10 @@ public:
             <a href="/2022/05/01/graph-algorithm-note2/">图算法笔记2 - 连通分量算法union-find</a>
         </h2>
     
-        <p>探究：union-find算法连通分量：处于同一连通分量的点相互连通。
+        <p>探究：union-find算法
+连通分量：处于同一连通分量的点相互连通。
 算法API
+
 
 
 接口
@@ -115,12 +121,12 @@ public:
 
 
 
+
 connect(int w, int v)
 连接 w，v点
 void
 
-
-fi...</p>
+...</p>
     
         <div class="post-meta">
             <time class="date">2022.05.01</time>
@@ -136,13 +142,15 @@ fi...</p>
             <a href="/2022/04/22/graph-algorithm-note1/">图算法笔记1 - 基础知识和DFS&amp;BFS</a>
         </h2>
     
-        <p>图算法无向图术语
+        <p>图算法
+无向图
+术语
+
 相邻：⓪-① 1与0相邻
 依附：⓪-① 该连接依附于0和1
 度数：⓪-①-② 1的度数为2(依附于它的边的总数)
 子图：一幅图所有边的子集
-路径：由边顺序连接的一系列节点
-(简...</p>
+路径：由边顺序连接的一系列节点...</p>
     
         <div class="post-meta">
             <time class="date">2022.04.22</time>
@@ -158,9 +166,11 @@ fi...</p>
             <a href="/2022/03/19/pynote1/">python - 选择更高效的容器(一)</a>
         </h2>
     
-        <p>python - 选择更高效的容器整理自fluent-python “当列表不是首选时”
+        <p>python - 选择更高效的容器
+整理自fluent-python “当列表不是首选时”
 注：此文暂不包括字典类对象
-python的常用容器《fluent-python》一书把python容器以...</p>
+python的常用容器
+《fluent-python》一书把python容...</p>
     
         <div class="post-meta">
             <time class="date">2022.03.19</time>
@@ -248,5 +258,20 @@ python的常用容器《fluent-python》一书把python容器以...</p>
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,9 @@
             <a href="/2024/06/11/computer-network-note6/">计算机网络笔记6——视频流和内容分发网</a>
         </h2>
     
-        <p>计算机网络笔记6——视频流和内容分发网视频储存在服务器上，用户根据需求获取对应大小的数据。为了保证高效，现在普遍使用视频流。
-比特率可以衡量视频质量，低质量通常100kbps，流式高分辨率电影超...</p>
+        <p>计算机网络笔记6——视频流和内容分发网
+视频储存在服务器上，用户根据需求获取对应大小的数据。为了保证高效，现在普遍使用视频流。
+比特率可以衡量视频质量，低质量通常100kbps，流式高分辨率电影...</p>
     
         <div class="post-meta">
             <time class="date">2024.06.11</time>
@@ -117,5 +118,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

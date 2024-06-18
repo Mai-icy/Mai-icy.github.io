@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,11 @@
             <a href="/2023/12/26/learn-algorithm-note5/">算法学习笔记5——异或哈希</a>
         </h2>
     
-        <p>算法学习笔记(5): 异或哈希简介异或哈希主要利用了异或操作的特殊性，再从特殊性出发，解决阻挡特殊性的问题。
-异或操作的特殊性异或操作是对数字的二进制表示按位相加并对2取余，它的运算十分高效，利...</p>
+        <p>算法学习笔记(5): 异或哈希
+简介
+异或哈希主要利用了异或操作的特殊性，再从特殊性出发，解决阻挡特殊性的问题。
+异或操作的特殊性
+异或操作是对数字的二进制表示按位相加并对2取余，它的运算十分高...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.26</time>
@@ -117,5 +120,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

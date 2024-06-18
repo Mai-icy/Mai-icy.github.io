@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,13 +61,15 @@
             <a href="/2022/04/22/graph-algorithm-note1/">图算法笔记1 - 基础知识和DFS&amp;BFS</a>
         </h2>
     
-        <p>图算法无向图术语
+        <p>图算法
+无向图
+术语
+
 相邻：⓪-① 1与0相邻
 依附：⓪-① 该连接依附于0和1
 度数：⓪-①-② 1的度数为2(依附于它的边的总数)
 子图：一幅图所有边的子集
-路径：由边顺序连接的一系列节点
-(简...</p>
+路径：由边顺序连接的一系列节点...</p>
     
         <div class="post-meta">
             <time class="date">2022.04.22</time>
@@ -120,5 +122,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

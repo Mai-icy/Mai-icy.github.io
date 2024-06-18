@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记10——最短路径问题"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,7 +61,9 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记10——最短路径问题"><a href="#ACM程序课算法笔记10——最短路径问题" class="headerlink" title="ACM程序课算法笔记10——最短路径问题"></a>ACM程序课算法笔记10——最短路径问题</h1><h2 id="松弛"><a href="#松弛" class="headerlink" title="松弛"></a>松弛</h2><p>最短路算法中，松弛是最关键的思想，彻底的理解松弛，就能理解最短路径的算法。</p>
+            <h1>ACM程序课算法笔记10——最短路径问题</h1>
+<h2 id="松弛">松弛</h2>
+<p>最短路算法中，松弛是最关键的思想，彻底的理解松弛，就能理解最短路径的算法。</p>
 <p>以下是边的松弛，而且是有向边的松弛。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void relax(WeightedDigraph G, Edge e)
 &#123;
@@ -73,43 +75,61 @@
         edgeTo_[to] &#x3D; e;
     &#125;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>意思就是，看看这个有向边，能否为<strong>最短路结果</strong>提供贡献，如果可以，那么就使用它。</p>
 <p>通过这个思路，我们可以知道由于每次贡献都会让<strong>最短路结果</strong>更小，所以考虑的最短路只会变小不会变大。</p>
 <p>以下不同的算法，均利用了松弛，主要思想也是松弛，不同点在于目的，和对松弛边的顺序不同。</p>
 <p>松弛的distTo数组就是动态规划的体现。</p>
-<h2 id="Dijkstra算法"><a href="#Dijkstra算法" class="headerlink" title="Dijkstra算法"></a>Dijkstra算法</h2><h3 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h3><p>获得到了指定起始点到所有点的距离长度。</p>
-<h3 id="简述算法"><a href="#简述算法" class="headerlink" title="简述算法"></a>简述算法</h3><p>算法依照逐渐考虑边的形式来解决，主要思想在于<strong>松弛</strong></p>
+<h2 id="Dijkstra算法">Dijkstra算法</h2>
+<h3 id="结果">结果</h3>
+<p>获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法">简述算法</h3>
+<p>算法依照逐渐考虑边的形式来解决，主要思想在于<strong>松弛</strong></p>
 <p>松弛顺序：</p>
 <ul>
 <li>先松弛起点</li>
 <li>再松弛没有松弛过的离起点最近的点</li>
 </ul>
 <p>松弛完所有的点就结束了</p>
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>Dijkstra实际上是贪心+动态规划的算法。</p>
+<h3 id="分析">分析</h3>
+<p>Dijkstra实际上是贪心+动态规划的算法。</p>
 <p>根据松弛，就是DP。然而根据<strong>每次选择最近的点</strong>进行松弛，就是贪心。</p>
 <p>理解贪心的合理性：</p>
 <p>如果我们不按照贪心的顺序进行松弛点，当在松弛一条边的时，distTo[to]和 distTo[from]如果都是INF，那么这个松弛就是无效的，因为无法做出任何贡献，如何让松弛有效成为最大问题：</p>
 <p>松弛有效的前提是，distTo[from]已经是最小的了，这就是Dijkstra的贪心体现。</p>
 <p>先松弛起点，所有的distTo中最小的，就已经是这个点的答案了，因为<strong>其他的路径必须要从其它点路过</strong>其它点的距离已经远于最小的了，最小点也就是答案了。</p>
 <p>同时我们顺手理解了另外一个问题Dijkstra算法不能处理负边，因为我们保证<strong>最小点也就是答案</strong>，这是松弛有效的前提，最小点是答案的前提是<strong>其他的路径从其它点路过，其它点因为更大所以不会影响最小点，但如果有负边，就不一样了</strong>。</p>
-<h2 id="Dijkstra算法基于优先队列优化"><a href="#Dijkstra算法基于优先队列优化" class="headerlink" title="Dijkstra算法基于优先队列优化"></a>Dijkstra算法基于优先队列优化</h2><h3 id="结果-1"><a href="#结果-1" class="headerlink" title="结果"></a>结果</h3><p>依旧是获得到了指定起始点到所有点的距离长度。</p>
-<h3 id="简述算法-1"><a href="#简述算法-1" class="headerlink" title="简述算法"></a>简述算法</h3><p>依旧在于松弛的顺序，用优先队列(最小堆)维护distTo，每次松弛距离最小的点即可。</p>
-<h3 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h3><p>上述Dijkstra算法说过，<strong>每次选择最近的点</strong>，也就是每次都找dist里面最小距离的点，至于这种经常更新，还要找到最小点的过程，我们就可以用队列进行优化。否则要每次遍历一遍这个数组去找到最小的点。</p>
-<h2 id="Floyd算法"><a href="#Floyd算法" class="headerlink" title="Floyd算法"></a>Floyd算法</h2><h3 id="结果-2"><a href="#结果-2" class="headerlink" title="结果"></a>结果</h3><p>获得到了所有的两个点之间的最小路径</p>
-<h3 id="简述算法-2"><a href="#简述算法-2" class="headerlink" title="简述算法"></a>简述算法</h3><p>Floyd算法的主要思想是逐步地更新这个二维数组，通过考虑从中间节点经过的路径来找到更短的路径。具体来说，算法的步骤如下：</p>
+<h2 id="Dijkstra算法基于优先队列优化">Dijkstra算法基于优先队列优化</h2>
+<h3 id="结果-2">结果</h3>
+<p>依旧是获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法-2">简述算法</h3>
+<p>依旧在于松弛的顺序，用优先队列(最小堆)维护distTo，每次松弛距离最小的点即可。</p>
+<h3 id="分析-2">分析</h3>
+<p>上述Dijkstra算法说过，<strong>每次选择最近的点</strong>，也就是每次都找dist里面最小距离的点，至于这种经常更新，还要找到最小点的过程，我们就可以用队列进行优化。否则要每次遍历一遍这个数组去找到最小的点。</p>
+<h2 id="Floyd算法">Floyd算法</h2>
+<h3 id="结果-3">结果</h3>
+<p>获得到了所有的两个点之间的最小路径</p>
+<h3 id="简述算法-3">简述算法</h3>
+<p>Floyd算法的主要思想是逐步地更新这个二维数组，通过考虑从中间节点经过的路径来找到更短的路径。具体来说，算法的步骤如下：</p>
 <ul>
-<li><p>将<code>dist[i][j]</code>初始化为直接连接节点<code>i</code>和节点<code>j</code>的边的权重。如果两个节点之间不存在直接的边，则将<code>dist[i][j]</code>初始化为一个无穷大的值。</p>
+<li>
+<p>将<code>dist[i][j]</code>初始化为直接连接节点<code>i</code>和节点<code>j</code>的边的权重。如果两个节点之间不存在直接的边，则将<code>dist[i][j]</code>初始化为一个无穷大的值。</p>
 </li>
-<li><p>对于每对节点<code>(i, j)</code>，以及每一个可能的中间节点<code>k</code>，检查路径<code>i-&gt;k-&gt;j</code>是否比当前已知的路径<code>i-&gt;j</code>更短。如果是，则更新<code>dist[i][j] = dist[i][k] + dist[k][j]</code>。</p>
+<li>
+<p>对于每对节点<code>(i, j)</code>，以及每一个可能的中间节点<code>k</code>，检查路径<code>i-&gt;k-&gt;j</code>是否比当前已知的路径<code>i-&gt;j</code>更短。如果是，则更新<code>dist[i][j] = dist[i][k] + dist[k][j]</code>。</p>
 </li>
-<li><p>重复步骤2，对于每一个可能的中间节点<code>k</code>，直到没有节点可以通过路径<code>i-&gt;k-&gt;j</code>获得更短的路径为止。</p>
+<li>
+<p>重复步骤2，对于每一个可能的中间节点<code>k</code>，直到没有节点可以通过路径<code>i-&gt;k-&gt;j</code>获得更短的路径为止。</p>
 </li>
 </ul>
-<h3 id="分析-2"><a href="#分析-2" class="headerlink" title="分析"></a>分析</h3><p>十分暴力的思路，因此为了便于理解，有人又称其为插点法，对于每个点，考虑它会不会成为图中所有点对中的任意两点的中间者。</p>
-<h2 id="Bellman-Ford算法"><a href="#Bellman-Ford算法" class="headerlink" title="Bellman-Ford算法"></a>Bellman-Ford算法</h2><h3 id="结果-3"><a href="#结果-3" class="headerlink" title="结果"></a>结果</h3><p>获得到了指定起始点到所有点的距离长度。</p>
-<h3 id="简述算法-3"><a href="#简述算法-3" class="headerlink" title="简述算法"></a>简述算法</h3><p>对所有边进行n - 1次松弛。</p>
-<h3 id="分析-3"><a href="#分析-3" class="headerlink" title="分析"></a>分析</h3><p>Dijkstra为了松弛的有效性，选择按照贪心的顺序去松弛。Bellman-Ford算法为了有效性就比较暴力了，因为无效的松弛不会影响最终结果，该算法决定一次松弛所有边，这样做n - 1次，所有的边都被有效松弛了。</p>
+<h3 id="分析-3">分析</h3>
+<p>十分暴力的思路，因此为了便于理解，有人又称其为插点法，对于每个点，考虑它会不会成为图中所有点对中的任意两点的中间者。</p>
+<h2 id="Bellman-Ford算法">Bellman-Ford算法</h2>
+<h3 id="结果-4">结果</h3>
+<p>获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法-4">简述算法</h3>
+<p>对所有边进行n - 1次松弛。</p>
+<h3 id="分析-4">分析</h3>
+<p>Dijkstra为了松弛的有效性，选择按照贪心的顺序去松弛。Bellman-Ford算法为了有效性就比较暴力了，因为无效的松弛不会影响最终结果，该算法决定一次松弛所有边，这样做n - 1次，所有的边都被有效松弛了。</p>
 <p>解释：</p>
 <p>如果没有负边，已知Dijkstra是有效的，松弛所有边，和起点相关的边被有效松弛，再松弛所有边，和Dijkstra计算的第二个点的所有边都是有效松弛的，以此类推，有n - 1个点，就进行n - 1次全松弛即可。</p>
 <p>可处理负边：</p>
@@ -119,9 +139,13 @@
 <p>负环：</p>
 <p>如果一旦出现负环，显然无法进行最小路径的计算，因为程序可以一直在负环绕圈圈，导致最后的结果就是负无穷，然而Bellman-Ford算法可以处理负环。</p>
 <p>根据上一个结论，V - 1次全边松弛可以让所有点都有效松弛，因此第V次松弛必定是全无效松弛，然而，一旦出现负环，就可以无限有效松弛下去。如果第V次出现有效松弛，那么必定就有负环了。</p>
-<h2 id="Bellman-Ford算法基于队列优化"><a href="#Bellman-Ford算法基于队列优化" class="headerlink" title="Bellman-Ford算法基于队列优化"></a>Bellman-Ford算法基于队列优化</h2><h3 id="结果-4"><a href="#结果-4" class="headerlink" title="结果"></a>结果</h3><p>还是获得到了指定起始点到所有点的距离长度。</p>
-<h3 id="简述算法-4"><a href="#简述算法-4" class="headerlink" title="简述算法"></a>简述算法</h3><p>使用一个<strong>队列</strong>，一轮松弛过后，如果有点的距离发生改变，这个点就要被之后松弛，使用队列记录他，如果这个点还在队列里，就不需要再添加进去了，因此还需要记录是否在队列里。</p>
-<h3 id="分析-4"><a href="#分析-4" class="headerlink" title="分析"></a>分析</h3><p>这个队列只是用于记录要松弛的点而已，并不需要优先队列来找最小。只起到了记录的作用。</p>
+<h2 id="Bellman-Ford算法基于队列优化">Bellman-Ford算法基于队列优化</h2>
+<h3 id="结果-5">结果</h3>
+<p>还是获得到了指定起始点到所有点的距离长度。</p>
+<h3 id="简述算法-5">简述算法</h3>
+<p>使用一个<strong>队列</strong>，一轮松弛过后，如果有点的距离发生改变，这个点就要被之后松弛，使用队列记录他，如果这个点还在队列里，就不需要再添加进去了，因此还需要记录是否在队列里。</p>
+<h3 id="分析-5">分析</h3>
+<p>这个队列只是用于记录要松弛的点而已，并不需要优先队列来找最小。只起到了记录的作用。</p>
 <blockquote>
 <p>所以用栈也行</p>
 </blockquote>
@@ -202,5 +226,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

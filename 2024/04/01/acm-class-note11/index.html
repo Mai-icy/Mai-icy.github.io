@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记11——差分约束"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,39 +61,47 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记11——差分约束"><a href="#ACM程序课算法笔记11——差分约束" class="headerlink" title="ACM程序课算法笔记11——差分约束"></a>ACM程序课算法笔记11——差分约束</h1><h2 id="差分约束方程组"><a href="#差分约束方程组" class="headerlink" title="差分约束方程组"></a>差分约束方程组</h2><p>差分约束指的是一种多个元素之间差的限制，而求某两个值的最大差。</p>
+            <h1>ACM程序课算法笔记11——差分约束</h1>
+<h2 id="差分约束方程组">差分约束方程组</h2>
+<p>差分约束指的是一种多个元素之间差的限制，而求某两个值的最大差。</p>
 <p>例如求：</p>
-<p>x1 - x0 &lt;&#x3D; 2——①</p>
-<p>x2 - x0 &lt;&#x3D; 7——②</p>
-<p>x3 - x0 &lt;&#x3D; 8——③</p>
-<p>x2 - x1 &lt;&#x3D; 3——④</p>
-<p>x3 - x2 &lt;&#x3D; 2——⑤</p>
+<p>x1 - x0 &lt;= 2——①</p>
+<p>x2 - x0 &lt;= 7——②</p>
+<p>x3 - x0 &lt;= 8——③</p>
+<p>x2 - x1 &lt;= 3——④</p>
+<p>x3 - x2 &lt;= 2——⑤</p>
 <p>求x3-x0的最大值。</p>
 <p>对于这个式子，我们可以通过很简单的联立来获得关系式</p>
-<p>x3 - x0 &lt;&#x3D; 8——③</p>
-<p>(x3 - x2) + (x2 - x0) &lt;&#x3D; 7 + 2——②⑤</p>
-<p>(x3 - x2) + (x2 - x1) + (x1 - x0) &lt;&#x3D; 2 + 3 + 2——①④⑤</p>
+<p>x3 - x0 &lt;= 8——③</p>
+<p>(x3 - x2) + (x2 - x0) &lt;= 7 + 2——②⑤</p>
+<p>(x3 - x2) + (x2 - x1) + (x1 - x0) &lt;= 2 + 3 + 2——①④⑤</p>
 <p>最终三式子得到 8 9 7三个值</p>
-<p>得到x3 - x0 &lt;&#x3D; 7</p>
-<h3 id="问题转化一（-lt-x3D-amp-lt-）"><a href="#问题转化一（-lt-x3D-amp-lt-）" class="headerlink" title="问题转化一（&lt;&#x3D; &amp; &lt;）"></a>问题转化一（&lt;&#x3D; &amp; &lt;）</h3><p>通过上式的联立我们可以很快发现，这三个值的获取，就相当于从x0直接走到x3，从x0走过x2再到x3等等。这和有向图是几乎一样的。</p>
+<p>得到x3 - x0 &lt;= 7</p>
+<h3 id="问题转化一（-）">问题转化一（&lt;= &amp; &lt;）</h3>
+<p>通过上式的联立我们可以很快发现，这三个值的获取，就相当于从x0直接走到x3，从x0走过x2再到x3等等。这和有向图是几乎一样的。</p>
 <p>无异于 0-&gt;1 边权2，0-&gt;2 边权7，0-&gt;3 边权8，1-&gt;2 边权3，2-&gt;3 边权2</p>
 <p>当我要求x3的最大值时，也就是求0到3的最短路径。</p>
 <blockquote>
 <p>注意为什么是最短路径，当你求的是最大值的时候，你得到的路径权值是约束条件，如同上面的8 9 7一样，是小于等于它们，所以我们要取最小的，也就是最短路径。</p>
 </blockquote>
-<h3 id="问题转化二（-gt-x3D-amp-gt-）"><a href="#问题转化二（-gt-x3D-amp-gt-）" class="headerlink" title="问题转化二（&gt;&#x3D; &amp; &gt;）"></a>问题转化二（&gt;&#x3D; &amp; &gt;）</h3><p>上面是最好理解的<code>&lt;=</code>符号，现在当遇到<code>&gt;=</code>时，也就两边取负变号，也就变成了上面一样的方式，只不过边权取负，方向相反。</p>
+<h3 id="问题转化二（-）">问题转化二（&gt;= &amp; &gt;）</h3>
+<p>上面是最好理解的<code>&lt;=</code>符号，现在当遇到<code>&gt;=</code>时，也就两边取负变号，也就变成了上面一样的方式，只不过边权取负，方向相反。</p>
 <p>或者是换一个理解方式，所有都为<code>&gt;=</code>，此时就需要转换一下，所有的值都变成大于等于，最后联立得到的多个约束值也是大于等于，此时就是找到多个约束值的最大值，最后求的也是最小值。就变成了最大路径问题。</p>
 <blockquote>
 <p>注意：Dij不能用于计算最大路径问题，原因是贪心思路的时候，dij的最短路保证最短路径的那个点已经是答案了，但对于最长路，最长路径的点也不一定是答案，破坏了贪心的思路。</p>
 </blockquote>
-<h3 id="问题转化三（-x3D-）"><a href="#问题转化三（-x3D-）" class="headerlink" title="问题转化三（&#x3D;）"></a>问题转化三（&#x3D;）</h3><p>当遇到<code>=</code>的要求时，实际上就是两个符号的组合起来，<code>=</code>等价于<code>&gt;=</code>&amp;<code>&lt;=</code>，同时满足两个条件，这也就是一个双向的边，不过要注意权值正负不同。</p>
-<h2 id="例题：整数区间"><a href="#例题：整数区间" class="headerlink" title="例题：整数区间"></a>例题：整数区间</h2><h3 id="内容："><a href="#内容：" class="headerlink" title="内容："></a>内容：</h3><p>给定 n 个整数闭区间 [ai, bi] 和 n 个整数 c1, …, cn。</p>
+<h3 id="问题转化三（-）">问题转化三（=）</h3>
+<p>当遇到<code>=</code>的要求时，实际上就是两个符号的组合起来，<code>=</code>等价于<code>&gt;=</code>&amp;<code>&lt;=</code>，同时满足两个条件，这也就是一个双向的边，不过要注意权值正负不同。</p>
+<h2 id="例题：整数区间">例题：整数区间</h2>
+<h3 id="内容：">内容：</h3>
+<p>给定 n 个整数闭区间 [ai, bi] 和 n 个整数 c1, …, cn。</p>
 <p>读取区间数、它们的端点和整数 c1, …, cn，</p>
-<p>计算整数集 Z 的最小大小，该数集满足和区间 [ai , bi]至少有 ci 个公共元素( i &#x3D; 1, 2, …, n )</p>
-<h3 id="题解："><a href="#题解：" class="headerlink" title="题解："></a>题解：</h3><p>这是一道很隐藏的差分约束，其特点难以发现。我们不妨记录a[i]代表前i个数字，区间选择了a[i]个数，那么对于区间[left, right]内至少要选择c个元素也就是</p>
-<p>a[right] - a[left - 1] &gt;&#x3D; c</p>
+<p>计算整数集 Z 的最小大小，该数集满足和区间 [ai , bi]至少有 ci 个公共元素( i = 1, 2, …, n )</p>
+<h3 id="题解：">题解：</h3>
+<p>这是一道很隐藏的差分约束，其特点难以发现。我们不妨记录a[i]代表前i个数字，区间选择了a[i]个数，那么对于区间[left, right]内至少要选择c个元素也就是</p>
+<p>a[right] - a[left - 1] &gt;= c</p>
 <p>同时我们还有个差分条件也就是</p>
-<p>1 &gt;&#x3D; a[x] - a[x - 1] &gt;&#x3D; 0</p>
+<p>1 &gt;= a[x] - a[x - 1] &gt;= 0</p>
 <p>根据以上约束条件做出边即可</p>
 <blockquote>
 <p>又水了一篇博客</p>
@@ -165,5 +173,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

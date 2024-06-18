@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,7 +61,9 @@
             <a href="/2023/10/10/asyncio-note/">Python异步底层原理</a>
         </h2>
     
-        <p>Python 异步基础以及原理深层理解概述python的异步是基于python的生成器机制，利用生成器的特性，可以完成在多个函数之间互相切换。我们可以关注到生成器的一个特性，就是在next了之后...</p>
+        <p>Python 异步基础以及原理深层理解
+概述
+python的异步是基于python的生成器机制，利用生成器的特性，可以完成在多个函数之间互相切换。我们可以关注到生成器的一个特性，就是在next了...</p>
     
         <div class="post-meta">
             <time class="date">2023.10.10</time>
@@ -116,5 +118,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

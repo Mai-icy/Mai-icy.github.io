@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记6——ST表"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,24 +61,33 @@
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-6-Sparse-Table-ST-表"><a href="#算法学习笔记-6-Sparse-Table-ST-表" class="headerlink" title="算法学习笔记(6): Sparse Table (ST 表)"></a>算法学习笔记(6): Sparse Table (ST 表)</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p><strong>ST 表</strong> 是一个数据结构，用于计算<strong>RMQ问题</strong>，其思想基于动态规划</p>
-<h2 id="RMQ问题"><a href="#RMQ问题" class="headerlink" title="RMQ问题"></a>RMQ问题</h2><p>RMQ即Range Minimum &#x2F; Maximum Query，区间的最大值最小值查询，即求区间最值的问题。</p>
-<h3 id="内容："><a href="#内容：" class="headerlink" title="内容："></a>内容：</h3><p>给含有n个元素的数组a，有多次查询，每次查询有变量L，R，问区间[L, R] 中的最大&#x2F;小值。</p>
-<h3 id="分析："><a href="#分析：" class="headerlink" title="分析："></a>分析：</h3><h4 id="解法1"><a href="#解法1" class="headerlink" title="解法1"></a>解法1</h4><p>对于区间L，R，只要遍历它们就可以找到最大值，这也是最暴力的解法，其时间复杂度为O(N2).</p>
+            <h1>算法学习笔记(6): Sparse Table (ST 表)</h1>
+<h2 id="简介">简介</h2>
+<p><strong>ST 表</strong> 是一个数据结构，用于计算<strong>RMQ问题</strong>，其思想基于动态规划</p>
+<h2 id="RMQ问题">RMQ问题</h2>
+<p>RMQ即Range Minimum / Maximum Query，区间的最大值最小值查询，即求区间最值的问题。</p>
+<h3 id="内容：">内容：</h3>
+<p>给含有n个元素的数组a，有多次查询，每次查询有变量L，R，问区间[L, R] 中的最大/小值。</p>
+<h3 id="分析：">分析：</h3>
+<h4 id="解法1">解法1</h4>
+<p>对于区间L，R，只要遍历它们就可以找到最大值，这也是最暴力的解法，其时间复杂度为O(N2).</p>
 <p>对于暴力解法，需要消耗大量的时间，多次查询都是一次新的查询，不利于降低时间复杂度。</p>
-<h4 id="解法2"><a href="#解法2" class="headerlink" title="解法2"></a>解法2</h4><p>因为有多次查找，不如创建数组d[n][n]，其中d[i][j] 表示区间i j中的最大值。其中我们有：</p>
+<h4 id="解法2">解法2</h4>
+<p>因为有多次查找，不如创建数组d[n][n]，其中d[i][j] 表示区间i j中的最大值。其中我们有：</p>
 <pre class="line-numbers language-[]" data-language="[]"><code class="language-[]">d[i][i] &#x3D; a[i]
 d[i][j] &#x3D; max(d[i][j - 1], a[j])<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p>对此，我们可以得到所有的查询的值，但时间复杂度并没有很大的下降，同时，空间复杂度提升到了O(N2)</p>
 <p>对于这个d，我们将其称为<strong>表</strong>，我们可以发现，该表存储的多个区间高度重合，因此，该表的密度很高。</p>
 <p>虽然解法2使用了DP的思想，但是仍有很大的进步空间。</p>
-<h2 id="ST表-稀疏表"><a href="#ST表-稀疏表" class="headerlink" title="ST表(稀疏表)"></a>ST表(稀疏表)</h2><p>对于我们解法二，提到了该表的多个区间重合度问题，对于这一点，我们可以考虑能否降低区间重合度。</p>
-<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>ST表提出储存d[i][j]代表区间[i, i + 2^j) 左闭右开中的最值。</p>
+<h2 id="ST表-稀疏表">ST表(稀疏表)</h2>
+<p>对于我们解法二，提到了该表的多个区间重合度问题，对于这一点，我们可以考虑能否降低区间重合度。</p>
+<h3 id="定义">定义</h3>
+<p>ST表提出储存d[i][j]代表区间[i, i + 2^j) 左闭右开中的最值。</p>
 <blockquote>
 <p>也可以储存最值的下标</p>
 </blockquote>
-<h3 id="查询"><a href="#查询" class="headerlink" title="查询"></a>查询</h3><p>我们先假设该表已经完成预处理，该表的值已经储存完毕。</p>
+<h3 id="查询">查询</h3>
+<p>我们先假设该表已经完成预处理，该表的值已经储存完毕。</p>
 <p>对于查询区间[x, y]，我们可知想其长度为y - x + 1, 对此，它必定能由两个区间并集产生。</p>
 <p>两个区间特点：长度为2的幂值，两个区间可能重合，例如对于区间 [0, 13]</p>
 <p>可得两个区间为 [0, 7] 和 [6, 13]。易得这两个区间的最大值也就是d[0][3]和d[6][3]</p>
@@ -86,9 +95,9 @@ d[i][j] &#x3D; max(d[i][j - 1], a[j])<span aria-hidden="true" class="line-number
 <pre class="line-numbers language-none"><code class="language-none">len &#x3D; r - l + 1
 i &#x3D; log2(len) &#x2F;&#x2F; 向下取整
 result &#x3D; max(d[l][i], d[r - (1 &lt;&lt; i) + 1][i])<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="预处理"><a href="#预处理" class="headerlink" title="预处理"></a>预处理</h3><p>d[i][0] &#x3D; i;</p>
-<p>d[i][j] &#x3D; max(d[i][j - 1], d[i + (1 &lt;&lt; (j - 1))][j - 1]);</p>
+<h3 id="预处理">预处理</h3>
+<p>d[i][0] = i;</p>
+<p>d[i][j] = max(d[i][j - 1], d[i + (1 &lt;&lt; (j - 1))][j - 1]);</p>
 <pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">void init(const vector&lt;int&gt; &amp; arr) &#123;
     for (int j &#x3D; 0; j &lt; arr.size(); j++) &#123;
         for (int i &#x3D; 1; i + (1 &lt;&lt; (j - 1)) &lt;&#x3D; arr.size(); j++) &#123;
@@ -99,11 +108,11 @@ result &#x3D; max(d[l][i], d[r - (1 &lt;&lt; i) + 1][i])<span aria-hidden="true"
         &#125;
     &#125;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>同样使用了DP的思路，对于区间[0, 7] （d[0, 3]）已知区间[0, 3] [4, 7] 分别是 d[0, 2], d[4, 2]</p>
 <p>转化之后即为</p>
-<p>d[0, 3] &#x3D; max(d[0, 2], d[4, 2]);</p>
-<h3 id="实现的稀疏表类"><a href="#实现的稀疏表类" class="headerlink" title="实现的稀疏表类"></a>实现的稀疏表类</h3><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class SparseTable &#123;
+<p>d[0, 3] = max(d[0, 2], d[4, 2]);</p>
+<h3 id="实现的稀疏表类">实现的稀疏表类</h3>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class SparseTable &#123;
 public:
     SparseTable(const vector&lt;int&gt;&amp; array) &#123;
         this-&gt;array &#x3D; array;
@@ -143,11 +152,13 @@ private:
     vector&lt;vector&lt;int&gt;&gt; table;
     int n, k;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="RMQ二维扩展"><a href="#RMQ二维扩展" class="headerlink" title="RMQ二维扩展"></a>RMQ二维扩展</h2><p>简略说明一下</p>
+<h2 id="RMQ二维扩展">RMQ二维扩展</h2>
+<p>简略说明一下</p>
 <p>d[a][b][c][d] 为 [(a, b), (c + 2 ^ a - 1, d + 2 ^ b - 1)]</p>
 <p>按照同样思路完成即可。</p>
-<h2 id="部分应用例题"><a href="#部分应用例题" class="headerlink" title="部分应用例题"></a>部分应用例题</h2><h3 id="例题1：区间GCD"><a href="#例题1：区间GCD" class="headerlink" title="例题1：区间GCD"></a>例题1：区间GCD</h3><p>给定一个数字序列，多次询问[l, r]区间内所有数的最大公因数。</p>
+<h2 id="部分应用例题">部分应用例题</h2>
+<h3 id="例题1：区间GCD">例题1：区间GCD</h3>
+<p>给定一个数字序列，多次询问[l, r]区间内所有数的最大公因数。</p>
 <p>我们易发现gcd的连续性，和取最大值类似，故直接替换函数即可。</p>
 <blockquote>
 <p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/437873882?utm_id=0">参考</a></p>
@@ -219,5 +230,20 @@ private:
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

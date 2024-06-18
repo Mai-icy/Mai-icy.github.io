@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,12 @@
             <a href="/2024/04/01/acm-class-note11/">ACM程序课算法笔记11——差分约束</a>
         </h2>
     
-        <p>ACM程序课算法笔记11——差分约束差分约束方程组差分约束指的是一种多个元素之间差的限制，而求某两个值的最大差。
+        <p>ACM程序课算法笔记11——差分约束
+差分约束方程组
+差分约束指的是一种多个元素之间差的限制，而求某两个值的最大差。
 例如求：
-x1 - x0 &amp;lt;&amp;#x3D; 2——①
-x2 - x0 &amp;lt...</p>
+x1 - x0 &amp;lt;= 2——①
+x2 - x0 &amp;lt;= ...</p>
     
         <div class="post-meta">
             <time class="date">2024.04.01</time>
@@ -119,5 +121,20 @@ x2 - x0 &amp;lt...</p>
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

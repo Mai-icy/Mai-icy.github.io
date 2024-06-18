@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="计算机网络笔记6——视频流和内容分发网"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,28 +61,37 @@
         </section>
         <article class="post-content">
         
-            <h1 id="计算机网络笔记6——视频流和内容分发网"><a href="#计算机网络笔记6——视频流和内容分发网" class="headerlink" title="计算机网络笔记6——视频流和内容分发网"></a>计算机网络笔记6——视频流和内容分发网</h1><p>视频储存在服务器上，用户根据需求获取对应大小的数据。为了保证高效，现在普遍使用视频流。</p>
+            <h1>计算机网络笔记6——视频流和内容分发网</h1>
+<p>视频储存在服务器上，用户根据需求获取对应大小的数据。为了保证高效，现在普遍使用视频流。</p>
 <p>比特率可以衡量视频质量，低质量通常100kbps，流式高分辨率电影超过3Mbps，4K流式超过10Mbps。</p>
 <p>用户可以根据需求选择对应的质量。</p>
-<h3 id="MPD"><a href="#MPD" class="headerlink" title="MPD"></a>MPD</h3><p>MPD（媒体呈现描述，Media Presentation Description）是一个分层数据模型，通常以XML文件的形式表示，用于描述视频的所有信息。一个MPD文件包含一个或多个Period（时段）。每个Period包含各种媒体组件，例如视频流、不同的编码器、音频语言或字幕等。</p>
+<h3 id="MPD">MPD</h3>
+<p>MPD（媒体呈现描述，Media Presentation Description）是一个分层数据模型，通常以XML文件的形式表示，用于描述视频的所有信息。一个MPD文件包含一个或多个Period（时段）。每个Period包含各种媒体组件，例如视频流、不同的编码器、音频语言或字幕等。</p>
 <p>这些组件都有特定的特性，如码率、帧率、音频通道数和音频采样率等，在同一个Period内，这些特性是不能改变的。但在不同的Period时，可以进行对不同特性进行灵活选择。</p>
 <p>MPD文件本身并不包含视频数据，指导客户端如何从服务器上获取和播放视频数据的一个索引或目录。</p>
-<h2 id="HTTP流"><a href="#HTTP流" class="headerlink" title="HTTP流"></a>HTTP流</h2><p>视频被储存在服务器，用户发起请求获取内容，两者形成TCP连接并开始传输文件。用户不断收集数据，保存在应用缓存之中。视频播放程序负责定时从缓存中抓取帧，对帧解压缩并播放。在播放的时候，再缓存后面的帧。</p>
-<h3 id="分段FLV"><a href="#分段FLV" class="headerlink" title="分段FLV"></a>分段FLV</h3><p>视频播放器向视频服务器发送请求，获取视频文件的头部信息。这些头部信息包括视频的基本信息（如编码格式、分辨率、帧率等）以及视频的索引信息（如分段视频的索引）。再根据用户请求，分割视频文件，再转发到用户即可。但对于长视频来说，头部过于庞大，效率很低，于是可以采用分段FLV，在原来的基础上再进行分割。</p>
-<h2 id="DASH"><a href="#DASH" class="headerlink" title="DASH"></a>DASH</h2><p>DASH：Dynamic Adaptive Streaming over HTTP。DASH会通过media presentation description (MPD)将视频内容切片成一个很短的文件片段，每个切片都有多个不同的码率，DASH Client可以根据网络的情况选择一个码率进行播放，支持在不同码率之间无缝切换。</p>
+<h2 id="HTTP流">HTTP流</h2>
+<p>视频被储存在服务器，用户发起请求获取内容，两者形成TCP连接并开始传输文件。用户不断收集数据，保存在应用缓存之中。视频播放程序负责定时从缓存中抓取帧，对帧解压缩并播放。在播放的时候，再缓存后面的帧。</p>
+<h3 id="分段FLV">分段FLV</h3>
+<p>视频播放器向视频服务器发送请求，获取视频文件的头部信息。这些头部信息包括视频的基本信息（如编码格式、分辨率、帧率等）以及视频的索引信息（如分段视频的索引）。再根据用户请求，分割视频文件，再转发到用户即可。但对于长视频来说，头部过于庞大，效率很低，于是可以采用分段FLV，在原来的基础上再进行分割。</p>
+<h2 id="DASH">DASH</h2>
+<p>DASH：Dynamic Adaptive Streaming over HTTP。DASH会通过media presentation description (MPD)将视频内容切片成一个很短的文件片段，每个切片都有多个不同的码率，DASH Client可以根据网络的情况选择一个码率进行播放，支持在不同码率之间无缝切换。</p>
 <p>使用DASH后，视频的不同版本都被存在服务器中。每个版本都有不同的url。同时，对于这个视频，有一个MPD文件，正如上面所描述的，MPD文件记录了不同版本的请求位置。客户端先获取一个MPD，后根据当前不同的状况，向服务器发送不同的url的请求，一次选择一个并下载一个块。</p>
 <p>DASH能够利用现有的内容交付网络基础设施，并与许多客户端应用程序兼容。</p>
-<h2 id="内容分发网CDN"><a href="#内容分发网CDN" class="headerlink" title="内容分发网CDN"></a>内容分发网CDN</h2><p>对于大体量的视频网站，需要为成百上千的用户提供视频流，并且还要储存可能上亿个视频，为了保证高效率的传输，以及稳定性，把所有视频都存储在一个数据中心显得不是很现实了。而且，多个用户如果在看同一个视频，把数据传输到ISP就会重复，并且多次。并且数据中心就是典型的单点故障，如果某个链路崩溃，就会造成很大影响。</p>
+<h2 id="内容分发网CDN">内容分发网CDN</h2>
+<p>对于大体量的视频网站，需要为成百上千的用户提供视频流，并且还要储存可能上亿个视频，为了保证高效率的传输，以及稳定性，把所有视频都存储在一个数据中心显得不是很现实了。而且，多个用户如果在看同一个视频，把数据传输到ISP就会重复，并且多次。并且数据中心就是典型的单点故障，如果某个链路崩溃，就会造成很大影响。</p>
 <p>为了应对这个问题，大量分发内容的需求就由内容分发网CDN解决。</p>
-<h3 id="CDN"><a href="#CDN" class="headerlink" title="CDN"></a>CDN</h3><p>（Content Distribution Network, CDN）</p>
+<h3 id="CDN">CDN</h3>
+<p>（Content Distribution Network, CDN）</p>
 <p>CDN是由多个位于不同地理位置的服务器组成的网络，这些服务器存储着文件数据。CDN的目标是将用户的请求定向到能够提供最佳用户体验的服务器上。</p>
 <p>CDN可以是专用CDN，即由内容提供商自己拥有和管理，例如，谷歌的CDN用于分发YouTube视频和其他类型的内容。</p>
 <p>另一种CDN是第三方CDN，它代表多个内容提供商分发内容。</p>
-<h3 id="CDN操作"><a href="#CDN操作" class="headerlink" title="CDN操作"></a>CDN操作</h3><p>用户在浏览器中打开视频网站，并点击观看一个视频。此时，浏览器发送一个HTTP请求，要求获取该视频文件。浏览器向本地DNS服务器请求解析该视频网站的域名。</p>
+<h3 id="CDN操作">CDN操作</h3>
+<p>用户在浏览器中打开视频网站，并点击观看一个视频。此时，浏览器发送一个HTTP请求，要求获取该视频文件。浏览器向本地DNS服务器请求解析该视频网站的域名。</p>
 <p>本地DNS服务器发送请求给权威DNS服务器，发现目标是个CDN加速的，于是返回CDN的位置，本地服务器把CND返回给用户。</p>
 <p>浏览器的请求被发送到用户附近的CDN服务器。它会检查是否缓存了该视频文件。</p>
 <p>如果有缓存，就直接传输数据，如果没有，就会向原始服务器请求文件。</p>
-<h3 id="集群选择策略"><a href="#集群选择策略" class="headerlink" title="集群选择策略"></a>集群选择策略</h3><p>指的是用户连接到的CDN并不是一直不变的，而是会动态改变的，至于选择哪个CDN就依照了集群选择策略。</p>
+<h3 id="集群选择策略">集群选择策略</h3>
+<p>指的是用户连接到的CDN并不是一直不变的，而是会动态改变的，至于选择哪个CDN就依照了集群选择策略。</p>
 <p>经过用户的DNS查询，CDN也知道了用户的ip地址，会为该ip地址选择一个适当的集群。有多种方案，例如根据地理位置，或者是根据试探包的响应速度，选择最快的。</p>
 
         </article>
@@ -151,5 +160,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

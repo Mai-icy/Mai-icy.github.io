@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记5——异或哈希"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,21 +61,30 @@
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-5-异或哈希"><a href="#算法学习笔记-5-异或哈希" class="headerlink" title="算法学习笔记(5): 异或哈希"></a>算法学习笔记(5): 异或哈希</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>异或哈希主要利用了异或操作的特殊性，再从特殊性出发，解决阻挡特殊性的问题。</p>
-<h2 id="异或操作的特殊性"><a href="#异或操作的特殊性" class="headerlink" title="异或操作的特殊性"></a>异或操作的特殊性</h2><p>异或操作是对数字的二进制表示按位相加并对2取余，它的运算十分高效，利于计算机的运算。异或运算符合交换律等等。同时有个特性<code>A ^ A = 0</code>.</p>
+            <h1>算法学习笔记(5): 异或哈希</h1>
+<h2 id="简介">简介</h2>
+<p>异或哈希主要利用了异或操作的特殊性，再从特殊性出发，解决阻挡特殊性的问题。</p>
+<h2 id="异或操作的特殊性">异或操作的特殊性</h2>
+<p>异或操作是对数字的二进制表示按位相加并对2取余，它的运算十分高效，利于计算机的运算。异或运算符合交换律等等。同时有个特性<code>A ^ A = 0</code>.</p>
 <p>推论可得当一个数进行偶数次异或运算后，其值为0，当一个数进行奇数次操作后，其结果为自身</p>
-<h3 id="问题1："><a href="#问题1：" class="headerlink" title="问题1："></a>问题1：</h3><p>一个数组中除了一个元素外其他元素都出现了两次(偶数次)，找出这个元素。</p>
-<h3 id="题解："><a href="#题解：" class="headerlink" title="题解："></a>题解：</h3><p>我们就可以采用异或操作的特殊性，一旦异或两次就会变成0，故剩余的数就是所有值异或的结果。同样很好理解，类似于一个bitmap，每个数都占据一个位的空间，如果出现一次就变成1，再出现一次就变成0。最后的运算结果值剩下的位就是只出现1次的数了。</p>
+<h3 id="问题1：">问题1：</h3>
+<p>一个数组中除了一个元素外其他元素都出现了两次(偶数次)，找出这个元素。</p>
+<h3 id="题解：">题解：</h3>
+<p>我们就可以采用异或操作的特殊性，一旦异或两次就会变成0，故剩余的数就是所有值异或的结果。同样很好理解，类似于一个bitmap，每个数都占据一个位的空间，如果出现一次就变成1，再出现一次就变成0。最后的运算结果值剩下的位就是只出现1次的数了。</p>
 <p>但是反思一下，对于不同的数，我都要将它们映射到不同的位上，而且一旦有n个数，我的bitmap相当于使用了2^n的空间，那如果我们不采用这种方式，直接使用这个值呢</p>
-<h3 id="修改尝试"><a href="#修改尝试" class="headerlink" title="修改尝试"></a>修改尝试</h3><p>对于序列，如果直接使用这个值，就会产生不同的数直接互相干扰，例如数列 3 5 7,他的运算结果是0，因为3和5异或恰好就是7。为了避免这种互相干扰带来的冲突，我们选择哈希随机数。</p>
-<h2 id="哈希随机数"><a href="#哈希随机数" class="headerlink" title="哈希随机数"></a>哈希随机数</h2><p>此时就需要请出我们的哈希产生作用，我们希望将原本的序列中的数字映射到一个不互相干扰的数字上，对此我们通常采用<code>mt19937_64 rnd(time(0))</code>，产生一个随机数，再将普通数字映射到上面。</p>
+<h3 id="修改尝试">修改尝试</h3>
+<p>对于序列，如果直接使用这个值，就会产生不同的数直接互相干扰，例如数列 3 5 7,他的运算结果是0，因为3和5异或恰好就是7。为了避免这种互相干扰带来的冲突，我们选择哈希随机数。</p>
+<h2 id="哈希随机数">哈希随机数</h2>
+<p>此时就需要请出我们的哈希产生作用，我们希望将原本的序列中的数字映射到一个不互相干扰的数字上，对此我们通常采用<code>mt19937_64 rnd(time(0))</code>，产生一个随机数，再将普通数字映射到上面。</p>
 <p>代入该随机数的目的就是为了减少冲突。</p>
 <blockquote>
 <p>mt19937_64 是 c++ 自带的梅森旋转（Mersenne Twister）伪随机数，可以随机生成 64 位整数。同时它输出的数字也是64位无符号整数。</p>
 </blockquote>
 <p>此时代入它，让我们解决更加复杂的题目。</p>
-<h3 id="问题2："><a href="#问题2：" class="headerlink" title="问题2："></a>问题2：</h3><p>给一个长度为 n 的数组 A，找到所有的连续子序列 S ，其长度为L，满足：S包含A中前L个的所有数字。求这样的区间个数。</p>
-<h3 id="题解：-1"><a href="#题解：-1" class="headerlink" title="题解："></a>题解：</h3><p>就是在询问对于区间[L, R] 和 区间[1, R - L + 1], 元素是否相同，对此可以理解为</p>
+<h3 id="问题2：">问题2：</h3>
+<p>给一个长度为 n 的数组 A，找到所有的连续子序列 S ，其长度为L，满足：S包含A中前L个的所有数字。求这样的区间个数。</p>
+<h3 id="题解：-2">题解：</h3>
+<p>就是在询问对于区间[L, R] 和 区间[1, R - L + 1], 元素是否相同，对此可以理解为</p>
 <p><strong>判断一个序列是否是另一个序列的排列组合</strong>问题</p>
 <p>以下便是题解代码</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include&lt;bits&#x2F;stdc++.h&gt;
@@ -109,9 +118,10 @@ int solve(int n)
         
     return result;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="问题3："><a href="#问题3：" class="headerlink" title="问题3："></a>问题3：</h3><p>判断一个序列的乘积是否是完全平方数</p>
-<h3 id="题解：-2"><a href="#题解：-2" class="headerlink" title="题解："></a>题解：</h3><p>对序列的数进行因数分解，然后改序列所有因数出现的个数都是偶数个，即为平方数</p>
+<h3 id="问题3：">问题3：</h3>
+<p>判断一个序列的乘积是否是完全平方数</p>
+<h3 id="题解：-3">题解：</h3>
+<p>对序列的数进行因数分解，然后改序列所有因数出现的个数都是偶数个，即为平方数</p>
 
         </article>
         <section class="post-near">
@@ -179,5 +189,20 @@ int solve(int n)
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记13——线段树入门"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,11 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记13——线段树入门"><a href="#ACM程序课算法笔记13——线段树入门" class="headerlink" title="ACM程序课算法笔记13——线段树入门"></a>ACM程序课算法笔记13——线段树入门</h1><h2 id="线段树介绍"><a href="#线段树介绍" class="headerlink" title="线段树介绍"></a>线段树介绍</h2><p>线段树的功能是维护一个数组，当然你可以用普通数组维护，线段树只是一种维护方式，它的特点是可以在O(LogN)的时间复杂度完成单点修改，区间修改，区间查询。</p>
-<h2 id="线段树结构"><a href="#线段树结构" class="headerlink" title="线段树结构"></a>线段树结构</h2><p>线段树的结构目的是为了维护区间的某个信息，比如总和，最大值，最小值等等。</p>
+            <h1>ACM程序课算法笔记13——线段树入门</h1>
+<h2 id="线段树介绍">线段树介绍</h2>
+<p>线段树的功能是维护一个数组，当然你可以用普通数组维护，线段树只是一种维护方式，它的特点是可以在O(LogN)的时间复杂度完成单点修改，区间修改，区间查询。</p>
+<h2 id="线段树结构">线段树结构</h2>
+<p>线段树的结构目的是为了维护区间的某个信息，比如总和，最大值，最小值等等。</p>
 <p>按照树的思想，把区间进行多次的分割，同时，线段树使用数组存储树，使用数组表示树可以使根节点编号为1。</p>
 <p>例如区间[1,5] 我们根据树先进行分割一次[1, 3]和[4, 5]这就是一个根节点变成两个子节点。同时在对它们俩进行一个拆分，此时[1,3]变成[1,2]和[3,3]。[4, 5]拆成[4,4]和[5,5]结构如下图</p>
 <p><img src="/2024/04/16/acm-class-note13/segt1.svg" alt="segt1.svg"></p>
@@ -80,8 +83,8 @@
 				<span class="token keyword">return</span> newNode<span class="token punctuation">;</span>
 		<span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="线段树的构建"><a href="#线段树的构建" class="headerlink" title="线段树的构建"></a>线段树的构建</h3><p>对于建立一个这样的空间，我们可以发现很多都是在做重复的工作，所以不妨使用递归。再从下往上构建，颇有回溯味道。再根据数组储存树的基础知识，获取左子节点的方法是 index * 2 右子节点是 index * 2 +1</p>
+<h3 id="线段树的构建">线段树的构建</h3>
+<p>对于建立一个这样的空间，我们可以发现很多都是在做重复的工作，所以不妨使用递归。再从下往上构建，颇有回溯味道。再根据数组储存树的基础知识，获取左子节点的方法是 index * 2 右子节点是 index * 2 +1</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">build</span><span class="token punctuation">(</span>vector<span class="token operator">&lt;</span>Node<span class="token operator">></span> <span class="token operator">&amp;</span>arr<span class="token punctuation">,</span> <span class="token keyword">int</span> left<span class="token punctuation">,</span> <span class="token keyword">int</span> right<span class="token punctuation">,</span> <span class="token keyword">int</span> arrNo<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
 	  <span class="token keyword">if</span> <span class="token punctuation">(</span>left <span class="token operator">==</span> right<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
 		    arr<span class="token punctuation">[</span>arrNo<span class="token punctuation">]</span> <span class="token operator">=</span> a<span class="token punctuation">[</span>left<span class="token punctuation">]</span><span class="token punctuation">;</span>
@@ -97,8 +100,8 @@
 		<span class="token comment">// 特征值向上转移，这里使用相加，当然还可以使用其它方式</span>
 	  arr<span class="token punctuation">[</span>p<span class="token punctuation">]</span> <span class="token operator">=</span> arr<span class="token punctuation">[</span>leftTreeNo<span class="token punctuation">]</span> <span class="token operator">+</span> arr<span class="token punctuation">[</span>rightTreeNo<span class="token punctuation">]</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="线段树的区间查询"><a href="#线段树的区间查询" class="headerlink" title="线段树的区间查询"></a>线段树的区间查询</h3><p>线段树的区间查询不一定是，这里我们以求和为例子，也就是arr[1]储存1~5所有值的和，每个元素管理的区间的区间特征值作为它的值。同样，你也可以使用结构体来代表一个节点，这样就可以储存多个值。</p>
+<h3 id="线段树的区间查询">线段树的区间查询</h3>
+<p>线段树的区间查询不一定是，这里我们以求和为例子，也就是arr[1]储存1~5所有值的和，每个元素管理的区间的区间特征值作为它的值。同样，你也可以使用结构体来代表一个节点，这样就可以储存多个值。</p>
 <p>线段树的区间查询有一个特点，一次查询最后是两个节点的和。例如当我求区间[2, 5] 实际上访问的就是节点[2, 2]和[3, 5]两个节点的和并。</p>
 <p>为什么是两个：已知如果是多个一定连续，如果两个连续大概率合并成一个。</p>
 <p>所以对于区间查询来说，主要问题就是如何找到这两个节点。</p>
@@ -117,10 +120,11 @@
 			  sum <span class="token operator">+=</span> <span class="token function">getsum</span><span class="token punctuation">(</span>queryLeft<span class="token punctuation">,</span> queryRight<span class="token punctuation">,</span> mid <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> nodeRight<span class="token punctuation">,</span> rightTreeNo<span class="token punctuation">)</span><span class="token punctuation">;</span>
 	  <span class="token keyword">return</span> sum<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>通过递归从上往下去寻找即可。见上代码。</p>
-<h3 id="线段树的区间修改"><a href="#线段树的区间修改" class="headerlink" title="线段树的区间修改"></a>线段树的区间修改</h3><p>根据简单的判断我们可以得出，线段树如果要修改一个值，就要同步修改上面的所有值，但如果修改一个区间，同样我们要进行很大的成本修改，对此，咱们提出了懒惰标级。</p>
-<h3 id="懒惰标记"><a href="#懒惰标记" class="headerlink" title="懒惰标记"></a>懒惰标记</h3><p>懒惰标记的目的就是延迟对具体底下的值进行修改。例如我要修改的是区间[1, 3]的所有值，那我先只改[1, 2]和[3, 3]，如果我之后查询的是[1, 4] 和 [1, 5]那么实际上就没有必要落实到1和2个题元素上，那我们就把这个修改暂时留在[1, 2]的这个节点上，等到我真的要去查询[1, 1]或者[2, 2]，我再把这个修改下沉。</p>
+<h3 id="线段树的区间修改">线段树的区间修改</h3>
+<p>根据简单的判断我们可以得出，线段树如果要修改一个值，就要同步修改上面的所有值，但如果修改一个区间，同样我们要进行很大的成本修改，对此，咱们提出了懒惰标级。</p>
+<h3 id="懒惰标记">懒惰标记</h3>
+<p>懒惰标记的目的就是延迟对具体底下的值进行修改。例如我要修改的是区间[1, 3]的所有值，那我先只改[1, 2]和[3, 3]，如果我之后查询的是[1, 4] 和 [1, 5]那么实际上就没有必要落实到1和2个题元素上，那我们就把这个修改暂时留在[1, 2]的这个节点上，等到我真的要去查询[1, 1]或者[2, 2]，我再把这个修改下沉。</p>
 <p>以下是关于懒惰标记的区间更新(区间增加或者区间减少)</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">update</span><span class="token punctuation">(</span><span class="token keyword">int</span> queryLeft<span class="token punctuation">,</span> <span class="token keyword">int</span> queryRight<span class="token punctuation">,</span> <span class="token keyword">int</span> nodeLeft<span class="token punctuation">,</span> <span class="token keyword">int</span> nodeRight<span class="token punctuation">,</span> <span class="token keyword">int</span> node<span class="token punctuation">,</span> <span class="token keyword">int</span> add<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
   <span class="token keyword">if</span> <span class="token punctuation">(</span>queryLeft <span class="token operator">&lt;=</span> nodeLeft <span class="token operator">&amp;&amp;</span> nodeRight <span class="token operator">&lt;=</span> queryRight<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
@@ -149,7 +153,6 @@
 	
   arr<span class="token punctuation">[</span>node<span class="token punctuation">]</span> <span class="token operator">=</span> arr<span class="token punctuation">[</span>leftTreeNo<span class="token punctuation">]</span> <span class="token operator">+</span> arr<span class="token punctuation">[</span>rightTreeNo<span class="token punctuation">]</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>以下是关于懒惰标记的区间查询</p>
 <p>我们说过，一旦查询到下面，就需要对懒惰标记进行下移</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">Node <span class="token function">getsum</span><span class="token punctuation">(</span><span class="token keyword">int</span> queryLeft<span class="token punctuation">,</span> <span class="token keyword">int</span> queryRight<span class="token punctuation">,</span> <span class="token keyword">int</span> nodeLeft<span class="token punctuation">,</span> <span class="token keyword">int</span> nodeRight<span class="token punctuation">,</span> <span class="token keyword">int</span> node<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
@@ -177,10 +180,10 @@
 			  sum <span class="token operator">+=</span> <span class="token function">getsum</span><span class="token punctuation">(</span>queryLeft<span class="token punctuation">,</span> queryRight<span class="token punctuation">,</span> mid <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> nodeRight<span class="token punctuation">,</span> rightTreeNo<span class="token punctuation">)</span><span class="token punctuation">;</span>
 	  <span class="token keyword">return</span> sum<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>当然也可以把对区间的操作从“都增加一个值add”变成“都变成一个值x”。</p>
 <p>此时的lazy标签就代表要改的值了，但需要注意一点，主要另一个值来判断是否要修改，因为lazy标签为0时，代表的是全部值改为0而并不是不修改元素。</p>
-<h2 id="一些优化"><a href="#一些优化" class="headerlink" title="一些优化"></a>一些优化</h2><ul>
+<h2 id="一些优化">一些优化</h2>
+<ul>
 <li>在叶子节点处无需下放懒惰标记，所以懒惰标记可以不下传到叶子节点。</li>
 <li>动态创建子节点，在不访问的时候就不创建节点。</li>
 <li>标记永久化：如果确定懒惰标记不会在中途被加到溢出，那么就可以将标记永久化。标记永久化可以避免下传懒惰标记，只需在进行询问时把标记的影响加到答案当中，从而降低程序常数。也就是不需要修改子节点的值，只需要一直利用路途中的懒惰标记即可。</li>
@@ -252,5 +255,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="爬虫学习(1) - 超基础篇"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,17 +61,19 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 831 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 832 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
             <p>网络爬虫（又称为网页蜘蛛，网络机器人，在FOAF社区中间，更经常的称为网页追逐者），是一种按照一定的规则，自动地抓取万维网信息的程序或者脚本。另外一些不常使用的名字还有蚂蚁、自动索引、模拟程序或者蠕虫。</p>
 <p>虽然听起来十分高级，但是说清楚了，网络爬虫就是在机器代替人的时代下，让机器代替人上网，从网上获取信息，让程序服务人来获取网上数据，网上操作，这就是网络爬虫。</p>
 <p>做一个网络爬虫，我们要先了解http协议和tcp协议，</p>
-<h1 id="HTTP协议"><a href="#HTTP协议" class="headerlink" title="HTTP协议"></a>HTTP协议</h1><h2 id="HTTP简介"><a href="#HTTP简介" class="headerlink" title="HTTP简介"></a>HTTP简介</h2><p>HTTP协议是Hyper Text Transfer Protocol（超文本传输协议）的缩写,是用于从万维网（WWW:World Wide Web ）服务器传输超文本到本地浏览器的传送协议。</p>
-<p>HTTP是一个基于TCP&#x2F;IP通信协议来传递数据（HTML 文件, 图片文件, 查询结果等）。</p>
+<h1>HTTP协议</h1>
+<h2 id="HTTP简介">HTTP简介</h2>
+<p>HTTP协议是Hyper Text Transfer Protocol（超文本传输协议）的缩写,是用于从万维网（WWW:World Wide Web ）服务器传输超文本到本地浏览器的传送协议。</p>
+<p>HTTP是一个基于TCP/IP通信协议来传递数据（HTML 文件, 图片文件, 查询结果等）。</p>
 <p>在如此抽象的概念之下我们需要一些基础的理解，后端，前端，浏览器，用户之间的关系。</p>
 <p>简单说，就是用户利用浏览器。浏览器作为用户和网站交流的中介，他可以理解服务器返回的数据，并对其加以处理</p>
 <p>举一个例子(这是一个返回的html文件)</p>
-<pre class="line-numbers language-html" data-language="html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span><span class="token punctuation">></span></span>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span><span class="token punctuation">></span></span>
 
 <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>head</span><span class="token punctuation">></span></span>
 <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">></span></span>我的第一个 HTML 页面<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">></span></span>
@@ -84,10 +86,8 @@
 
 <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>html</span><span class="token punctuation">></span></span>
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>在浏览器的处理下，会变为</p>
-<img src="/2022/03/10/crawler-1/03/10/crawler-1/p1.png" class title="This is an example image">
-
+<p>在浏览器的处理下，会变为<br>
+<img src="/2022/03/10/crawler-1/p1.png" alt="p1.png"></p>
 <p>这就是用户通过浏览器看到的页面</p>
 <p>他的内部可以置入许多按钮和输入框，这样的话，用户可以根据需要，就比如登录，就要通过输入账号密码</p>
 <p>这个时候，用户就是在前端进行操作（前端就是指上面返回的页面，高级的前端会有很多脚本，可以供用户提交表单）</p>
@@ -95,333 +95,338 @@
 <p>后端会再次返回数据交给前端</p>
 <p>前端再次分析显示数据，用户看到的画面就会变化</p>
 <p>在这个过程中，如果我们要做网络爬虫，我们就要从对后端发送数据包开始</p>
-<p>这个时候我们要通过”抓包”操作，对前端发送的数据包进行分析，了解发送的数据包的规律和参数分布</p>
+<p>这个时候我们要通过&quot;抓包&quot;操作，对前端发送的数据包进行分析，了解发送的数据包的规律和参数分布</p>
 <p>模仿用户对前端的操作，发送数据包给后端，从后端返回的数据里面，找到自己需要的进行过滤</p>
-<h2 id="HTTP消息结构"><a href="#HTTP消息结构" class="headerlink" title="HTTP消息结构"></a>HTTP消息结构</h2><p>以下是一个header</p>
+<h2 id="HTTP消息结构">HTTP消息结构</h2>
+<p>以下是一个header</p>
 <pre class="line-numbers language-header" data-language="header"><code class="language-header">User-Agent: curl&#x2F;7.16.3 libcurl&#x2F;7.16.3 OpenSSL&#x2F;0.9.7l zlib&#x2F;1.2.3
 Host: www.example.com
 Accept-Language: en, mi<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>这只是一些基础的参数</p>
 <p>但对于post，我们是要传参的，会比上面那个多几个参数（部分get也会有），例如</p>
 <table>
 <thead>
 <tr>
-<th align="center"><strong>Header</strong>参数</th>
-<th align="center">分类描述</th>
+<th style="text-align:center"><strong>Header</strong>参数</th>
+<th style="text-align:center">分类描述</th>
 <th>示例</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="center">Authorization</td>
-<td align="center">信息，服务器收到请求，需要请求者继续执行操作</td>
-<td>Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ&#x3D;&#x3D;</td>
+<tbody>
+<tr>
+<td style="text-align:center">Authorization</td>
+<td style="text-align:center">信息，服务器收到请求，需要请求者继续执行操作</td>
+<td>Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==</td>
 </tr>
 <tr>
-<td align="center">Referer</td>
-<td align="center">先前网页的地址，当前请求网页紧随其后,即来路</td>
+<td style="text-align:center">Referer</td>
+<td style="text-align:center">先前网页的地址，当前请求网页紧随其后,即来路</td>
 <td>Referer: <a target="_blank" rel="noopener" href="https://www.baidu.com/">https://www.baidu.com/</a></td>
 </tr>
 <tr>
-<td align="center">Content-Length</td>
-<td align="center">请求的内容长度</td>
+<td style="text-align:center">Content-Length</td>
+<td style="text-align:center">请求的内容长度</td>
 <td>Content-Length: 233</td>
 </tr>
 <tr>
-<td align="center">Content-Type</td>
-<td align="center">请求的与实体对应的MIME信息</td>
-<td>Content-Type: application&#x2F;x-www-form-urlencoded</td>
+<td style="text-align:center">Content-Type</td>
+<td style="text-align:center">请求的与实体对应的MIME信息</td>
+<td>Content-Type: application/x-www-form-urlencoded</td>
 </tr>
 <tr>
-<td align="center">Host</td>
-<td align="center">指定请求的服务器的域名和端口号</td>
-<td>Host: <a target="_blank" rel="noopener" href="http://www.baidu.com/">www.baidu.com</a></td>
+<td style="text-align:center">Host</td>
+<td style="text-align:center">指定请求的服务器的域名和端口号</td>
+<td>Host: <a target="_blank" rel="noopener" href="http://www.baidu.com">www.baidu.com</a></td>
 </tr>
 <tr>
-<td align="center">Cookie</td>
-<td align="center">HTTP请求发送时，会把保存在该请求域名下的所有cookie值一起发送给web服务器。</td>
-<td>Cookie: $Version&#x3D;1; Skin&#x3D;new;</td>
+<td style="text-align:center">Cookie</td>
+<td style="text-align:center">HTTP请求发送时，会把保存在该请求域名下的所有cookie值一起发送给web服务器。</td>
+<td>Cookie: $Version=1; Skin=new;</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>HTTP 协议中共定义了八种方法或者叫“动作”来表明对 Request-URI 指定的资源的不同操作方式，具体介绍如下：</p>
 <ul>
-<li><strong>OPTIONS</strong>：返回服务器针对特定资源所支持的HTTP请求方法。也可以利用向Web服务器发送’*’的请求来测试服务器的功能性。</li>
+<li><strong>OPTIONS</strong>：返回服务器针对特定资源所支持的HTTP请求方法。也可以利用向Web服务器发送’*'的请求来测试服务器的功能性。</li>
 <li><strong>HEAD</strong>：向服务器索要与GET请求相一致的响应，只不过响应体将不会被返回。这一方法可以在不必传输整个响应内容的情况下，就可以获取包含在响应消息头中的元信息。</li>
 <li><strong>GET</strong>：向特定的资源发出请求。</li>
-<li><strong>POST</strong>：向指定资源提交数据进行处理请求（例如提交表单或者上传文件）。数据被包含在请求体中。POST请求可能会导致新的资源的创建和&#x2F;或已有资源的修改。</li>
+<li><strong>POST</strong>：向指定资源提交数据进行处理请求（例如提交表单或者上传文件）。数据被包含在请求体中。POST请求可能会导致新的资源的创建和/或已有资源的修改。</li>
 <li><strong>PUT</strong>：向指定资源位置上传其最新内容。</li>
 <li><strong>DELETE</strong>：请求服务器删除 Request-URI 所标识的资源。</li>
 <li><strong>TRACE</strong>：回显服务器收到的请求，主要用于测试或诊断。</li>
-<li><strong>CONNECT</strong>：HTTP&#x2F;1.1 协议中预留给能够将连接改为管道方式的代理服务器。</li>
+<li><strong>CONNECT</strong>：HTTP/1.1 协议中预留给能够将连接改为管道方式的代理服务器。</li>
 </ul>
 <p>虽然 HTTP 的请求方式有 8 种，但是我们在实际应用中常用的也就是 <strong>get</strong> 和 <strong>post</strong>，其他请求方式也都可以通过这两种方式间接的来实现。</p>
-<p>但至于我们只要做低级爬虫<br>只要了解这两个就已经足够了</p>
+<p>但至于我们只要做低级爬虫<br>
+只要了解这两个就已经足够了</p>
 <ul>
 <li><strong>GET</strong>：请求指定的页面信息，并返回实体主体。</li>
-<li><strong>POST</strong>：向指定资源提交数据进行处理请求（例如提交表单或者上传文件）。数据被包含在请求体中。POST请求可能会导致新的资源的创建和&#x2F;或已有资源的修改。</li>
+<li><strong>POST</strong>：向指定资源提交数据进行处理请求（例如提交表单或者上传文件）。数据被包含在请求体中。POST请求可能会导致新的资源的创建和/或已有资源的修改。</li>
 </ul>
-<h2 id="HTTP状态码分类"><a href="#HTTP状态码分类" class="headerlink" title="HTTP状态码分类"></a>HTTP状态码分类</h2><p>HTTP状态码由三个十进制数字组成，第一个十进制数字定义了状态码的类型，后两个数字没有分类的作用。HTTP状态码共分为5种类型：</p>
+<h2 id="HTTP状态码分类">HTTP状态码分类</h2>
+<p>HTTP状态码由三个十进制数字组成，第一个十进制数字定义了状态码的类型，后两个数字没有分类的作用。HTTP状态码共分为5种类型：</p>
 <p>HTTP状态码分类</p>
 <table>
 <thead>
 <tr>
-<th align="center">分类</th>
-<th align="center">分类描述</th>
+<th style="text-align:center">分类</th>
+<th style="text-align:center">分类描述</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="center">1**</td>
-<td align="center">信息，服务器收到请求，需要请求者继续执行操作</td>
+<tbody>
+<tr>
+<td style="text-align:center">1**</td>
+<td style="text-align:center">信息，服务器收到请求，需要请求者继续执行操作</td>
 </tr>
 <tr>
-<td align="center">2**</td>
-<td align="center">成功，操作被成功接收并处理</td>
+<td style="text-align:center">2**</td>
+<td style="text-align:center">成功，操作被成功接收并处理</td>
 </tr>
 <tr>
-<td align="center">3**</td>
-<td align="center">重定向，需要进一步的操作以完成请求</td>
+<td style="text-align:center">3**</td>
+<td style="text-align:center">重定向，需要进一步的操作以完成请求</td>
 </tr>
 <tr>
-<td align="center">4**</td>
-<td align="center">客户端错误，请求包含语法错误或无法完成请求</td>
+<td style="text-align:center">4**</td>
+<td style="text-align:center">客户端错误，请求包含语法错误或无法完成请求</td>
 </tr>
 <tr>
-<td align="center">5**</td>
-<td align="center">服务器错误，服务器在处理请求的过程中发生了错误</td>
+<td style="text-align:center">5**</td>
+<td style="text-align:center">服务器错误，服务器在处理请求的过程中发生了错误</td>
 </tr>
-</tbody></table>
-<h2 id="HTTP状态码列表"><a href="#HTTP状态码列表" class="headerlink" title="HTTP状态码列表:"></a>HTTP状态码列表:</h2><table>
+</tbody>
+</table>
+<h2 id="HTTP状态码列表">HTTP状态码列表:</h2>
+<table>
 <thead>
 <tr>
-<th align="center">状态码</th>
-<th align="right">状态码英文名称</th>
-<th align="left">中文描述</th>
+<th style="text-align:center">状态码</th>
+<th style="text-align:right">状态码英文名称</th>
+<th style="text-align:left">中文描述</th>
 </tr>
 </thead>
-<tbody><tr>
-<td align="center">100</td>
-<td align="right">Continue</td>
-<td align="left">继续。客户端应继续其请求</td>
+<tbody>
+<tr>
+<td style="text-align:center">100</td>
+<td style="text-align:right">Continue</td>
+<td style="text-align:left">继续。客户端应继续其请求</td>
 </tr>
 <tr>
-<td align="center">101</td>
-<td align="right">Switching Protocols</td>
-<td align="left">切换协议。服务器根据客户端的请求切换协议。只能切换到更高级的协议，例如，切换到HTTP的新版本协议</td>
+<td style="text-align:center">101</td>
+<td style="text-align:right">Switching Protocols</td>
+<td style="text-align:left">切换协议。服务器根据客户端的请求切换协议。只能切换到更高级的协议，例如，切换到HTTP的新版本协议</td>
 </tr>
 <tr>
-<td align="center">200</td>
-<td align="right">OK</td>
-<td align="left">请求成功。一般用于GET与POST请求</td>
+<td style="text-align:center">200</td>
+<td style="text-align:right">OK</td>
+<td style="text-align:left">请求成功。一般用于GET与POST请求</td>
 </tr>
 <tr>
-<td align="center">201</td>
-<td align="right">Created</td>
-<td align="left">已创建。成功请求并创建了新的资源</td>
+<td style="text-align:center">201</td>
+<td style="text-align:right">Created</td>
+<td style="text-align:left">已创建。成功请求并创建了新的资源</td>
 </tr>
 <tr>
-<td align="center">202</td>
-<td align="right">Accepted</td>
-<td align="left">已接受。已经接受请求，但未处理完成</td>
+<td style="text-align:center">202</td>
+<td style="text-align:right">Accepted</td>
+<td style="text-align:left">已接受。已经接受请求，但未处理完成</td>
 </tr>
 <tr>
-<td align="center">203</td>
-<td align="right">Non-Authoritative Information</td>
-<td align="left">非授权信息。请求成功。但返回的meta信息不在原始的服务器，而是一个副本</td>
+<td style="text-align:center">203</td>
+<td style="text-align:right">Non-Authoritative Information</td>
+<td style="text-align:left">非授权信息。请求成功。但返回的meta信息不在原始的服务器，而是一个副本</td>
 </tr>
 <tr>
-<td align="center">204</td>
-<td align="right">No Content</td>
-<td align="left">无内容。服务器成功处理，但未返回内容。在未更新网页的情况下，可确保浏览器继续显示当前文档</td>
+<td style="text-align:center">204</td>
+<td style="text-align:right">No Content</td>
+<td style="text-align:left">无内容。服务器成功处理，但未返回内容。在未更新网页的情况下，可确保浏览器继续显示当前文档</td>
 </tr>
 <tr>
-<td align="center">205</td>
-<td align="right">Reset Content</td>
-<td align="left">重置内容。服务器处理成功，用户终端（例如：浏览器）应重置文档视图。可通过此返回码清除浏览器的表单域</td>
+<td style="text-align:center">205</td>
+<td style="text-align:right">Reset Content</td>
+<td style="text-align:left">重置内容。服务器处理成功，用户终端（例如：浏览器）应重置文档视图。可通过此返回码清除浏览器的表单域</td>
 </tr>
 <tr>
-<td align="center">206</td>
-<td align="right">Partial Content</td>
-<td align="left">部分内容。服务器成功处理了部分GET请求</td>
+<td style="text-align:center">206</td>
+<td style="text-align:right">Partial Content</td>
+<td style="text-align:left">部分内容。服务器成功处理了部分GET请求</td>
 </tr>
 <tr>
-<td align="center">300</td>
-<td align="right">Multiple Choices</td>
-<td align="left">多种选择。请求的资源可包括多个位置，相应可返回一个资源特征与地址的列表用于用户终端（例如：浏览器）选择</td>
+<td style="text-align:center">300</td>
+<td style="text-align:right">Multiple Choices</td>
+<td style="text-align:left">多种选择。请求的资源可包括多个位置，相应可返回一个资源特征与地址的列表用于用户终端（例如：浏览器）选择</td>
 </tr>
 <tr>
-<td align="center">301</td>
-<td align="right">Moved Permanently</td>
-<td align="left">永久移动。请求的资源已被永久的移动到新URI，返回信息会包括新的URI，浏览器会自动定向到新URI。今后任何新的请求都应使用新的URI代替</td>
+<td style="text-align:center">301</td>
+<td style="text-align:right">Moved Permanently</td>
+<td style="text-align:left">永久移动。请求的资源已被永久的移动到新URI，返回信息会包括新的URI，浏览器会自动定向到新URI。今后任何新的请求都应使用新的URI代替</td>
 </tr>
 <tr>
-<td align="center">302</td>
-<td align="right">Found</td>
-<td align="left">临时移动。与301类似。但资源只是临时被移动。客户端应继续使用原有URI</td>
+<td style="text-align:center">302</td>
+<td style="text-align:right">Found</td>
+<td style="text-align:left">临时移动。与301类似。但资源只是临时被移动。客户端应继续使用原有URI</td>
 </tr>
 <tr>
-<td align="center">303</td>
-<td align="right">See Other</td>
-<td align="left">查看其它地址。与301类似。使用GET和POST请求查看</td>
+<td style="text-align:center">303</td>
+<td style="text-align:right">See Other</td>
+<td style="text-align:left">查看其它地址。与301类似。使用GET和POST请求查看</td>
 </tr>
 <tr>
-<td align="center">304</td>
-<td align="right">Not Modified</td>
-<td align="left">未修改。所请求的资源未修改，服务器返回此状态码时，不会返回任何资源。客户端通常会缓存访问过的资源，通过提供一个头信息指出客户端希望只返回在指定日期之后修改的资源</td>
+<td style="text-align:center">304</td>
+<td style="text-align:right">Not Modified</td>
+<td style="text-align:left">未修改。所请求的资源未修改，服务器返回此状态码时，不会返回任何资源。客户端通常会缓存访问过的资源，通过提供一个头信息指出客户端希望只返回在指定日期之后修改的资源</td>
 </tr>
 <tr>
-<td align="center">305</td>
-<td align="right">Use Proxy</td>
-<td align="left">使用代理。所请求的资源必须通过代理访问</td>
+<td style="text-align:center">305</td>
+<td style="text-align:right">Use Proxy</td>
+<td style="text-align:left">使用代理。所请求的资源必须通过代理访问</td>
 </tr>
 <tr>
-<td align="center">306</td>
-<td align="right">Unused</td>
-<td align="left">已经被废弃的HTTP状态码</td>
+<td style="text-align:center">306</td>
+<td style="text-align:right">Unused</td>
+<td style="text-align:left">已经被废弃的HTTP状态码</td>
 </tr>
 <tr>
-<td align="center">307</td>
-<td align="right">Temporary Redirect</td>
-<td align="left">临时重定向。与302类似。使用GET请求重定向</td>
+<td style="text-align:center">307</td>
+<td style="text-align:right">Temporary Redirect</td>
+<td style="text-align:left">临时重定向。与302类似。使用GET请求重定向</td>
 </tr>
 <tr>
-<td align="center">400</td>
-<td align="right">Bad Request</td>
-<td align="left">客户端请求的语法错误，服务器无法理解</td>
+<td style="text-align:center">400</td>
+<td style="text-align:right">Bad Request</td>
+<td style="text-align:left">客户端请求的语法错误，服务器无法理解</td>
 </tr>
 <tr>
-<td align="center">401</td>
-<td align="right">Unauthorized</td>
-<td align="left">请求要求用户的身份认证</td>
+<td style="text-align:center">401</td>
+<td style="text-align:right">Unauthorized</td>
+<td style="text-align:left">请求要求用户的身份认证</td>
 </tr>
 <tr>
-<td align="center">402</td>
-<td align="right">Payment Required</td>
-<td align="left">保留，将来使用</td>
+<td style="text-align:center">402</td>
+<td style="text-align:right">Payment Required</td>
+<td style="text-align:left">保留，将来使用</td>
 </tr>
 <tr>
-<td align="center">403</td>
-<td align="right">Forbidden</td>
-<td align="left">服务器理解请求客户端的请求，但是拒绝执行此请求</td>
+<td style="text-align:center">403</td>
+<td style="text-align:right">Forbidden</td>
+<td style="text-align:left">服务器理解请求客户端的请求，但是拒绝执行此请求</td>
 </tr>
 <tr>
-<td align="center">404</td>
-<td align="right">Not Found</td>
-<td align="left">服务器无法根据客户端的请求找到资源（网页）。通过此代码，网站设计人员可设置”您所请求的资源无法找到”的个性页面</td>
+<td style="text-align:center">404</td>
+<td style="text-align:right">Not Found</td>
+<td style="text-align:left">服务器无法根据客户端的请求找到资源（网页）。通过此代码，网站设计人员可设置&quot;您所请求的资源无法找到&quot;的个性页面</td>
 </tr>
 <tr>
-<td align="center">405</td>
-<td align="right">Method Not Allowed</td>
-<td align="left">客户端请求中的方法被禁止</td>
+<td style="text-align:center">405</td>
+<td style="text-align:right">Method Not Allowed</td>
+<td style="text-align:left">客户端请求中的方法被禁止</td>
 </tr>
 <tr>
-<td align="center">406</td>
-<td align="right">Not Acceptable</td>
-<td align="left">服务器无法根据客户端请求的内容特性完成请求</td>
+<td style="text-align:center">406</td>
+<td style="text-align:right">Not Acceptable</td>
+<td style="text-align:left">服务器无法根据客户端请求的内容特性完成请求</td>
 </tr>
 <tr>
-<td align="center">407</td>
-<td align="right">Proxy Authentication Required</td>
-<td align="left">请求要求代理的身份认证，与401类似，但请求者应当使用代理进行授权</td>
+<td style="text-align:center">407</td>
+<td style="text-align:right">Proxy Authentication Required</td>
+<td style="text-align:left">请求要求代理的身份认证，与401类似，但请求者应当使用代理进行授权</td>
 </tr>
 <tr>
-<td align="center">408</td>
-<td align="right">Request Time-out</td>
-<td align="left">服务器等待客户端发送的请求时间过长，超时</td>
+<td style="text-align:center">408</td>
+<td style="text-align:right">Request Time-out</td>
+<td style="text-align:left">服务器等待客户端发送的请求时间过长，超时</td>
 </tr>
 <tr>
-<td align="center">409</td>
-<td align="right">Conflict</td>
-<td align="left">服务器完成客户端的 PUT 请求时可能返回此代码，服务器处理请求时发生了冲突</td>
+<td style="text-align:center">409</td>
+<td style="text-align:right">Conflict</td>
+<td style="text-align:left">服务器完成客户端的 PUT 请求时可能返回此代码，服务器处理请求时发生了冲突</td>
 </tr>
 <tr>
-<td align="center">410</td>
-<td align="right">Gone</td>
-<td align="left">客户端请求的资源已经不存在。410不同于404，如果资源以前有现在被永久删除了可使用410代码，网站设计人员可通过301代码指定资源的新位置</td>
+<td style="text-align:center">410</td>
+<td style="text-align:right">Gone</td>
+<td style="text-align:left">客户端请求的资源已经不存在。410不同于404，如果资源以前有现在被永久删除了可使用410代码，网站设计人员可通过301代码指定资源的新位置</td>
 </tr>
 <tr>
-<td align="center">411</td>
-<td align="right">Length Required</td>
-<td align="left">服务器无法处理客户端发送的不带Content-Length的请求信息</td>
+<td style="text-align:center">411</td>
+<td style="text-align:right">Length Required</td>
+<td style="text-align:left">服务器无法处理客户端发送的不带Content-Length的请求信息</td>
 </tr>
 <tr>
-<td align="center">412</td>
-<td align="right">Precondition Failed</td>
-<td align="left">客户端请求信息的先决条件错误</td>
+<td style="text-align:center">412</td>
+<td style="text-align:right">Precondition Failed</td>
+<td style="text-align:left">客户端请求信息的先决条件错误</td>
 </tr>
 <tr>
-<td align="center">413</td>
-<td align="right">Request Entity Too Large</td>
-<td align="left">由于请求的实体过大，服务器无法处理，因此拒绝请求。为防止客户端的连续请求，服务器可能会关闭连接。如果只是服务器暂时无法处理，则会包含一个Retry-After的响应信息</td>
+<td style="text-align:center">413</td>
+<td style="text-align:right">Request Entity Too Large</td>
+<td style="text-align:left">由于请求的实体过大，服务器无法处理，因此拒绝请求。为防止客户端的连续请求，服务器可能会关闭连接。如果只是服务器暂时无法处理，则会包含一个Retry-After的响应信息</td>
 </tr>
 <tr>
-<td align="center">414</td>
-<td align="right">Request-URI Too Large</td>
-<td align="left">请求的URI过长（URI通常为网址），服务器无法处理</td>
+<td style="text-align:center">414</td>
+<td style="text-align:right">Request-URI Too Large</td>
+<td style="text-align:left">请求的URI过长（URI通常为网址），服务器无法处理</td>
 </tr>
 <tr>
-<td align="center">415</td>
-<td align="right">Unsupported Media Type</td>
-<td align="left">服务器无法处理请求附带的媒体格式</td>
+<td style="text-align:center">415</td>
+<td style="text-align:right">Unsupported Media Type</td>
+<td style="text-align:left">服务器无法处理请求附带的媒体格式</td>
 </tr>
 <tr>
-<td align="center">416</td>
-<td align="right">Requested range not satisfiable</td>
-<td align="left">客户端请求的范围无效</td>
+<td style="text-align:center">416</td>
+<td style="text-align:right">Requested range not satisfiable</td>
+<td style="text-align:left">客户端请求的范围无效</td>
 </tr>
 <tr>
-<td align="center">417</td>
-<td align="right">Expectation Failed</td>
-<td align="left">服务器无法满足Expect的请求头信息</td>
+<td style="text-align:center">417</td>
+<td style="text-align:right">Expectation Failed</td>
+<td style="text-align:left">服务器无法满足Expect的请求头信息</td>
 </tr>
 <tr>
-<td align="center">500</td>
-<td align="right">Internal Server Error</td>
-<td align="left">服务器内部错误，无法完成请求</td>
+<td style="text-align:center">500</td>
+<td style="text-align:right">Internal Server Error</td>
+<td style="text-align:left">服务器内部错误，无法完成请求</td>
 </tr>
 <tr>
-<td align="center">501</td>
-<td align="right">Not Implemented</td>
-<td align="left">服务器不支持请求的功能，无法完成请求</td>
+<td style="text-align:center">501</td>
+<td style="text-align:right">Not Implemented</td>
+<td style="text-align:left">服务器不支持请求的功能，无法完成请求</td>
 </tr>
 <tr>
-<td align="center">502</td>
-<td align="right">Bad Gateway</td>
-<td align="left">作为网关或者代理工作的服务器尝试执行请求时，从远程服务器接收到了一个无效的响应</td>
+<td style="text-align:center">502</td>
+<td style="text-align:right">Bad Gateway</td>
+<td style="text-align:left">作为网关或者代理工作的服务器尝试执行请求时，从远程服务器接收到了一个无效的响应</td>
 </tr>
 <tr>
-<td align="center">503</td>
-<td align="right">Service Unavailable</td>
-<td align="left">由于超载或系统维护，服务器暂时的无法处理客户端的请求。延时的长度可包含在服务器的Retry-After头信息中</td>
+<td style="text-align:center">503</td>
+<td style="text-align:right">Service Unavailable</td>
+<td style="text-align:left">由于超载或系统维护，服务器暂时的无法处理客户端的请求。延时的长度可包含在服务器的Retry-After头信息中</td>
 </tr>
 <tr>
-<td align="center">504</td>
-<td align="right">Gateway Time-out</td>
-<td align="left">充当网关或代理的服务器，未及时从远端服务器获取请求</td>
+<td style="text-align:center">504</td>
+<td style="text-align:right">Gateway Time-out</td>
+<td style="text-align:left">充当网关或代理的服务器，未及时从远端服务器获取请求</td>
 </tr>
 <tr>
-<td align="center">505</td>
-<td align="right">HTTP Version not supported</td>
-<td align="left">服务器不支持请求的HTTP协议的版本，无法完成处理</td>
+<td style="text-align:center">505</td>
+<td style="text-align:right">HTTP Version not supported</td>
+<td style="text-align:left">服务器不支持请求的HTTP协议的版本，无法完成处理</td>
 </tr>
-</tbody></table>
-<h1 id="中华万年历爬虫示例"><a href="#中华万年历爬虫示例" class="headerlink" title="中华万年历爬虫示例"></a>中华万年历爬虫示例</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>中华万年历—让时光充满乐趣，<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E6%97%A5%E5%8E%86/84469">日历</a>类TOP 1应用。基于传统黄历、日程记录等日历功能上提供个性化阅读服务、生活提醒服务等，致力于成为用户的智能生活提醒助手 。</p>
-<img src="/2022/03/10/crawler-1/03/10/crawler-1/p2.png" class>
-
-
-
+</tbody>
+</table>
+<h1>中华万年历爬虫示例</h1>
+<h2 id="简介">简介</h2>
+<p>中华万年历—让时光充满乐趣，<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E6%97%A5%E5%8E%86/84469">日历</a>类TOP 1应用。基于传统黄历、日程记录等日历功能上提供个性化阅读服务、生活提醒服务等，致力于成为用户的智能生活提醒助手 。</p>
+<p><img src="/2022/03/10/crawler-1/p2.png" alt="p2.png"></p>
 <p>那我们可以从它这里获取什么呢？</p>
 <p>天气是中华万年历可以提供的，所以我们的目标是获取天气，这样子的话，我们就可以不用天天跑网站上看天气了（好像也没什么很大必要，由于是练习，就依我这么说罢）</p>
 <p>我们要先找到获取天气的地方，进行‘抓包’</p>
-<h2 id="抓包"><a href="#抓包" class="headerlink" title="抓包"></a>抓包</h2><p>抓包工具有许多，像fiddler，Charles，还有许多浏览器自带的开发者模式（例如谷歌的F12）等等</p>
+<h2 id="抓包">抓包</h2>
+<p>抓包工具有许多，像fiddler，Charles，还有许多浏览器自带的开发者模式（例如谷歌的F12）等等</p>
 <p>对于我们来说，浏览器的代理就够用了，不过我这里依然拿Charles做示例，软件的使用方式请自行查询</p>
-<img src="/2022/03/10/crawler-1/03/10/crawler-1/p3.png" class title="中华万年历示例">
-
-
-
+<p><img src="/2022/03/10/crawler-1/p3.png" alt="p3.png"></p>
 <p>找到这个页面之后，我们发现，它可以显示出天气，说明后端在前端的请求中返回了关于天气的数据</p>
 <p>此时利用抓包工具我们能发现这些数据</p>
-<img src="/2022/03/10/crawler-1/03/10/crawler-1/p4.png" class title="抓包示例">
-
+<p><img src="/2022/03/10/crawler-1/p4.png" alt="p4.png"></p>
 <p>这里我们发现了一个问题，就是返回的数据不能正常显示，其实就是被加密了。我们可以在accept-encoding中发现gzip，代表了后端返回的数据是经过gzip加密的，不过问题不大，如果感兴趣的话，可以自行查询和研究，python的requests库内的请求是会自动根据返回值进行解码的</p>
 <p>不过这里就先跳过了，</p>
 <p>再来观察参数，我们是get方式获取数据的，所以参数都在url（网址之中）我们来观察网址后缀</p>
@@ -429,7 +434,6 @@ Accept-Language: en, mi<span aria-hidden="true" class="line-numbers-rows"><span>
 
 问号之后就是我们需要观察的参数
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>（你可以想象一下我写了5000多字文章没保存现在只有3500留下来的感受）</p>
 <p>（插播：请大家随时按ctrl+s）</p>
 <p>这里我们发现一段尤其显眼的东西“%E5%8D%97%E4%BA%AC”这里其实是中文的url编码，大致意思就是中文在网址里面的编码，通过url解码，我们可以得到结果“南京”所以在city参数后面的值就是“南京”。</p>
@@ -437,7 +441,6 @@ Accept-Language: en, mi<span aria-hidden="true" class="line-numbers-rows"><span>
 <pre class="line-numbers language-apl" data-language="apl"><code class="language-apl">http<span class="token dfn builtin">:</span><span class="token monadic-operator operator">/</span><span class="token monadic-operator operator">/</span>wthrcdn<span class="token dyadic-operator operator">.</span>etouch<span class="token dyadic-operator operator">.</span>cn<span class="token monadic-operator operator">/</span>weather_mini<span class="token function">?</span>city<span class="token function">=</span>北京
 http<span class="token dfn builtin">:</span><span class="token monadic-operator operator">/</span><span class="token monadic-operator operator">/</span>wthrcdn<span class="token dyadic-operator operator">.</span>etouch<span class="token dyadic-operator operator">.</span>cn<span class="token monadic-operator operator">/</span>weather_mini<span class="token function">?</span>city<span class="token function">=</span>温州
 http<span class="token dfn builtin">:</span><span class="token monadic-operator operator">/</span><span class="token monadic-operator operator">/</span>wthrcdn<span class="token dyadic-operator operator">.</span>etouch<span class="token dyadic-operator operator">.</span>cn<span class="token monadic-operator operator">/</span>weather_mini<span class="token function">?</span>city<span class="token function">=</span>曹县<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>选择一个用python的requests库进行获取</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> json
 <span class="token keyword">import</span> requests
@@ -445,11 +448,10 @@ http<span class="token dfn builtin">:</span><span class="token monadic-operator 
 a <span class="token operator">=</span> requests<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'http://wthrcdn.etouch.cn/weather_mini?city=乐清'</span><span class="token punctuation">)</span>
 res_json <span class="token operator">=</span> json<span class="token punctuation">.</span>loads<span class="token punctuation">(</span>a<span class="token punctuation">.</span>text<span class="token punctuation">)</span>
 <span class="token keyword">print</span><span class="token punctuation">(</span>res_json<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>输出结果</p>
 <pre class="line-numbers language-output" data-language="output"><code class="language-output">&#123;&#39;data&#39;: &#123;&#39;yesterday&#39;: &#123;&#39;date&#39;: &#39;20日星期日&#39;, &#39;high&#39;: &#39;高温 25℃&#39;, &#39;fx&#39;: &#39;东北风&#39;, &#39;low&#39;: &#39;低温 22℃&#39;, &#39;fl&#39;: &#39;&lt;![CDATA[2级]]&gt;&#39;, &#39;type&#39;: &#39;中雨&#39;&#125;, &#39;city&#39;: &#39;乐清&#39;, &#39;forecast&#39;: [&#123;&#39;date&#39;: &#39;21日星期一&#39;, &#39;high&#39;: &#39;高温 25℃&#39;, &#39;fengli&#39;: &#39;&lt;![CDATA[2级]]&gt;&#39;, &#39;low&#39;: &#39;低温 20℃&#39;, &#39;fengxiang&#39;: &#39;东北风&#39;, &#39;type&#39;: &#39;小雨&#39;&#125;, &#123;&#39;date&#39;: &#39;22日星期二&#39;, &#39;high&#39;: &#39;高温 28℃&#39;, &#39;fengli&#39;: &#39;&lt;![CDATA[2级]]&gt;&#39;, &#39;low&#39;: &#39;低温 22℃&#39;, &#39;fengxiang&#39;: &#39;北风&#39;, &#39;type&#39;: &#39;小雨&#39;&#125;, &#123;&#39;date&#39;: &#39;23日星期三&#39;, &#39;high&#39;: &#39;高温 27℃&#39;, &#39;fengli&#39;: &#39;&lt;![CDATA[2级]]&gt;&#39;, &#39;low&#39;: &#39;低温 23℃&#39;, &#39;fengxiang&#39;: &#39;东北风&#39;, &#39;type&#39;: &#39;多云&#39;&#125;, &#123;&#39;date&#39;: &#39;24日星期四&#39;, &#39;high&#39;: &#39;高温 27℃&#39;, &#39;fengli&#39;: &#39;&lt;![CDATA[1级]]&gt;&#39;, &#39;low&#39;: &#39;低温 22℃&#39;, &#39;fengxiang&#39;: &#39;东风&#39;, &#39;type&#39;: &#39;多云&#39;&#125;, &#123;&#39;date&#39;: &#39;25日星期五&#39;, &#39;high&#39;: &#39;高温 27℃&#39;, &#39;fengli&#39;: &#39;&lt;![CDATA[1级]]&gt;&#39;, &#39;low&#39;: &#39;低温 24℃&#39;, &#39;fengxiang&#39;: &#39;东南风&#39;, &#39;type&#39;: &#39;小雨&#39;&#125;], &#39;ganmao&#39;: &#39;感冒低发期，天气舒适，请注意多吃蔬菜水果，多喝水哦。&#39;, &#39;wendu&#39;: &#39;23&#39;&#125;, &#39;status&#39;: 1000, &#39;desc&#39;: &#39;OK&#39;&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><p>数据看起来杂乱无章，实际条理很有序，经过json格式化</p>
+<h2 id="分析">分析</h2>
+<p>数据看起来杂乱无章，实际条理很有序，经过json格式化</p>
 <pre class="line-numbers language-json" data-language="json"><code class="language-json"><span class="token punctuation">&#123;</span>
     <span class="token property">"data"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
         <span class="token property">"yesterday"</span><span class="token operator">:</span> <span class="token punctuation">&#123;</span>
@@ -509,13 +511,10 @@ res_json <span class="token operator">=</span> json<span class="token punctuatio
     <span class="token property">"status"</span><span class="token operator">:</span> <span class="token number">1000</span><span class="token punctuation">,</span> 
     <span class="token property">"desc"</span><span class="token operator">:</span> <span class="token string">"OK"</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>结果嵌套分明，我们可以通过res_json &#x3D; json.loads(a.text)来把获取到的数据转换成dict，以便我们进行访问，经过数据处理，我们可以轻松获取其中的数据</p>
+<p>结果嵌套分明，我们可以通过res_json = json.loads(a.text)来把获取到的数据转换成dict，以便我们进行访问，经过数据处理，我们可以轻松获取其中的数据</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">print</span><span class="token punctuation">(</span>res_json<span class="token punctuation">[</span><span class="token string">'data'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'yesterday'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'date'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>  <span class="token comment"># '20日星期日'</span>
 <span class="token keyword">print</span><span class="token punctuation">(</span>res_json<span class="token punctuation">[</span><span class="token string">'data'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'city'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>  <span class="token comment"># '乐清'</span>
 <span class="token keyword">print</span><span class="token punctuation">(</span>res_json<span class="token punctuation">[</span><span class="token string">'data'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'forecast'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">'date'</span><span class="token punctuation">]</span><span class="token punctuation">)</span>  <span class="token comment"># '21日星期一'</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-
 <p>我们成功的完成了我们的爬虫任务，那现在可以做什么呢？，这里给出示例</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> requests
 <span class="token keyword">import</span> json
@@ -614,10 +613,9 @@ res_json <span class="token operator">=</span> json<span class="token punctuatio
     a <span class="token operator">=</span> WeatherApi<span class="token punctuation">(</span><span class="token punctuation">)</span>
     <span class="token keyword">print</span><span class="token punctuation">(</span>a<span class="token punctuation">.</span>get_weather<span class="token punctuation">(</span><span class="token string">'温州'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
     a<span class="token punctuation">.</span>img_crate<span class="token punctuation">(</span>a<span class="token punctuation">.</span>get_weather<span class="token punctuation">(</span><span class="token string">'温州'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h2><p>这段代码可以做到什么？它可以返回一个这样的图片</p>
-<img src="/2022/03/10/crawler-1/03/10/crawler-1/p5.png" class title="代码返回示例">
-
+<h2 id="结果">结果</h2>
+<p>这段代码可以做到什么？它可以返回一个这样的图片<br>
+<img src="/2022/03/10/crawler-1/p5.png" alt="p5.png"></p>
 <p>这段代码用到了python的pillow库这是一个图片绘制的库，但核心其实就是爬虫。</p>
 <p>这是一个很初级的网络爬虫。</p>
 <p><a target="_blank" rel="noopener" href="https://github.com/Mai-icy/weather_image_320x160">源码在这!</a></p>
@@ -688,5 +686,20 @@ res_json <span class="token operator">=</span> json<span class="token punctuatio
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

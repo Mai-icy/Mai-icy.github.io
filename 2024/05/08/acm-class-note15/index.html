@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记15——强联通分量"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,22 +61,28 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记15——强联通分量"><a href="#ACM程序课算法笔记15——强联通分量" class="headerlink" title="ACM程序课算法笔记15——强联通分量"></a>ACM程序课算法笔记15——强联通分量</h1><h2 id="问题与目的"><a href="#问题与目的" class="headerlink" title="问题与目的"></a>问题与目的</h2><p>强联通的点是指，A点能到达B点，且B点能到达A点。</p>
+            <h1>ACM程序课算法笔记15——强联通分量</h1>
+<h2 id="问题与目的">问题与目的</h2>
+<p>强联通的点是指，A点能到达B点，且B点能到达A点。</p>
 <p>对于一个图，问有多少强联通分量？</p>
-<h2 id="Kosaraju-算法"><a href="#Kosaraju-算法" class="headerlink" title="Kosaraju 算法"></a><strong>Kosaraju 算法</strong></h2><p>获取目标图G1的反图G2（所有边反向）</p>
+<h2 id="Kosaraju-算法"><strong>Kosaraju 算法</strong></h2>
+<p>获取目标图G1的反图G2（所有边反向）</p>
 <p>该算法先获取一张图G1所有点后序遍历的逆序排列。</p>
 <p>再对G2进行dfs，每次dfs遇到的未到达的点集合就是一个强联通分量。</p>
-<h3 id="理解算法"><a href="#理解算法" class="headerlink" title="理解算法"></a>理解算法</h3><p>首先我们要了解后序遍历的逆序排序意味着什么：</p>
+<h3 id="理解算法">理解算法</h3>
+<p>首先我们要了解后序遍历的逆序排序意味着什么：</p>
 <p>如果是一棵无环的树，后序排序的逆序一定是从根节点开始的，也就是说如果我们遍历一个点就删除它，我们就能保证，我们遍历到的每个点的时候（前面的点被删除）都是没有边指向它的。</p>
 <p>如果这是一个连通图，再去寻找规律：</p>
 <p>对于后序遍历的逆排序，对于其中的任意一个点，在这个点右边的所有点都是这个点能达到的，在这个点左边的所有点都是这个点碰不到的。</p>
 <p>如果这图不一定联通，有规律：（这个规律就很重要）</p>
 <p>这个点的后面的所有点都是这个点能到达的，或者根本不连通的（没有任何的边关系），前面的点都是到达不了的。</p>
-<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>对G2进行dfs，所有的边都反向了，此时的A点到达B点实际上就是B点能到达A点。</p>
+<h3 id="分析">分析</h3>
+<p>对G2进行dfs，所有的边都反向了，此时的A点到达B点实际上就是B点能到达A点。</p>
 <p>对所有的点从前往后运算，我们能保证，这个点后面的所有点只有两种情况，根本没有连接关系和能到达的点。例如第一个点，我们能保证除去和它根本无关的点，它能到达其他的所有点。</p>
 <p>所以G2中，从前点开始能遇到的点，就是这些点能遇到前点，形成了一个强联通，一旦形成便删除，所以对于后面遍历的每个点都有这样的连接关系。</p>
 <p>这也就是Kosaraju算法的原理。</p>
-<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// g 是原图，g2 是反图</span>
+<h3 id="代码">代码</h3>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">// g 是原图，g2 是反图</span>
 
 <span class="token keyword">void</span> <span class="token function">dfs1</span><span class="token punctuation">(</span><span class="token keyword">int</span> u<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
   vis<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
@@ -101,8 +107,8 @@
       <span class="token function">dfs2</span><span class="token punctuation">(</span>s<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
     <span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="例题一："><a href="#例题一：" class="headerlink" title="例题一："></a>例题一：</h3><p>给定一个有向图，每个点i有点权ai，请对于每个点i，找到i能到达的点中点权的最大值（包括i点）。</p>
+<h3 id="例题一：">例题一：</h3>
+<p>给定一个有向图，每个点i有点权ai，请对于每个点i，找到i能到达的点中点权的最大值（包括i点）。</p>
 <p>对于题目要求，我们可以利用强联通分量，对于强联通分量中的每个点，它们能到达点点权最大值是一样的，所以不妨把一个强联通分量的点集合看做一个点，这就形成了一个有向无环图，再进行记忆化搜索即可。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">void solve()&#123;
     int n, m;
@@ -205,8 +211,8 @@
     &#125;
 
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><p>我们可以将一张图的每个强连通分量都缩成一个点。</p>
+<h2 id="应用">应用</h2>
+<p>我们可以将一张图的每个强连通分量都缩成一个点。</p>
 <p>然后这张图会变成一个 DAG，可以进行拓扑排序以及更多其他操作。</p>
 <p>举个简单的例子，求一条路径，可以经过重复结点，要求经过的不同结点数量最多。</p>
 
@@ -276,5 +282,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

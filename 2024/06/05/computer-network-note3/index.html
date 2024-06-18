@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="计算机网络笔记3——电子邮件"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,14 +61,16 @@
         </section>
         <article class="post-content">
         
-            <h1 id="计算机网络笔记3——电子邮件"><a href="#计算机网络笔记3——电子邮件" class="headerlink" title="计算机网络笔记3——电子邮件"></a>计算机网络笔记3——电子邮件</h1><h2 id="电子邮件"><a href="#电子邮件" class="headerlink" title="电子邮件"></a>电子邮件</h2><p>对于电子邮件的发送，我们模拟一个用户A向用户B发送的情况。</p>
+            <h1>计算机网络笔记3——电子邮件</h1>
+<h2 id="电子邮件">电子邮件</h2>
+<p>对于电子邮件的发送，我们模拟一个用户A向用户B发送的情况。</p>
 <p>其中有个用户代理的概念，我们此处可以将用户代理当做 邮件客户端例如qq邮箱，outlook等</p>
 <p>我们引入的角色有用户A，用户B，代理用户A，代理用户B，邮箱服务器A，邮箱服务器B。其中邮箱服务器A管理A的邮件，邮箱服务器B管理B的邮件</p>
 <ul>
 <li>用户A先使用代理用户A，完成内容和目标邮箱</li>
 <li>代理用户A把A的邮件和目标交给邮箱服务器A（SMTP）</li>
 <li>邮箱服务器A把邮件发往邮箱服务器B（SMTP）</li>
-<li>代理用户B从邮箱服务器B中获取邮件（POP3&#x2F;IMAP&#x2F;HTTP）</li>
+<li>代理用户B从邮箱服务器B中获取邮件（POP3/IMAP/HTTP）</li>
 </ul>
 <p>SMTP并不经过中间邮件服务器，这个TCP连接会直接连接两方服务器。</p>
 <p>其中，如果服务器B是关闭的，服务器A中将会有一个队列，一旦服务器A到B的发送失败，就会进入队列等待下一轮发送。</p>
@@ -87,9 +89,9 @@
 <span class="token key atrule">服务器</span><span class="token punctuation">:</span>  <span class="token key atrule">250 OK</span><span class="token punctuation">:</span> queued as 12345
 <span class="token key atrule">客户端</span><span class="token punctuation">:</span>  QUIT
 <span class="token key atrule">服务器</span><span class="token punctuation">:</span>  221 Bye<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>CR代表回车 LF代表换行。</p>
-<h3 id="SMTP命令"><a href="#SMTP命令" class="headerlink" title="SMTP命令"></a>SMTP命令</h3><p>SMTP协议由一系列命令和响应构成，常见的SMTP命令包括：</p>
+<h3 id="SMTP命令">SMTP命令</h3>
+<p>SMTP协议由一系列命令和响应构成，常见的SMTP命令包括：</p>
 <ul>
 <li><strong>HELO</strong>：标识发送方服务器，开始会话。</li>
 <li><strong>MAIL FROM</strong>：指定邮件发送者地址。</li>
@@ -97,20 +99,23 @@
 <li><strong>DATA</strong>：表示开始传输邮件内容。</li>
 <li><strong>QUIT</strong>：终止会话。</li>
 </ul>
-<h3 id="SMTP与HTTP"><a href="#SMTP与HTTP" class="headerlink" title="SMTP与HTTP"></a>SMTP与HTTP</h3><ul>
+<h3 id="SMTP与HTTP">SMTP与HTTP</h3>
+<ul>
 <li>SMTP是推协议，HTTP是拉协议</li>
 <li>SMTP要求是ASCII，HTTP无限制</li>
 <li>SMTP将所有媒体对象放在单一文件，HTTP每个媒体对象会分别通过独立的HTTP请求来获取</li>
 </ul>
-<h3 id="邮件报文格式"><a href="#邮件报文格式" class="headerlink" title="邮件报文格式"></a>邮件报文格式</h3><p>邮件报文格式不同于SMTP命令</p>
+<h3 id="邮件报文格式">邮件报文格式</h3>
+<p>邮件报文格式不同于SMTP命令</p>
 <p>如同HTTP协议</p>
 <p>每个首部必须有一个From:和 To: 首部行 例如</p>
 <pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">From</span><span class="token punctuation">:</span> alice@crepes.fr
 <span class="token key atrule">To</span><span class="token punctuation">:</span> bob@hamburger.edu
 <span class="token key atrule">Subject</span><span class="token punctuation">:</span> Searching for the meaning of life.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="POP3-x2F-IMAP-x2F-HTTP"><a href="#POP3-x2F-IMAP-x2F-HTTP" class="headerlink" title="POP3&#x2F;IMAP&#x2F;HTTP"></a>POP3&#x2F;IMAP&#x2F;HTTP</h2><p>对于用户B要从邮箱服务器B中获取邮件，就不能使用推协议SMTP，需要使用拉协议，例如IMAP， POP3，HTTP</p>
-<h3 id="POP3"><a href="#POP3" class="headerlink" title="POP3"></a>POP3</h3><p>由RFC 1939进行定义</p>
+<h2 id="POP3-IMAP-HTTP">POP3/IMAP/HTTP</h2>
+<p>对于用户B要从邮箱服务器B中获取邮件，就不能使用推协议SMTP，需要使用拉协议，例如IMAP， POP3，HTTP</p>
+<h3 id="POP3">POP3</h3>
+<p>由RFC 1939进行定义</p>
 <p>先在端口110进行TCP连接，经过“authorization”， “transaction”，“update” 三个阶段，分别是授权，事务，更新。</p>
 <p><strong>授权阶段</strong>：</p>
 <ul>
@@ -160,9 +165,9 @@
 
 <span class="token target symbol">客户端</span><span class="token punctuation">:</span> QUIT
 <span class="token target symbol">服务器</span><span class="token punctuation">:</span> +OK Goodbye<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>缺陷：如果有两个设备使用POP3访问一个邮箱，在设备1删除了某个邮件后，设备2就无法下载访问了。</p>
-<h3 id="IMAP"><a href="#IMAP" class="headerlink" title="IMAP"></a>IMAP</h3><p>允许用户在多个设备上同步和管理电子邮件。与POP3不同，IMAP支持更丰富的功能和更复杂的邮件管理操作。IMAP通常在TCP端口143上运行，使用SSL加密的IMAPS通常在TCP端口993上运行。</p>
+<h3 id="IMAP">IMAP</h3>
+<p>允许用户在多个设备上同步和管理电子邮件。与POP3不同，IMAP支持更丰富的功能和更复杂的邮件管理操作。IMAP通常在TCP端口143上运行，使用SSL加密的IMAPS通常在TCP端口993上运行。</p>
 <p>主要是文件夹管理，IMAP可以把报文和文件夹联系起来，管理者可以移动邮件到不同的文件夹，并且还可以创建删除，查找等。</p>
 <p>IMAP的另一个重要特性是它具有允许用户代理获取报文某些部分的命令，只获取邮件中的部分内容，降低了宽带需求。</p>
 <p>IMAP的操作过程也可以分为多个阶段：<strong>连接阶段</strong>、<strong>选择阶段</strong>、<strong>操作阶段</strong>和<strong>断开阶段</strong>。</p>
@@ -186,7 +191,8 @@
 </ol>
 <p>在操作阶段，客户端可以执行各种命令来管理和操作邮件。这是IMAP会话的主要阶段。</p>
 <ul>
-<li><p>邮件状态查询：</p>
+<li>
+<p>邮件状态查询：</p>
 <ul>
 <li><code>STATUS &lt;folder&gt;</code>：查询指定文件夹的状态信息。</li>
 <li><code>SEARCH &lt;criteria&gt;</code>：根据条件搜索邮件。</li>
@@ -194,7 +200,8 @@
 <li><code>EXAMINE &lt;folder&gt;</code>：类似于<code>SELECT</code>，但以只读方式打开文件夹。</li>
 </ul>
 </li>
-<li><p>邮件操作：</p>
+<li>
+<p>邮件操作：</p>
 <ul>
 <li><code>COPY &lt;sequence&gt; &lt;folder&gt;</code>：将指定邮件复制到另一个文件夹。</li>
 <li><code>STORE &lt;sequence&gt; &lt;item&gt; &lt;value&gt;</code>：修改邮件的标志（如已读、未读）。</li>
@@ -208,28 +215,32 @@
 </ol>
 <p>在断开阶段，客户端发送<code>LOGOUT</code>命令，服务器进行必要的更新操作并断开连接。</p>
 <ul>
-<li><p>结束会话：</p>
+<li>
+<p>结束会话：</p>
 <ul>
 <li>客户端发送<code>LOGOUT</code>命令。</li>
 </ul>
 </li>
-<li><p>服务器响应<code>OK</code>，并断开TCP连接。</p>
+<li>
+<p>服务器响应<code>OK</code>，并断开TCP连接。</p>
 </li>
 </ul>
-<h3 id="IMAP命令"><a href="#IMAP命令" class="headerlink" title="IMAP命令"></a>IMAP命令</h3><p>以下是一些常用的IMAP命令：</p>
+<h3 id="IMAP命令">IMAP命令</h3>
+<p>以下是一些常用的IMAP命令：</p>
 <ul>
-<li>**LOGIN <username> <password>**：进行用户身份验证。</password></username></li>
-<li>**SELECT <folder>**：选择一个邮件文件夹进行操作。</folder></li>
-<li>**EXAMINE <folder>**：以只读方式选择一个文件夹。</folder></li>
-<li>**STATUS <folder>**：查询指定文件夹的状态信息。</folder></li>
-<li>**FETCH <sequence> <items>**：获取指定邮件的内容和属性。</items></sequence></li>
-<li>**SEARCH <criteria>**：根据条件搜索邮件。</criteria></li>
-<li>**STORE <sequence> <item> <value>**：修改邮件的标志。</value></item></sequence></li>
-<li>**COPY <sequence> <folder>**：将指定邮件复制到另一个文件夹。</folder></sequence></li>
+<li><strong>LOGIN <username> <password></password></username></strong>：进行用户身份验证。</li>
+<li><strong>SELECT <folder></folder></strong>：选择一个邮件文件夹进行操作。</li>
+<li><strong>EXAMINE <folder></folder></strong>：以只读方式选择一个文件夹。</li>
+<li><strong>STATUS <folder></folder></strong>：查询指定文件夹的状态信息。</li>
+<li><strong>FETCH <sequence> <items></items></sequence></strong>：获取指定邮件的内容和属性。</li>
+<li><strong>SEARCH <criteria></criteria></strong>：根据条件搜索邮件。</li>
+<li><strong>STORE <sequence> <item> <value></value></item></sequence></strong>：修改邮件的标志。</li>
+<li><strong>COPY <sequence> <folder></folder></sequence></strong>：将指定邮件复制到另一个文件夹。</li>
 <li><strong>EXPUNGE</strong>：删除所有标记为删除的邮件。</li>
 <li><strong>LOGOUT</strong>：结束会话并断开连接。</li>
 </ul>
-<h3 id="HTTP"><a href="#HTTP" class="headerlink" title="HTTP"></a>HTTP</h3><p>也就是基于web的电子邮件，可以使用http协议从邮箱服务器拉取自己的邮件，方式更加丰富多样。（发送仍然是STMP）</p>
+<h3 id="HTTP">HTTP</h3>
+<p>也就是基于web的电子邮件，可以使用http协议从邮箱服务器拉取自己的邮件，方式更加丰富多样。（发送仍然是STMP）</p>
 
         </article>
         <section class="post-near">
@@ -297,5 +308,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

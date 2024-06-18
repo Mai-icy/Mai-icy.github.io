@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,12 @@
             <a href="/2023/09/02/c-primer-plus-note2/">C Primer Plus 笔记2</a>
         </h2>
     
-        <p>C Primer Plus 笔记211.5 字符串函数略，见表
-11.9 把字符串转换为数字int atoi(const char *str);
-double atof(const char *...</p>
+        <p>C Primer Plus 笔记2
+11.5 字符串函数
+略，见表
+11.9 把字符串转换为数字
+int atoi(const char *str);
+double atof(const cha...</p>
     
         <div class="post-meta">
             <time class="date">2023.09.02</time>
@@ -81,8 +84,10 @@ double atof(const char *...</p>
             <a href="/2023/08/18/c-primer-plus-note1/">C Primer Plus 笔记1</a>
         </h2>
     
-        <p>C Primer Plus 笔记13.4.5 可移植类型：stdint.h 和 intypes.h3.4.6 浮点型常量默认情况下，编译器假定浮点型常量是double类型的精度，假设以下：
-fl...</p>
+        <p>C Primer Plus 笔记1
+3.4.5 可移植类型：stdint.h 和 intypes.h
+3.4.6 浮点型常量
+默认情况下，编译器假定浮点型常量是double类型的精度，假设以下：...</p>
     
         <div class="post-meta">
             <time class="date">2023.08.18</time>
@@ -137,5 +142,20 @@ fl...</p>
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

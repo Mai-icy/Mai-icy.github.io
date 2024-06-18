@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,10 @@
             <a href="/2024/06/10/acm-class-note18/">ACM程序课算法笔记18——中国剩余定理</a>
         </h2>
     
-        <p>ACM程序课算法笔记18——中国剩余定理问题引入《孙子算经》中有问「物不知数」：有物不知其数，三三数之剩二，五五数之剩三，七七数之剩二。问物几何？
-即希望x同时满足多个模线性方程，然后求解。比如...</p>
+        <p>ACM程序课算法笔记18——中国剩余定理
+问题引入
+《孙子算经》中有问「物不知数」：有物不知其数，三三数之剩二，五五数之剩三，七七数之剩二。问物几何？
+即希望x同时满足多个模线性方程，然后求解。...</p>
     
         <div class="post-meta">
             <time class="date">2024.06.10</time>
@@ -117,5 +119,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

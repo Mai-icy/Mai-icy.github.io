@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记12——树状数组"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,29 +61,33 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记12——树状数组"><a href="#ACM程序课算法笔记12——树状数组" class="headerlink" title="ACM程序课算法笔记12——树状数组"></a>ACM程序课算法笔记12——树状数组</h1><h2 id="引入"><a href="#引入" class="headerlink" title="引入"></a>引入</h2><p>对于数据储存，我们通常有求区间的需求，因此产生了不同的用于储存数据的数据结构，例如求区间和问题，我们会使用的前缀和数组。</p>
+            <h1>ACM程序课算法笔记12——树状数组</h1>
+<h2 id="引入">引入</h2>
+<p>对于数据储存，我们通常有求区间的需求，因此产生了不同的用于储存数据的数据结构，例如求区间和问题，我们会使用的前缀和数组。</p>
 <p>本次我们考虑的问题是：单点更新和区间和查询：</p>
 <p><strong>普通数组</strong>：查询区间和O(N)，修改单点值O(1)</p>
 <p><strong>前缀和数组</strong>：查询区间和O(1)，修改单点值O(N)</p>
 <p>但对于一个树状数组，有二分的特点</p>
 <p><strong>树状数组</strong>：查询区间和O(logN)，修改单点值O(logN)</p>
-<h2 id="存储方式"><a href="#存储方式" class="headerlink" title="存储方式"></a>存储方式</h2><p>树状数组是一种数组的储存形式，利用了类二叉树的结构，</p>
+<h2 id="存储方式">存储方式</h2>
+<p>树状数组是一种数组的储存形式，利用了类二叉树的结构，</p>
 <p>图片略</p>
 <p>对于树状数组的思路，有树状数组C和原数组A</p>
-<p>(0001) C[1] &#x3D; A[1]</p>
-<p>(0010) C[2] &#x3D; A[1] + A[2]</p>
-<p>(0011) C[3] &#x3D; A[3]</p>
-<p>(0100) C[4] &#x3D; A[1] + A[2] + A[3] + A[4]</p>
-<p>(0101) C[5] &#x3D; A[5]</p>
-<p>(0110) C[6] &#x3D; A[5] + A[6]</p>
-<p>(0111) C[7] &#x3D; A[7]</p>
-<p>(1000) C[8] &#x3D; A[1] + A[2] + A[3] + A[4] + A[5] + A[6] + A[7] + A[8]</p>
+<p>(0001) C[1] = A[1]</p>
+<p>(0010) C[2] = A[1] + A[2]</p>
+<p>(0011) C[3] = A[3]</p>
+<p>(0100) C[4] = A[1] + A[2] + A[3] + A[4]</p>
+<p>(0101) C[5] = A[5]</p>
+<p>(0110) C[6] = A[5] + A[6]</p>
+<p>(0111) C[7] = A[7]</p>
+<p>(1000) C[8] = A[1] + A[2] + A[3] + A[4] + A[5] + A[6] + A[7] + A[8]</p>
 <p>对此储存方式，我们应当找到其中的规律，为了缩短篇幅，本笔记将线索写在了前面，也就是下标的二进制值，我们可以发现，结尾2的连续0数量次幂，也就是这个C元素包含原A中的个数，从本下标往前递减。</p>
 <p>“结尾2的连续0数量次幂“这个描述只是为了方便观察规律，实际上个数也就等于最低位的1代表的值，例如1010，最低位1代表的值也就是2.</p>
 <ul>
-<li>最低位的获取方式也就是lowbit(x) &#x3D; x &amp; (-x)  利用了计算机补码的特性</li>
+<li>最低位的获取方式也就是lowbit(x) = x &amp; (-x)  利用了计算机补码的特性</li>
 </ul>
-<h2 id="单点更新"><a href="#单点更新" class="headerlink" title="单点更新"></a>单点更新</h2><p>对于当我要修改原数组中的元素时，就需要修改不止一个树状数组里面的元素，要依据树的形状向上修改。例如，我要修改A[1]，我们需要修改C[1]，C[2]，C[4]，C[8]</p>
+<h2 id="单点更新">单点更新</h2>
+<p>对于当我要修改原数组中的元素时，就需要修改不止一个树状数组里面的元素，要依据树的形状向上修改。例如，我要修改A[1]，我们需要修改C[1]，C[2]，C[4]，C[8]</p>
 <p>如果修改A[3]我们就要修改C[3]，C[4]，C[8]</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">update</span><span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token punctuation">,</span> <span class="token keyword">int</span> val<span class="token punctuation">)</span><span class="token punctuation">&#123;</span> <span class="token comment">// 此处是让A[i] 增加val</span>
 	<span class="token keyword">while</span><span class="token punctuation">(</span>i <span class="token operator">&lt;=</span> n<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
@@ -91,10 +95,10 @@
 		i <span class="token operator">+=</span> <span class="token function">lowbit</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
 	<span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>从中可以发现单点更新的复杂度是O(LogN)</p>
-<h2 id="区间和查询"><a href="#区间和查询" class="headerlink" title="区间和查询"></a>区间和查询</h2><p>当要查询区间和时，对于树状数组，可以方便的先找到前缀和，例如找前缀和前7个</p>
-<p>Sum[7] &#x3D; C[4] + C[6] + C[7]</p>
+<h2 id="区间和查询">区间和查询</h2>
+<p>当要查询区间和时，对于树状数组，可以方便的先找到前缀和，例如找前缀和前7个</p>
+<p>Sum[7] = C[4] + C[6] + C[7]</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">preSum</span><span class="token punctuation">(</span><span class="token keyword">int</span> i<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
 	<span class="token keyword">int</span> res<span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
 	<span class="token keyword">while</span> <span class="token punctuation">(</span>i <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
@@ -103,14 +107,13 @@
 	    <span class="token punctuation">&#125;</span>
 	<span class="token keyword">return</span> res<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>有以上代码，对此根据前缀和求区间和的方法，可以获得区间和为</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">Sum</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">,</span><span class="token keyword">int</span> b<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
 	<span class="token keyword">return</span> <span class="token function">preSum</span><span class="token punctuation">(</span>b<span class="token punctuation">)</span> <span class="token operator">-</span> <span class="token function">preSum</span><span class="token punctuation">(</span>a <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>因此，区间求和的复杂度也就是O(LogN)</p>
-<h2 id="例子：用树状数组求逆序对数量"><a href="#例子：用树状数组求逆序对数量" class="headerlink" title="例子：用树状数组求逆序对数量"></a>例子：用树状数组求逆序对数量</h2><p>基本思想:开一个数组c[n+1],初始化为0，记录前面数据的出现情况;当数据a出现时，就令c[a]&#x3D;1。这样的话，若求a的逆序数，只需要算出在当前状态下c[a+1,n]中有多少个1，因为这些位置的数在a之前出现且比a大。</p>
+<h2 id="例子：用树状数组求逆序对数量">例子：用树状数组求逆序对数量</h2>
+<p>基本思想:开一个数组c[n+1],初始化为0，记录前面数据的出现情况;当数据a出现时，就令c[a]=1。这样的话，若求a的逆序数，只需要算出在当前状态下c[a+1,n]中有多少个1，因为这些位置的数在a之前出现且比a大。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &lt;iostream&gt;
 #include &lt;vector&gt;
 
@@ -162,7 +165,6 @@ int main() &#123;
     return 0;
 &#125;
 <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 
         </article>
         <section class="post-near">
@@ -230,5 +232,20 @@ int main() &#123;
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

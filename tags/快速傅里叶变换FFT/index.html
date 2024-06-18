@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,11 @@
             <a href="/2023/12/13/learn-algorithm-note3/">算法学习笔记3——快速傅里叶变换(FFT)</a>
         </h2>
     
-        <p>算法学习笔记3——快速傅里叶变换(FFT)问题：内容：对于两个多项式快速取得两个多项式的乘积。对于最基本的解法，便是通过分配率将两个多项式中的每一项都相乘，然后取得计算结果。
-对于两个n项式，其...</p>
+        <p>算法学习笔记3——快速傅里叶变换(FFT)
+问题：
+内容：对于两个多项式快速取得两个多项式的乘积。
+对于最基本的解法，便是通过分配率将两个多项式中的每一项都相乘，然后取得计算结果。
+对于两个n项...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.13</time>
@@ -117,5 +120,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

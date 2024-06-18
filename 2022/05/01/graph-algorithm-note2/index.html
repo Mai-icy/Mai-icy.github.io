@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="图算法笔记2 - 连通分量算法union-find"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -59,10 +59,12 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 779 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 780 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h3 id="探究：union-find算法"><a href="#探究：union-find算法" class="headerlink" title="探究：union-find算法"></a>探究：union-find算法</h3><p>连通分量：处于同一连通分量的点相互连通。</p>
-<h3 id="算法API"><a href="#算法API" class="headerlink" title="算法API"></a>算法API</h3><table>
+            <h3 id="探究：union-find算法">探究：union-find算法</h3>
+<p>连通分量：处于同一连通分量的点相互连通。</p>
+<h3 id="算法API">算法API</h3>
+<table>
 <thead>
 <tr>
 <th>接口</th>
@@ -70,7 +72,8 @@
 <th>返回类型</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>connect(int w, int v)</td>
 <td>连接 w，v点</td>
 <td>void</td>
@@ -90,8 +93,10 @@
 <td>查看连通分量的数量</td>
 <td>int</td>
 </tr>
-</tbody></table>
-<h4 id="UF头文件"><a href="#UF头文件" class="headerlink" title="UF头文件"></a>UF头文件</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class UF
+</tbody>
+</table>
+<h4 id="UF头文件">UF头文件</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">class UF
 &#123;
 public:
     UF(int n);
@@ -111,8 +116,8 @@ protected:
     int _count;
     int *id &#x3D; nullptr;
 &#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h4 id="quick-find算法："><a href="#quick-find算法：" class="headerlink" title="quick-find算法："></a>quick-find算法：</h4><p>目的：实现find的高效</p>
+<h4 id="quick-find算法：">quick-find算法：</h4>
+<p>目的：实现find的高效</p>
 <p>实现：维护数组id，点在id对应的值即为改点的连通分量。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">inline int UF::find(int v) const &#123; return id[v]; &#125;
 
@@ -129,10 +134,10 @@ void UF::connect(int w, int v)
         _count--;
     &#125;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>connect操作为找到两点的连通分量，遍历数组，将两个连通分量的元素值统一。</p>
 <p>分析：实现find的高效会导致connect函数的连接操作变的复杂。find操作的时间复杂度成功降到O(1)，但connect的操作由于要遍历一遍数组，时间复杂度也达到O(N)。</p>
-<h4 id="quick-union算法"><a href="#quick-union算法" class="headerlink" title="quick-union算法"></a>quick-union算法</h4><p>目的：实现connect的高效</p>
+<h4 id="quick-union算法">quick-union算法</h4>
+<p>目的：实现connect的高效</p>
 <p>实现：维护数组id，整个数据结构成为树状，每个连通分量为一颗树，每颗树的根节点即为该树的连通分量值，同理，若id数组中该点的下标和值一样，这个点就是根节点。此时若要connect，只需要把连接的一点连向另一点即可（连接之前确保两点不在同一连通分量）</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int UF::find(int v) const
 &#123;
@@ -150,9 +155,9 @@ void UF::connect(int w, int v)
     id[w] &#x3D; v;
     _count--;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：同样，为了实现connect的高效，find操作的效率也有所牺牲。在一些最坏情况下，一棵树可能深度很大，就会导致效率很低。为了优化，提出了加权quick-union算法，在两个连通分量连接的时候，为了避免造出一颗深度很大的树，加权quick-union算法确保小树添加在大树上。</p>
-<h4 id="加权quick-union算法"><a href="#加权quick-union算法" class="headerlink" title="加权quick-union算法"></a>加权quick-union算法</h4><p>目的：quick-union算法在坏情况下的低效率</p>
+<h4 id="加权quick-union算法">加权quick-union算法</h4>
+<p>目的：quick-union算法在坏情况下的低效率</p>
 <p>实现：额外维护数组size，size存放了每个连通分量对应的树的深度，并以此为依据，保证两树连接的时候，深度小的树连接在深度大的树上。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int WUF::find(int v) const
 &#123;
@@ -180,9 +185,9 @@ void WUF::connect(int w, int v)
     &#125;
     _count--;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：维护了数组sz，用额外的空间复杂度换取了时间复杂度的降低。但加权quick-union算法仍然有进步空间。加权任一节点深度最大为log(N)。</p>
-<h4 id="路径压缩的加权quick-union算法"><a href="#路径压缩的加权quick-union算法" class="headerlink" title="路径压缩的加权quick-union算法"></a>路径压缩的加权quick-union算法</h4><p>目的：更加优化加权quick-union算法</p>
+<h4 id="路径压缩的加权quick-union算法">路径压缩的加权quick-union算法</h4>
+<p>目的：更加优化加权quick-union算法</p>
 <p>实现：实现及其简单，在确保connect高效的情况下，提高find的效率，只需要在每次find的时候，将被搜索的点直接连接到其树的根节点，在多次find之后便可以减小树的深度。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int WUF::find(int v) const
 &#123;
@@ -192,7 +197,6 @@ void WUF::connect(int w, int v)
     id[ori_p] &#x3D; v; &#x2F;&#x2F; 路径压缩
     return v;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>分析：虽然看起来十分简单粗暴，但是在实际测试使用中，确实会达到更加高效的效果。</p>
 
         </article>
@@ -261,5 +265,20 @@ void WUF::connect(int w, int v)
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,9 +61,11 @@
             <a href="/2024/03/25/acm-class-note10/">ACM程序课算法笔记10——最短路径问题</a>
         </h2>
     
-        <p>ACM程序课算法笔记10——最短路径问题松弛最短路算法中，松弛是最关键的思想，彻底的理解松弛，就能理解最短路径的算法。
+        <p>ACM程序课算法笔记10——最短路径问题
+松弛
+最短路算法中，松弛是最关键的思想，彻底的理解松弛，就能理解最短路径的算法。
 以下是边的松弛，而且是有向边的松弛。
-void relax(Weighte...</p>
+void relax(Weigh...</p>
     
         <div class="post-meta">
             <time class="date">2024.03.25</time>
@@ -118,5 +120,20 @@ void relax(Weighte...</p>
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

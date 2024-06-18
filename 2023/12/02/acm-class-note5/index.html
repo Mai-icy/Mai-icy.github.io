@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记5——组合博弈"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -63,9 +63,12 @@
         
             <blockquote>这篇文章上次修改于 199 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="ACM程序课算法笔记5——组合博弈"><a href="#ACM程序课算法笔记5——组合博弈" class="headerlink" title="ACM程序课算法笔记5——组合博弈"></a>ACM程序课算法笔记5——组合博弈</h1><h2 id="问题引入"><a href="#问题引入" class="headerlink" title="问题引入"></a>问题引入</h2><p>问题：一共有10张牌，你与一个人进行游戏，每次只能取走1或2或3张牌，谁取走最后一张，你是先手，如何获胜。</p>
+            <h1>ACM程序课算法笔记5——组合博弈</h1>
+<h2 id="问题引入">问题引入</h2>
+<p>问题：一共有10张牌，你与一个人进行游戏，每次只能取走1或2或3张牌，谁取走最后一张，你是先手，如何获胜。</p>
 <p>题解：根据以前的经验，我们能保证一轮取走4张牌，而且设定每一轮我们是后手，对手取走1张，我取走3张。对手取走2张，我也取走2张。对手取走3张，我取走1张。易得结果。</p>
-<h2 id="思考总结"><a href="#思考总结" class="headerlink" title="思考总结"></a>思考总结</h2><p>但在进行这个游戏的时候，我们心中就有个概念，只要我这么走，无论对方怎么走，我的结果就是赢，我们称这个状态为<strong>必胜点</strong>，同理，对于除了必胜点意外的其它点，对方就会必胜，此状态我们称为<strong>必败点</strong></p>
+<h2 id="思考总结">思考总结</h2>
+<p>但在进行这个游戏的时候，我们心中就有个概念，只要我这么走，无论对方怎么走，我的结果就是赢，我们称这个状态为<strong>必胜点</strong>，同理，对于除了必胜点意外的其它点，对方就会必胜，此状态我们称为<strong>必败点</strong></p>
 <p>从这个角度上再来看这道题，我们可以让剩余的卡片数量作为<strong>状态</strong>，并且我们设必胜为<strong>N</strong>必败为<strong>P</strong></p>
 <table>
 <thead>
@@ -84,7 +87,8 @@
 <th>10</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>状态情况</td>
 <td>P</td>
 <td>N</td>
@@ -98,7 +102,8 @@
 <td>N</td>
 <td>N</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>根据此次标记，我们可以找到一些规律：</p>
 <ul>
 <li>终结位置可以直接标记为必败点（没有牌给对面选意味着对面输了）</li>
@@ -123,7 +128,8 @@
 <th>10</th>
 </tr>
 </thead>
-<tbody><tr>
+<tbody>
+<tr>
 <td>状态情况</td>
 <td>P</td>
 <td>N</td>
@@ -137,34 +143,41 @@
 <td>P</td>
 <td>N</td>
 </tr>
-</tbody></table>
+</tbody>
+</table>
 <p>就又可以判断如何必胜</p>
 <p>按照此规律不能只局限于线性表，类似于二维表，甚至图的结构都可以解决。</p>
-<h2 id="Nim游戏（Nim-Sum）"><a href="#Nim游戏（Nim-Sum）" class="headerlink" title="Nim游戏（Nim-Sum）"></a>Nim游戏（Nim-Sum）</h2><h3 id="游戏规则"><a href="#游戏规则" class="headerlink" title="游戏规则"></a>游戏规则</h3><ul>
+<h2 id="Nim游戏（Nim-Sum）">Nim游戏（Nim-Sum）</h2>
+<h3 id="游戏规则">游戏规则</h3>
+<ul>
 <li>有两个玩家，三堆扑克牌（比如：分别是5, 7, 9张），双方轮流操作</li>
 <li>玩家的每次操作是选择其中某一堆牌，然后从中取走任意张</li>
 <li>最后一次取牌的一方为获胜方</li>
 </ul>
-<h3 id="初次尝试"><a href="#初次尝试" class="headerlink" title="初次尝试"></a>初次尝试</h3><p>按照我们原本的思路来看，这道题再根据必胜必败点，我们将(a1, a2, a3)为三个三堆扑克牌的剩余牌数量</p>
+<h3 id="初次尝试">初次尝试</h3>
+<p>按照我们原本的思路来看，这道题再根据必胜必败点，我们将(a1, a2, a3)为三个三堆扑克牌的剩余牌数量</p>
 <p>可得(0, 0, 0)为必败点，(0, 0, x)为必胜点，(0, 1, 1)为必败点，n(0, k, k)为必败点。</p>
 <p>依据这样来计算，将会花费大量空间，我们需要更好的规律来计算这类问题。</p>
-<h3 id="引入概念-Nim-Sum"><a href="#引入概念-Nim-Sum" class="headerlink" title="引入概念: Nim-Sum"></a>引入概念: Nim-Sum</h3><h4 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h4><p>Nim-Sum的运算对象(x1, x2, x3 … xn)</p>
+<h3 id="引入概念-Nim-Sum">引入概念: Nim-Sum</h3>
+<h4 id="定义">定义</h4>
+<p>Nim-Sum的运算对象(x1, x2, x3 … xn)</p>
 <p>(x1, x2, x3 … xn)和(y1, y2, y3 … yn)的Nim-Sum是(z1, z2, z3 … zn)</p>
-<p>其中对于所有 zk &#x3D; xk + yk (mod 2) （k&#x3D;0…m）  </p>
-<h4 id="定理"><a href="#定理" class="headerlink" title="定理"></a>定理</h4><p>对于本游戏，每个游戏状态都有一个Nim-Sum，就是对所有牌堆的牌数量进行Nim-Sum</p>
-<p>对于<strong>nim游戏</strong>的某个位置(x1,x2,x3)，当且仅当它各部分的nim-sum等于0时（即x1⊕x2⊕x3&#x3D;0），则当前位于必败点。</p>
-<p>例如点(0, 0, 0)属于必败点，(3, 5, 6) 即b11^b101^b110 &#x3D; 0，即必败点。</p>
-<h4 id="证明"><a href="#证明" class="headerlink" title="证明"></a>证明</h4><p>对于每次取牌，都可以取任意张，唯一的局限性就是，只能取其中的一堆的牌，只有一堆的牌的数量会变化。</p>
-<p>同时，假如此时状态的Nim-Sum是0，那么修改其中一堆牌的二进制必定会影响nim-sum而使其不为0，所以nim-sum&#x3D;0的点（除了最终状态）永远无法一步到达最终状态，故nim-sum&#x3D;0的点为必败点。</p>
-<p>同时，又因为nim-sum不为0的状态点，我们要去除除二进制的多个1，当最高位有1的时候，说明三堆牌中也有最高位为1的，修改它，并将之后所有的1位变为0，也就是nim-sum不为0的状态点都能一步到达nim-sum&#x3D;0的点，能到达必败点的点就是必胜点，一旦nim-sum不为0，其必胜。</p>
-<p>例子： </p>
+<p>其中对于所有 zk = xk + yk (mod 2) （k=0…m）</p>
+<h4 id="定理">定理</h4>
+<p>对于本游戏，每个游戏状态都有一个Nim-Sum，就是对所有牌堆的牌数量进行Nim-Sum</p>
+<p>对于<strong>nim游戏</strong>的某个位置(x1,x2,x3)，当且仅当它各部分的nim-sum等于0时（即x1⊕x2⊕x3=0），则当前位于必败点。</p>
+<p>例如点(0, 0, 0)属于必败点，(3, 5, 6) 即b11^b101^b110 = 0，即必败点。</p>
+<h4 id="证明">证明</h4>
+<p>对于每次取牌，都可以取任意张，唯一的局限性就是，只能取其中的一堆的牌，只有一堆的牌的数量会变化。</p>
+<p>同时，假如此时状态的Nim-Sum是0，那么修改其中一堆牌的二进制必定会影响nim-sum而使其不为0，所以nim-sum=0的点（除了最终状态）永远无法一步到达最终状态，故nim-sum=0的点为必败点。</p>
+<p>同时，又因为nim-sum不为0的状态点，我们要去除除二进制的多个1，当最高位有1的时候，说明三堆牌中也有最高位为1的，修改它，并将之后所有的1位变为0，也就是nim-sum不为0的状态点都能一步到达nim-sum=0的点，能到达必败点的点就是必胜点，一旦nim-sum不为0，其必胜。</p>
+<p>例子：</p>
 <pre class="line-numbers language-none"><code class="language-none">13 &#x3D; 1101b  -&gt;  0100b
 12 &#x3D; 1100b  -&gt;  0101b
  8 &#x3D; 1000b  -&gt;  0001b
  ____________异或运算
      1001b  -&gt;  0000b（目的）<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p> 此时，修改任意一堆牌以符合要求，见以上修改，即可进入必败点。</p>
+<p>此时，修改任意一堆牌以符合要求，见以上修改，即可进入必败点。</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">bool isPointWin(const vector&lt;int&gt; &amp; nims)&#123;
     int nimSum &#x3D; 0;
     for(int x: nims)&#123;
@@ -172,20 +185,31 @@
     &#125;
     return nimSum !&#x3D; 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="SG函数（Sprague-Grundy-Function）"><a href="#SG函数（Sprague-Grundy-Function）" class="headerlink" title="SG函数（Sprague-Grundy Function）"></a>SG函数（Sprague-Grundy Function）</h2><h3 id="定义-1"><a href="#定义-1" class="headerlink" title="定义"></a>定义</h3><p>SG函数同样为每个状态建立了一个值</p>
+<h2 id="SG函数（Sprague-Grundy-Function）">SG函数（Sprague-Grundy Function）</h2>
+<h3 id="定义-2">定义</h3>
+<p>SG函数同样为每个状态建立了一个值</p>
 <p><code>g(x) =min&#123;n ≥ 0 : n != g(y) for y ∈ F(x)&#125;</code></p>
 <p>即X节点的SG值是除X的后继节点的SG值后的最小的非负整数。</p>
-<h3 id="定理-1"><a href="#定理-1" class="headerlink" title="定理"></a>定理</h3><p><strong>必败点</strong>: 当节点x的 sg(x) &#x3D; 0<br><strong>必胜点</strong>: 当节点x的 sg(x) &gt; 0 </p>
-<h3 id="证明-1"><a href="#证明-1" class="headerlink" title="证明"></a>证明</h3><ul>
+<h3 id="定理-2">定理</h3>
+<p><strong>必败点</strong>: 当节点x的 sg(x) = 0<br>
+<strong>必胜点</strong>: 当节点x的 sg(x) &gt; 0</p>
+<h3 id="证明-2">证明</h3>
+<ul>
 <li>终止状态的SG函数值为0。</li>
 <li>如果SG(x)不为0，根据SG函数的定义，x的后继中一定存在某一个状态的SG函数值为0，我们称之为y。那么，我们一定可以通过操作将x转移到y，从而留给对手一个SG函数值为0的状态。</li>
 <li>如果SG(x)为0，根据SG函数的定义，x的后继中不存在SG函数值为0的状态。所以，无论如何操作，都一定会留给对手一个SG函数值不为0的状态。</li>
 </ul>
 <p>因此，如果玩家处于一个SG函数值不等于0的状态，那么他是必胜的，否则他是必败的。SG函数确实可以作为必胜点进行使用。</p>
-<h2 id="组合型组合博弈"><a href="#组合型组合博弈" class="headerlink" title="组合型组合博弈"></a>组合型组合博弈</h2><h3 id="题目"><a href="#题目" class="headerlink" title="题目"></a>题目</h3><p>有三堆扑克牌，分别为5,7,9张；<br>双方轮流取牌，每次可以选择任意一堆牌取走1~3张；<br>最后取牌的一方获胜。</p>
-<h3 id="定理-2"><a href="#定理-2" class="headerlink" title="定理"></a>定理</h3><p>如果图游戏G由若干子图游戏Gi组成，即：G &#x3D; G1 +···+ Gn ，假设gi是Gi（i &#x3D; 1, …,n）的SG函数值，那么，图游戏G的SG值计算如下：<br><code>g(x1, ...,xn) = g1(x1)⊕...⊕gn(xn)</code></p>
-<h3 id="题解"><a href="#题解" class="headerlink" title="题解"></a>题解</h3><p>按照本题套定理，三堆扑克牌也就属于三个子游戏，每个点都有自己的sg值</p>
+<h2 id="组合型组合博弈">组合型组合博弈</h2>
+<h3 id="题目">题目</h3>
+<p>有三堆扑克牌，分别为5,7,9张；<br>
+双方轮流取牌，每次可以选择任意一堆牌取走1~3张；<br>
+最后取牌的一方获胜。</p>
+<h3 id="定理-3">定理</h3>
+<p>如果图游戏G由若干子图游戏Gi组成，即：G = G1 +···+ Gn ，假设gi是Gi（i = 1, …,n）的SG函数值，那么，图游戏G的SG值计算如下：<br>
+<code>g(x1, ...,xn) = g1(x1)⊕...⊕gn(xn)</code></p>
+<h3 id="题解">题解</h3>
+<p>按照本题套定理，三堆扑克牌也就属于三个子游戏，每个点都有自己的sg值</p>
 <pre class="line-numbers language-C++" data-language="C++"><code class="language-C++">int calculateSG(const vector&lt;int&gt;&amp; moves, int state, unordered_set&lt;int&gt;&amp; memo) &#123;
     if (memo.find(state) !&#x3D; memo.end()) &#123;
         return memo[state];
@@ -228,8 +252,8 @@ int main() &#123;
 
     return 0;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="证明-2"><a href="#证明-2" class="headerlink" title="证明"></a>证明</h3><p>这里简单说明一下</p>
+<h3 id="证明-3">证明</h3>
+<p>这里简单说明一下</p>
 <p>我们将sg用于三堆牌的行为，同时，一次操作只能修改一堆牌。</p>
 <p>同步到这个问题，三堆牌都有自己的sg值来代表必胜点和必败点</p>
 <p>sg值是根据后继节点判断的，一个sg的值为5，代表它的后继必有0,1,2,3,4。类似于取牌游戏，5可以任意变成5以下的数字，sg值的变化和取牌等价，取牌也可以取任意张使得sg值随意变小，直到三堆牌的sg都变为0，便可直接结合应用。</p>
@@ -303,5 +327,20 @@ int main() &#123;
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

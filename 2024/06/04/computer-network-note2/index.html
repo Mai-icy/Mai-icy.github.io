@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="计算机网络笔记2——web和http"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,15 @@
         </section>
         <article class="post-content">
         
-            <h1 id="计算机网络笔记2——web和http"><a href="#计算机网络笔记2——web和http" class="headerlink" title="计算机网络笔记2——web和http"></a>计算机网络笔记2——web和http</h1><h2 id="网络应用程序体系结构"><a href="#网络应用程序体系结构" class="headerlink" title="网络应用程序体系结构"></a>网络应用程序体系结构</h2><h3 id="网络应用程序体系结构-1"><a href="#网络应用程序体系结构-1" class="headerlink" title="网络应用程序体系结构"></a>网络应用程序体系结构</h3><p>有一个常开的主机作为服务器，会有多个客户机对服务器进行请求。客户相互之间不直接通信，通过服务器作为中介进行数据的交流。为了满足大批量的请求，通常建立拥有大量服务器的数据中心。</p>
-<h3 id="P2P-体系结构"><a href="#P2P-体系结构" class="headerlink" title="P2P 体系结构"></a>P2P 体系结构</h3><p>对于专用服务器有最小的（或者没有）依赖，P2P是一种客户主机直接连接，这些主机被称为对等方</p>
+            <h1>计算机网络笔记2——web和http</h1>
+<h2 id="网络应用程序体系结构">网络应用程序体系结构</h2>
+<h3 id="网络应用程序体系结构-2">网络应用程序体系结构</h3>
+<p>有一个常开的主机作为服务器，会有多个客户机对服务器进行请求。客户相互之间不直接通信，通过服务器作为中介进行数据的交流。为了满足大批量的请求，通常建立拥有大量服务器的数据中心。</p>
+<h3 id="P2P-体系结构">P2P 体系结构</h3>
+<p>对于专用服务器有最小的（或者没有）依赖，P2P是一种客户主机直接连接，这些主机被称为对等方</p>
 <p>它有自拓展性：网络能够随着节点（即参与网络的计算机或设备）的增加而自动扩展，负载均衡，资源共享。</p>
-<h2 id="应用层"><a href="#应用层" class="headerlink" title="应用层"></a>应用层</h2><p>进程通过软件接口在互联网上进行报文接受发送，这个软件接口称作套接字。</p>
+<h2 id="应用层">应用层</h2>
+<p>进程通过软件接口在互联网上进行报文接受发送，这个软件接口称作套接字。</p>
 <ul>
 <li>数据传输：运输层协议的 可靠数据传输 和 被容忍丢失的应用</li>
 <li>时间敏感：要求严格的时间同步和实时响应，例如视频会议，或者游戏</li>
@@ -72,44 +77,48 @@
 </ul>
 <p>HTTP：先发起一个TCP连接。一旦建立，该进程就可以通过套接字接口访问TCP</p>
 <p>无状态协议：是一种在通信过程中不保留客户端状态的协议，每个请求是独立的，不保存关于客户的任何信息，HTTP是一个无状态协议。</p>
-<h3 id="非持续连接和持续连接"><a href="#非持续连接和持续连接" class="headerlink" title="非持续连接和持续连接"></a>非持续连接和持续连接</h3><p>非持续连接：每次进行一次通信时都会建立连接。完成传输就会关闭。要新的数据传输时，必须重新建立连接。</p>
+<h3 id="非持续连接和持续连接">非持续连接和持续连接</h3>
+<p>非持续连接：每次进行一次通信时都会建立连接。完成传输就会关闭。要新的数据传输时，必须重新建立连接。</p>
 <p>持续连接：也称为长连接，是指客户端和服务器之间建立的连接保持打开。可以完成多个请求，直到显式关闭或超时。</p>
-<h3 id="HTTP请求报文"><a href="#HTTP请求报文" class="headerlink" title="HTTP请求报文"></a>HTTP请求报文</h3><pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">GET /somedir/page ・html HTTP/1.1
+<h3 id="HTTP请求报文">HTTP请求报文</h3>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">GET /somedir/page ・html HTTP/1.1
 <span class="token key atrule">Host</span><span class="token punctuation">:</span> www someschool•edu
 <span class="token key atrule">Connection</span><span class="token punctuation">:</span> close
 <span class="token key atrule">User-agent</span><span class="token punctuation">:</span> Mozilla/5•0
 <span class="token key atrule">Accept-language</span><span class="token punctuation">:</span> fr<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>第一行为请求行： 方法字段 + URL字段 + HTTP版本字段</p>
 <p>其它为首部行：</p>
 <p>Host：指定请求的目标主机名</p>
 <p>Connection：指示是否在完成当前请求后关闭网络连接，1.1默认keep-alive 持久连接</p>
 <p>User-agent：提供有关客户端软件的信息</p>
 <p>Accept-language：告诉服务器客户端希望接收的语言版本</p>
-<h3 id="HTTP的状态设计：cookie"><a href="#HTTP的状态设计：cookie" class="headerlink" title="HTTP的状态设计：cookie"></a>HTTP的状态设计：cookie</h3><p>http是无状态的，但cookie技术可以用于记录状态。而负责保存cookie和在请求的时候使用对应的cookie的责任就交给了浏览器。</p>
+<h3 id="HTTP的状态设计：cookie">HTTP的状态设计：cookie</h3>
+<p>http是无状态的，但cookie技术可以用于记录状态。而负责保存cookie和在请求的时候使用对应的cookie的责任就交给了浏览器。</p>
 <p>服务器可以在返回的请求使用 “Set-cookie”使客户浏览器保存cookie并在后序的报文中增加“Cookie”首部行。</p>
-<h3 id="web缓存"><a href="#web缓存" class="headerlink" title="web缓存"></a>web缓存</h3><p>web缓存器也叫代理服务器，会将请求过的数据（如HTML页面、图片、JavaScript文件等）存储，当用户再次请求相同的数据时，缓存器会直接返回缓存中的数据，而不是再次从原始服务器获取。这可以显著提高响应速度和降低网络流量。</p>
+<h3 id="web缓存">web缓存</h3>
+<p>web缓存器也叫代理服务器，会将请求过的数据（如HTML页面、图片、JavaScript文件等）存储，当用户再次请求相同的数据时，缓存器会直接返回缓存中的数据，而不是再次从原始服务器获取。这可以显著提高响应速度和降低网络流量。</p>
 <p><code>If-Modified-Since</code> 是HTTP协议中的一个请求头字段，用于实现协商缓存（conditional request）。它允许客户端告诉服务器已经缓存了某个资源，并且缓存的版本是自指定日期以来的版本。如果自该日期以来资源没有被修改，服务器可以返回304 Not Modified状态码。</p>
 <p>第一次获取资源（response）</p>
 <pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">HTTP/1.1 200 OK
 <span class="token key atrule">Last-Modified</span><span class="token punctuation">:</span> Wed<span class="token punctuation">,</span> 21 Oct 2015 07<span class="token punctuation">:</span>28<span class="token punctuation">:</span>00 GMT
 <span class="token key atrule">Content-Type</span><span class="token punctuation">:</span> text/html
 <span class="token key atrule">Content-Length</span><span class="token punctuation">:</span> <span class="token number">1024</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>后续请求</p>
 <pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">GET /index.html HTTP/1.1
 <span class="token key atrule">Host</span><span class="token punctuation">:</span> example.com
 <span class="token key atrule">If-Modified-Since</span><span class="token punctuation">:</span> Wed<span class="token punctuation">,</span> 21 Oct 2015 07<span class="token punctuation">:</span>28<span class="token punctuation">:</span>00 GMT<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <ul>
-<li><p><strong>资源未修改 : 返回</strong>    HTTP&#x2F;1.1 304 Not Modified</p>
+<li>
+<p><strong>资源未修改 : 返回</strong>    HTTP/1.1 304 Not Modified</p>
 </li>
-<li><p><strong>资源已修改</strong>：如果资源自指定时间以来已被修改，服务器返回200 OK状态码，并且发送更新后的资源内容，同时更新<code>Last-Modified</code>时间。</p>
+<li>
+<p><strong>资源已修改</strong>：如果资源自指定时间以来已被修改，服务器返回200 OK状态码，并且发送更新后的资源内容，同时更新<code>Last-Modified</code>时间。</p>
 <pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">yHTTP/1.1 200 OK
 <span class="token key atrule">Last-Modified</span><span class="token punctuation">:</span> Thu<span class="token punctuation">,</span> 22 Oct 2015 10<span class="token punctuation">:</span>00<span class="token punctuation">:</span>00 GMT
 <span class="token key atrule">Content-Type</span><span class="token punctuation">:</span> text/html
 <span class="token key atrule">Content-Length</span><span class="token punctuation">:</span> <span class="token number">2048</span>
-(更新后的HTML内容)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre></li>
+(更新后的HTML内容)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+</li>
 </ul>
 
         </article>
@@ -178,5 +187,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

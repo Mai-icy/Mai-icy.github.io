@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记19——矩阵快速幂"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,12 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记19——矩阵快速幂"><a href="#ACM程序课算法笔记19——矩阵快速幂" class="headerlink" title="ACM程序课算法笔记19——矩阵快速幂"></a>ACM程序课算法笔记19——矩阵快速幂</h1><p>矩阵快速幂是对递推式的一种高效解决方法。</p>
-<p>主要的解决问题是类似于斐波那契数列 f(n) &#x3D; f(n - 1) + f(n - 2) 的使用。</p>
+            <h1>ACM程序课算法笔记19——矩阵快速幂</h1>
+<p>矩阵快速幂是对递推式的一种高效解决方法。</p>
+<p>主要的解决问题是类似于斐波那契数列 f(n) = f(n - 1) + f(n - 2) 的使用。</p>
 <p>不过我们要先进行矩阵基本运算在代码中的体现。</p>
-<h2 id="矩阵运算"><a href="#矩阵运算" class="headerlink" title="矩阵运算"></a>矩阵运算</h2><pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">mat</span> <span class="token punctuation">&#123;</span>
+<h2 id="矩阵运算">矩阵运算</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">mat</span> <span class="token punctuation">&#123;</span>
   LL a<span class="token punctuation">[</span>sz<span class="token punctuation">]</span><span class="token punctuation">[</span>sz<span class="token punctuation">]</span><span class="token punctuation">;</span>
 
   <span class="token function">mat</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token function">memset</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span> a<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
@@ -112,7 +114,6 @@
     <span class="token keyword">return</span> res<span class="token punctuation">;</span>
   <span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>上面的矩阵乘法运算是优于下面这个的，优于成块空间的优化导致。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">mat <span class="token keyword">operator</span><span class="token operator">*</span><span class="token punctuation">(</span><span class="token keyword">const</span> mat<span class="token operator">&amp;</span> T<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
   mat res<span class="token punctuation">;</span>
@@ -124,61 +125,78 @@
       <span class="token punctuation">&#125;</span>
   <span class="token keyword">return</span> res<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="问题提出"><a href="#问题提出" class="headerlink" title="问题提出"></a>问题提出</h2><p>我们希望在代码角度解决类似于斐波那契数列求第n项的问题</p>
+<h2 id="问题提出">问题提出</h2>
+<p>我们希望在代码角度解决类似于斐波那契数列求第n项的问题</p>
 <p>可得</p>
-<p>$a_1 &#x3D; a_2 &#x3D; 1\a_n &#x3D; a_{n - 1} + a_{n -2} (n &gt; 2)$</p>
+<p><img src="https://math.now.sh?inline=a_1%20%3D%20a_2%20%3D%201%5C%5Ca_n%20%3D%20a_%7Bn%20-%201%7D%20%2B%20a_%7Bn%20-2%7D%20%28n%20%3E%202%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>求an项的通项公式</p>
-<h2 id="递推公式和矩阵思想"><a href="#递推公式和矩阵思想" class="headerlink" title="递推公式和矩阵思想"></a>递推公式和矩阵思想</h2><p>对于以上问题，我们就需要使用矩阵的思想，构建以下矩阵</p>
-<p>$\begin{pmatrix}<br>a_{n}\<br>a_{n - 1}\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 1 \<br>1 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>a_{n - 1}\<br>a_{n - 2}\<br>\end{pmatrix}$<br>此时，我们可以发现其中的间接矩阵是我们构建的，并且能让式子成立，并且这就是一个矩阵的递推公式，是一个乘积的形式，每项也就变成了幂次这个间接矩阵。</p>
+<h2 id="递推公式和矩阵思想">递推公式和矩阵思想</h2>
+<p>对于以上问题，我们就需要使用矩阵的思想，构建以下矩阵</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7Da_%7Bn%7D%5C%5Ca_%7Bn%20-%201%7D%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7D1%20%26%201%20%5C%5C1%20%26%200%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Da_%7Bn%20-%201%7D%5C%5Ca_%7Bn%20-%202%7D%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"><br>
+此时，我们可以发现其中的间接矩阵是我们构建的，并且能让式子成立，并且这就是一个矩阵的递推公式，是一个乘积的形式，每项也就变成了幂次这个间接矩阵。</p>
 <p>首项 也就是 1 1了。</p>
 <p>拆解这个东西我们就可以发现</p>
-<p>$a_n &#x3D; 1 \times a_{n - 1} + 1 \times a_{n -2}\<br>a_{n - 1} &#x3D; 1 \times a_{n - 1}$</p>
+<p><img src="https://math.now.sh?inline=a_n%20%3D%201%20%5Ctimes%20a_%7Bn%20-%201%7D%20%2B%201%20%5Ctimes%20a_%7Bn%20-2%7D%5C%5C%0Aa_%7Bn%20-%201%7D%20%3D%201%20%5Ctimes%20a_%7Bn%20-%201%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>这是一个构造的实际例子。为了更便于后序的理解和方法总结，以下再给出6个题目尝试去构造。</p>
-<h2 id="矩阵构造"><a href="#矩阵构造" class="headerlink" title="矩阵构造"></a>矩阵构造</h2><h3 id="练习一"><a href="#练习一" class="headerlink" title="练习一"></a>练习一</h3><p>求f(n)，并且其中有以下递推式</p>
-<p>$f(n) &#x3D; 3 * f(n - 1) + 5 * f(n - 3) + 9 * f(n - 4)$</p>
-<h3 id="构造一"><a href="#构造一" class="headerlink" title="构造一"></a>构造一</h3><p>对于本题，f(n)借力于f(n - 3) f(n - 4)，不妨我们将它们都直入于矩阵</p>
-<p>$\begin{pmatrix}<br>f(n)\<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>3 &amp; 0 &amp; 5 &amp; 9 \<br>1 &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 1 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>f(n - 4)\<br>\end{pmatrix}$</p>
+<h2 id="矩阵构造">矩阵构造</h2>
+<h3 id="练习一">练习一</h3>
+<p>求f(n)，并且其中有以下递推式</p>
+<p><img src="https://math.now.sh?inline=f%28n%29%20%3D%203%20*%20f(n%20-%201)%20%2B%205%20*%20f(n%20-%203)%20%2B%209%20*%20f(n%20-%204)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<h3 id="构造一">构造一</h3>
+<p>对于本题，f(n)借力于f(n - 3) f(n - 4)，不妨我们将它们都直入于矩阵</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7Df%28n%29%5C%5Cf(n%20-%201)%5C%5Cf(n%20-%202)%5C%5Cf(n%20-%203)%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7D3%20%26%200%20%26%205%20%26%209%20%5C%5C1%20%26%200%20%26%200%20%26%200%5C%5C0%20%26%201%20%26%200%20%26%200%5C%5C0%20%26%200%20%26%201%20%26%200%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Df(n%20-%201)%5C%5Cf(n%20-%202)%5C%5Cf(n%20-%203)%5C%5Cf(n%20-%204)%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>矩阵的构造实际上就是为前一项的多个式能够配到后一项。</p>
 <p>可以得到以上矩阵式，我们可以发现，为了让f(n)能够顺利的获取到前面的项，我们就保存了它们，并且让它们出现在前一项。</p>
 <p>需要注意的是，我们使用了f(n - 2)它看似无用，实际上是为了保证中间能顺利递推下去。</p>
 <p>总结为：<strong>它需要什么，我们就存什么</strong></p>
-<h3 id="练习二"><a href="#练习二" class="headerlink" title="练习二"></a>练习二</h3><p>求f(n)，并且其中有以下递推式</p>
-<p>$f(n) &#x3D; a * f(n - 1) + b * f(n - 3) + c$</p>
-<h3 id="构造二"><a href="#构造二" class="headerlink" title="构造二"></a>构造二</h3><p>对于本体，引入了一个常数，这无疑干扰和打破了我们原来计算的规律，但是常数终究是常数，按照构造一的结论，因为需要c，我们就把c一起存起来就好了</p>
-<p>$\begin{pmatrix}<br>f(n)\<br>f(n - 1)\<br>f(n - 2)\<br>c\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>a &amp; 0 &amp; b &amp; 1 \<br>1 &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 0 &amp; 1\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>c\<br>\end{pmatrix}$</p>
+<h3 id="练习二">练习二</h3>
+<p>求f(n)，并且其中有以下递推式</p>
+<p><img src="https://math.now.sh?inline=f%28n%29%20%3D%20a%20*%20f(n%20-%201)%20%2B%20b%20*%20f(n%20-%203)%20%2B%20c" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<h3 id="构造二">构造二</h3>
+<p>对于本体，引入了一个常数，这无疑干扰和打破了我们原来计算的规律，但是常数终究是常数，按照构造一的结论，因为需要c，我们就把c一起存起来就好了</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7Df%28n%29%5C%5Cf(n%20-%201)%5C%5Cf(n%20-%202)%5C%5Cc%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7Da%20%26%200%20%26%20b%20%26%201%20%5C%5C1%20%26%200%20%26%200%20%26%200%5C%5C0%20%26%201%20%26%200%20%26%200%5C%5C0%20%26%200%20%26%200%20%26%201%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Df(n%20-%201)%5C%5Cf(n%20-%202)%5C%5Cf(n%20-%203)%5C%5Cc%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>以上构造式中，最后一行是c的构造，可以发现 0 0 0 1是一种恒定不变的形式，顺利达成。</p>
-<h3 id="练习三"><a href="#练习三" class="headerlink" title="练习三"></a>练习三</h3><p>求f(n)，并且其中有以下递推式</p>
-<p>$f(n) &#x3D; f(n - 1) + 2 * f(n - 2) + n^3$</p>
-<p>其中f(1) &#x3D; 1 f(2) &#x3D; 2</p>
-<h3 id="构造三"><a href="#构造三" class="headerlink" title="构造三"></a>构造三</h3><p>该构造的特点就是，引入的常量变成了一个变量，不同于常量，变量是会变化的，因此我们就需要找到这个变量的变化递推式。</p>
-<p>$n^3 &#x3D; (n - 1 + 1) ^ 3 &#x3D; (n - 1) ^ 3 + 3(n - 1) ^ 2 + 3(n - 1) + 1$<br>$n^2 &#x3D; (n - 1 + 1) ^ 2 &#x3D; (n - 1) ^ 2 + 2(n - 1) + 1$<br>$n &#x3D; (n - 1) + 1$</p>
-<p>1 &#x3D; 1</p>
-<p>$\begin{pmatrix}<br>f(n)\<br>f(n - 1)\<br>n^3\<br>n^2\<br>n\<br>1\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 2 &amp; 1 &amp; 3 &amp; 3 &amp; 1\<br>1 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 1 &amp; 3 &amp; 3 &amp; 1\<br>0 &amp; 0 &amp; 0 &amp; 1 &amp; 2 &amp; 1\<br>0 &amp; 0 &amp; 0 &amp; 0 &amp; 1 &amp; 1\<br>0 &amp; 0 &amp; 0 &amp; 0 &amp; 0 &amp; 1\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1)\<br>f(n - 2)\<br>(n - 1)^3\<br>(n - 1)^2\<br>n - 1\<br>1\<br>\end{pmatrix}$</p>
+<h3 id="练习三">练习三</h3>
+<p>求f(n)，并且其中有以下递推式</p>
+<p><img src="https://math.now.sh?inline=f%28n%29%20%3D%20f(n%20-%201)%20%2B%202%20*%20f(n%20-%202)%20%2B%20n%5E3" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>其中f(1) = 1 f(2) = 2</p>
+<h3 id="构造三">构造三</h3>
+<p>该构造的特点就是，引入的常量变成了一个变量，不同于常量，变量是会变化的，因此我们就需要找到这个变量的变化递推式。</p>
+<p><img src="https://math.now.sh?inline=n%5E3%20%3D%20%28n%20-%201%20%2B%201%29%20%5E%203%20%3D%20(n%20-%201)%20%5E%203%20%2B%203(n%20-%201)%20%5E%202%20%2B%203(n%20-%201)%20%2B%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"><br>
+<img src="https://math.now.sh?inline=n%5E2%20%3D%20%28n%20-%201%20%2B%201%29%20%5E%202%20%3D%20(n%20-%201)%20%5E%202%20%2B%202(n%20-%201)%20%2B%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"><br>
+<img src="https://math.now.sh?inline=n%20%3D%20%28n%20-%201%29%20%2B%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"><br>
+<img src="https://math.now.sh?inline=1%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7Df%28n%29%5C%5Cf(n%20-%201)%5C%5Cn%5E3%5C%5Cn%5E2%5C%5Cn%5C%5C1%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7D1%20%26%202%20%26%201%20%26%203%20%26%203%20%26%201%5C%5C1%20%26%200%20%26%200%20%26%200%20%26%200%20%26%200%5C%5C0%20%26%200%20%26%201%20%26%203%20%26%203%20%26%201%5C%5C0%20%26%200%20%26%200%20%26%201%20%26%202%20%26%201%5C%5C0%20%26%200%20%26%200%20%26%200%20%26%201%20%26%201%5C%5C0%20%26%200%20%26%200%20%26%200%20%26%200%20%26%201%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Df(n%20-%201)%5C%5Cf(n%20-%202)%5C%5C(n%20-%201)%5E3%5C%5C(n%20-%201)%5E2%5C%5Cn%20-%201%5C%5C1%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>以上构造可以发现，如果是变量，就和原来的f(x)一样，只不过这个变量的递推式更加隐蔽，但是变量已经告诉我们了，我们就可以求出变量的递推式。</p>
-<h3 id="练习四"><a href="#练习四" class="headerlink" title="练习四"></a>练习四</h3><p>有以下递推式</p>
-<p>$f(n) &#x3D; f(n - 1) + f(n - 2) + f(n - 3)$</p>
-<p>$f(0) &#x3D; f(1) &#x3D; f(2) &#x3D; 1$</p>
+<h3 id="练习四">练习四</h3>
+<p>有以下递推式</p>
+<p><img src="https://math.now.sh?inline=f%28n%29%20%3D%20f(n%20-%201)%20%2B%20f(n%20-%202)%20%2B%20f(n%20-%203)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=f%280%29%20%3D%20f(1)%20%3D%20f(2)%20%3D%201" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>已知a, b 求 f(a) + f(a + 1) + … + f(b - 1) + f(b)的值。</p>
-<h3 id="构造四"><a href="#构造四" class="headerlink" title="构造四"></a>构造四</h3><p>这下高级了，想让我们求区间和，但是对于区间和来说，我们应当立马联想到前缀和，两个前缀和就可以得到区间和。</p>
+<h3 id="构造四">构造四</h3>
+<p>这下高级了，想让我们求区间和，但是对于区间和来说，我们应当立马联想到前缀和，两个前缀和就可以得到区间和。</p>
 <p>好了，这下前缀和成为了我们的目的值，此时不妨引入T(n)代表前0~n的f值的前缀和。</p>
-<p>$T(n) &#x3D; T(n - 1) + f(n) &#x3D;  T(n - 1) + f(n - 1) + f(n - 2) + f(n - 3)$</p>
-<p>$\begin{pmatrix}<br>T(n)\<br>f(n)\<br>f(n - 1)\<br>f(n - 2)\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 1 &amp; 1 &amp; 1\<br>0 &amp; 1 &amp; 1 &amp; 1\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>0 &amp; 0 &amp; 1 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>T(n - 1)\<br>f(n - 1)\<br>f(n - 2)\<br>f(n - 3)\<br>\end{pmatrix}$</p>
+<p><img src="https://math.now.sh?inline=T%28n%29%20%3D%20T(n%20-%201)%20%2B%20f(n)%20%3D%20%20T(n%20-%201)%20%2B%20f(n%20-%201)%20%2B%20f(n%20-%202)%20%2B%20f(n%20-%203)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7DT%28n%29%5C%5Cf(n)%5C%5Cf(n%20-%201)%5C%5Cf(n%20-%202)%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7D1%20%26%201%20%26%201%20%26%201%5C%5C0%20%26%201%20%26%201%20%26%201%5C%5C0%20%26%201%20%26%200%20%26%200%5C%5C0%20%26%200%20%26%201%20%26%200%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7DT(n%20-%201)%5C%5Cf(n%20-%201)%5C%5Cf(n%20-%202)%5C%5Cf(n%20-%203)%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>很巧妙的构造，我们引入了前缀和，并且很好的使用了前缀和的构造式</p>
-<h3 id="练习五"><a href="#练习五" class="headerlink" title="练习五"></a>练习五</h3><p>f(0) &#x3D; f(1) &#x3D; 1</p>
-<p>f(n) &#x3D; X * f(n - 1) + Y * f(n - 2)</p>
+<h3 id="练习五">练习五</h3>
+<p>f(0) = f(1) = 1</p>
+<p>f(n) = X * f(n - 1) + Y * f(n - 2)</p>
 <p>S(n) 为 A(i)^2的和 i从0~n</p>
-<h3 id="构造五"><a href="#构造五" class="headerlink" title="构造五"></a>构造五</h3><p>S(n)更加抽象，作为新引入的值，也是我们的目的值，它使用了平方，但实际上我们只要继续抓住规律，写出S(n)的构造式即可轻松解决</p>
-<p>$S(n) &#x3D; S(n - 1) + f(n) ^ 2 &#x3D; S(n - 1) + (X * f(n - 1) + Y * f(n - 2)) ^ 2&#x3D;\S(n - 1) + X^2f(n - 1)^2 + 2XYf(n - 1)f(n - 2) + Y^2f(n - 2)^ 2$</p>
-<p>$f(n)^2 &#x3D; X^2f(n - 1)^2 + 2XYf(n - 1)f(n - 2) + Y^2f(n - 2)^ 2$</p>
+<h3 id="构造五">构造五</h3>
+<p>S(n)更加抽象，作为新引入的值，也是我们的目的值，它使用了平方，但实际上我们只要继续抓住规律，写出S(n)的构造式即可轻松解决</p>
+<p><img src="https://math.now.sh?inline=S%28n%29%20%3D%20S(n%20-%201)%20%2B%20f(n)%20%5E%202%20%3D%20S(n%20-%201)%20%2B%20(X%20*%20f(n%20-%201)%20%2B%20Y%20*%20f(n%20-%202))%20%5E%202%3D%5C%5CS(n%20-%201)%20%2B%20X%5E2f(n%20-%201)%5E2%20%2B%202XYf(n%20-%201)f(n%20-%202)%20%2B%20Y%5E2f(n%20-%202)%5E%202" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=f%28n%29%5E2%20%3D%20X%5E2f(n%20-%201)%5E2%20%2B%202XYf(n%20-%201)f(n%20-%202)%20%2B%20Y%5E2f(n%20-%202)%5E%202" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>就有以下构造</p>
-<p>$\begin{pmatrix}<br>S(n)\<br>f(n)^2\<br>f(n)f(n - 1)\<br>f(n - 1)^2\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; X^2 &amp; 2XY &amp; Y^2\<br>0 &amp; X^2 &amp; 2XY &amp; Y^2\<br>0 &amp; X &amp; Y &amp; 0\<br>0 &amp; 1 &amp; 0 &amp; 0\<br>\end{pmatrix}<br>\begin{pmatrix}<br>S(n - 1)\<br>f(n - 1)^2\<br>f(n - 1)f(n - 2)\<br>f(n - 2)^2\<br>\end{pmatrix}$</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7DS%28n%29%5C%5Cf(n)%5E2%5C%5Cf(n)f(n%20-%201)%5C%5Cf(n%20-%201)%5E2%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7D1%20%26%20X%5E2%20%26%202XY%20%26%20Y%5E2%5C%5C0%20%26%20X%5E2%20%26%202XY%20%26%20Y%5E2%5C%5C0%20%26%20X%20%26%20Y%20%26%200%5C%5C0%20%26%201%20%26%200%20%26%200%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7DS(n%20-%201)%5C%5Cf(n%20-%201)%5E2%5C%5Cf(n%20-%201)f(n%20-%202)%5C%5Cf(n%20-%202)%5E2%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>此时我们甚至没有f(n)项，因为我们的目的是S(n)，所以f(n)就是一个工具，为了便于使用，应该更加灵活。</p>
-<h3 id="练习六"><a href="#练习六" class="headerlink" title="练习六"></a>练习六</h3><p>一个01循环串,长度为L(L&lt;&#x3D;100)，这个串每秒都会进行一次变换，变换规则是:如果左边是1，则改变自己的状态，否则保持不变。给定初始状态，问n秒以后这个串的状态。</p>
-<h3 id="构造六"><a href="#构造六" class="headerlink" title="构造六"></a>构造六</h3><p>题目已经是具体化的题目了，先进行抽象化，我们可以得到</p>
-<p>$f(n, L) &#x3D; f(n - 1, L - 1) + f(n - 1,L) (mod2)$</p>
+<h3 id="练习六">练习六</h3>
+<p>一个01循环串,长度为L(L&lt;=100)，这个串每秒都会进行一次变换，变换规则是:如果左边是1，则改变自己的状态，否则保持不变。给定初始状态，问n秒以后这个串的状态。</p>
+<h3 id="构造六">构造六</h3>
+<p>题目已经是具体化的题目了，先进行抽象化，我们可以得到</p>
+<p><img src="https://math.now.sh?inline=f%28n%2C%20L%29%20%3D%20f(n%20-%201%2C%20L%20-%201)%20%2B%20f(n%20-%201%2CL)%20(mod2)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>建立的构造如下</p>
-<p>$\begin{pmatrix}<br>f(n, 1)\<br>f(n, 2)\<br>\dots\<br>f(n, L)\<br>\end{pmatrix}<br>&#x3D;<br>\begin{pmatrix}<br>1 &amp; 0 &amp; \dots &amp; 0 &amp; 1\<br>1 &amp; 1 &amp; \dots &amp; 0 &amp; 0\<br>\dots &amp; \dots &amp; \dots &amp; 1 &amp; 0\<br>0 &amp; 0 &amp; \dots &amp; 1 &amp; 1\<br>\end{pmatrix}<br>\begin{pmatrix}<br>f(n - 1, 1)\<br>f(n - 1, 2)\<br>\dots\<br>f(n - 1, L)\<br>\end{pmatrix}$</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Bpmatrix%7Df%28n%2C%201%29%5C%5Cf(n%2C%202)%5C%5C%5Cdots%5C%5Cf(n%2C%20L)%5C%5C%5Cend%7Bpmatrix%7D%3D%5Cbegin%7Bpmatrix%7D1%20%26%200%20%26%20%5Cdots%20%26%200%20%26%201%5C%5C1%20%26%201%20%26%20%5Cdots%20%26%200%20%26%200%5C%5C%5Cdots%20%26%20%5Cdots%20%26%20%5Cdots%20%26%201%20%26%200%5C%5C0%20%26%200%20%26%20%5Cdots%20%26%201%20%26%201%5C%5C%5Cend%7Bpmatrix%7D%5Cbegin%7Bpmatrix%7Df(n%20-%201%2C%201)%5C%5Cf(n%20-%201%2C%202)%5C%5C%5Cdots%5C%5Cf(n%20-%201%2C%20L)%5C%5C%5Cend%7Bpmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>构造是一件很灵活的事情，不能只拘泥于简单的递推上，要自己构建自己需要的值的构造式，才能得到构造矩阵。</p>
 
         </article>
@@ -247,5 +265,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

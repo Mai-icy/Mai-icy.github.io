@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记4——背包问题"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -63,41 +63,55 @@
         
             <blockquote>这篇文章上次修改于 211 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="ACM程序课算法笔记4——背包问题"><a href="#ACM程序课算法笔记4——背包问题" class="headerlink" title="ACM程序课算法笔记4——背包问题"></a>ACM程序课算法笔记4——背包问题</h1><h2 id="基本模型"><a href="#基本模型" class="headerlink" title="基本模型"></a>基本模型</h2><p>给你一个容量为V的背包和若干种物品，在一定的限制条件下（每种物品都占用一定容量），问最多能放进多少价值的物品。</p>
+            <h1>ACM程序课算法笔记4——背包问题</h1>
+<h2 id="基本模型">基本模型</h2>
+<p>给你一个容量为V的背包和若干种物品，在一定的限制条件下（每种物品都占用一定容量），问最多能放进多少价值的物品。</p>
 <blockquote>
 <p>最典型最基本的动态规划问题，DP问题中状态的理解概念</p>
 </blockquote>
 <p>有N件物品和一个容量为V的背包，知道每个物品的费用是<code>cost[i]</code>，价值是<code>value[i]</code>。求解将哪些物品装入背包可使价值总和最大。</p>
-<h3 id="01背包"><a href="#01背包" class="headerlink" title="01背包"></a>01背包</h3><h4 id="特点："><a href="#特点：" class="headerlink" title="特点："></a>特点：</h4><p>每个物品只有一件，可以选择放或者不放</p>
-<h4 id="解题思路："><a href="#解题思路：" class="headerlink" title="解题思路："></a>解题思路：</h4><p><code>dp[i][v]</code>表示前i个物品放入一个容量为v的背包可以获得的最大价值。 </p>
+<h3 id="01背包">01背包</h3>
+<h4 id="特点：">特点：</h4>
+<p>每个物品只有一件，可以选择放或者不放</p>
+<h4 id="解题思路：">解题思路：</h4>
+<p><code>dp[i][v]</code>表示前i个物品放入一个容量为v的背包可以获得的最大价值。</p>
 <p>则可得状态转移方程</p>
 <p><code>dp[i][v] = max(dp[i - 1][v - cost[i]] + value[i], dp[i - 1][v])</code></p>
 <p>我们可以发现<code>dp[i][v]</code>只用到了<code>dp[i - 1]</code>，所以我们可以做出一维<code>dp</code>的优化</p>
 <p>j循环从总容量递减到value[i]</p>
 <p><code>dp[j] = max(dp[j], dp[j - cost[i]] + value[i])</code></p>
-<h4 id="思考：为什么要倒序？"><a href="#思考：为什么要倒序？" class="headerlink" title="思考：为什么要倒序？"></a>思考：为什么要倒序？</h4><p>先考虑第一次遍历，dp的值都是0，而后面的dp又依赖于前面的dp，保证了这个物品只会被取一次。</p>
+<h4 id="思考：为什么要倒序？">思考：为什么要倒序？</h4>
+<p>先考虑第一次遍历，dp的值都是0，而后面的dp又依赖于前面的dp，保证了这个物品只会被取一次。</p>
 <p>后续的第i次遍历，dp中的值只包含了前i-1个物品，后面的dp依赖于前面的dp，保证了新的dp只会最多包含一个第i件物品。</p>
-<h3 id="完全背包"><a href="#完全背包" class="headerlink" title="完全背包"></a>完全背包</h3><h4 id="特点：-1"><a href="#特点：-1" class="headerlink" title="特点："></a>特点：</h4><p>一种物品可以取无数个</p>
-<h4 id="解题思路：-1"><a href="#解题思路：-1" class="headerlink" title="解题思路："></a>解题思路：</h4><p>暴力转换思路：直接转换到01背包</p>
+<h3 id="完全背包">完全背包</h3>
+<h4 id="特点：-2">特点：</h4>
+<p>一种物品可以取无数个</p>
+<h4 id="解题思路：-2">解题思路：</h4>
+<p>暴力转换思路：直接转换到01背包</p>
 <p>可以考虑每件物品最多取几件，然后把这件物品复制n遍，便可变为01背包问题。</p>
 <p>但是很容易爆效率，几件物品可能会膨胀到几万件。</p>
 <p>优化思路：</p>
 <p>和01背包类似，只需要将j循环从0到V</p>
 <p><code>dp[j] = max(dp[j], dp[j - cost[i]] + value[i])</code></p>
-<h4 id="思考：为什么要正序？"><a href="#思考：为什么要正序？" class="headerlink" title="思考：为什么要正序？"></a>思考：为什么要正序？</h4><p>从倒序的原因可以看出倒序是为了保证某个物品都只会被取一次，此时不放考虑一下正序的情况。</p>
+<h4 id="思考：为什么要正序？">思考：为什么要正序？</h4>
+<p>从倒序的原因可以看出倒序是为了保证某个物品都只会被取一次，此时不放考虑一下正序的情况。</p>
 <p>假如在正序情况第i次遍历，dp保存了前i-1物品的情况，如果前面的某次dp可以取第i件物品则取，后面的dp基于前面的dp，所以便可多次取第i件物品。即每次判断的时候都不考虑是否取过第i件物品，只考虑要不要取，取了值不值得。</p>
-<h3 id="填满背包"><a href="#填满背包" class="headerlink" title="填满背包"></a>填满背包</h3><h4 id="特点：-2"><a href="#特点：-2" class="headerlink" title="特点："></a>特点：</h4><p>要求背包的容量要全部利用，不能有空余空间。</p>
-<h4 id="解题思路：-2"><a href="#解题思路：-2" class="headerlink" title="解题思路："></a>解题思路：</h4><p>既然要求有空余空间，那么必然就有多种空间情况是非法的，一旦该方案非法，我们可以设置为-1，然后后面的dp依赖于前面的dp，每个dp只需要考虑两种情况（新增第i件物品和不增第i件物品），如果这两种情况都非法，则这个dp也非法，如果不非法则取用。</p>
-<h3 id="多重背包"><a href="#多重背包" class="headerlink" title="多重背包"></a>多重背包</h3><p> 一种物品可以取最多C个（不是一个也不是无数个）</p>
+<h3 id="填满背包">填满背包</h3>
+<h4 id="特点：-3">特点：</h4>
+<p>要求背包的容量要全部利用，不能有空余空间。</p>
+<h4 id="解题思路：-3">解题思路：</h4>
+<p>既然要求有空余空间，那么必然就有多种空间情况是非法的，一旦该方案非法，我们可以设置为-1，然后后面的dp依赖于前面的dp，每个dp只需要考虑两种情况（新增第i件物品和不增第i件物品），如果这两种情况都非法，则这个dp也非法，如果不非法则取用。</p>
+<h3 id="多重背包">多重背包</h3>
+<p>一种物品可以取最多C个（不是一个也不是无数个）</p>
 <p>解题思路：</p>
 <p>暴力转换思路：直接转换到01背包</p>
 <p>同理易得出，应该很好理解。</p>
 <p>优化转换思路：优化转换到01背包</p>
 <p>由于数可以转为二进制数，然后分开相加</p>
-<p>例如 15 &#x3D; 1 + 2 + 4 + 8</p>
+<p>例如 15 = 1 + 2 + 4 + 8</p>
 <p>0~15都可以由1 2 4 8自由组合出来。</p>
 <p>我们便把最多C个物品转为多个2次幂的数相加即可，多余的数单独一组，例如</p>
-<p>18 &#x3D; 1 + 2 + 4 + 8 <strong>+ 3</strong></p>
+<p>18 = 1 + 2 + 4 + 8 <strong>+ 3</strong></p>
 <p>二进制优化代码示例：</p>
  <pre class="line-numbers language-C" data-language="C"><code class="language-C">int t &#x3D; 1;
 while (x&gt;&#x3D;t) &#123;
@@ -110,9 +124,11 @@ if(x)&#123;
     v[cnt] &#x3D; a*x;
     c[cnt++] &#x3D; b*x;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h3 id="二维费用背包"><a href="#二维费用背包" class="headerlink" title="二维费用背包"></a>二维费用背包</h3><h4 id="特点：-3"><a href="#特点：-3" class="headerlink" title="特点："></a>特点：</h4><p>一个物品的占用两种费用，比如一件物品不仅占用空间，也有一定重量，给出最大空间和最大重量，求最大价值。</p>
-<h4 id="解题思路：-3"><a href="#解题思路：-3" class="headerlink" title="解题思路："></a>解题思路：</h4><p>背包问题利用的dp储存利用的下标实际上就是<strong>状态</strong>，此时多了一个重量状态，同理只要多添加一维的空间即可。</p>
+<h3 id="二维费用背包">二维费用背包</h3>
+<h4 id="特点：-4">特点：</h4>
+<p>一个物品的占用两种费用，比如一件物品不仅占用空间，也有一定重量，给出最大空间和最大重量，求最大价值。</p>
+<h4 id="解题思路：-4">解题思路：</h4>
+<p>背包问题利用的dp储存利用的下标实际上就是<strong>状态</strong>，此时多了一个重量状态，同理只要多添加一维的空间即可。</p>
 <p>解法同理。</p>
 <p>状态转移方程：</p>
 <p><code>f[i][v][u]=max(f[i-1][v][u],f[i-1][v-a[i]][u-b[i]]+w[i])</code></p>
@@ -183,5 +199,20 @@ if(x)&#123;
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

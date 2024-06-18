@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="ACM程序课算法笔记14——KMP算法"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,15 @@
         </section>
         <article class="post-content">
         
-            <h1 id="ACM程序课算法笔记14——KMP算法"><a href="#ACM程序课算法笔记14——KMP算法" class="headerlink" title="ACM程序课算法笔记14——KMP算法"></a>ACM程序课算法笔记14——KMP算法</h1><h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>KMP算法是一个查找子串的算法，这种算法感觉在题目中都几乎不会出现了，但我们应当注意的是它的思想，算法思想大于算法本身。</p>
-<h2 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h2><p>KMP算法输入两个字符串A和B，问B是否是A的一个子串，例如”ell”是“hello的子串”。并且返回匹配的位置。</p>
-<h2 id="暴力思路"><a href="#暴力思路" class="headerlink" title="暴力思路"></a>暴力思路</h2><p>暴力思路就是以A的每个下标位置开始，判断B的长度次数，复杂度易得O(mn)。</p>
-<h2 id="KMP思路-O-m-n"><a href="#KMP思路-O-m-n" class="headerlink" title="KMP思路 O(m + n)"></a>KMP思路 O(m + n)</h2><p>如果让你去优化，肯定首先想到动态规划的基本思想，我算过的东西，能否利用起来，此处也就是，我之前比较了的数据，能否利用起来呢？</p>
+            <h1>ACM程序课算法笔记14——KMP算法</h1>
+<h2 id="简介">简介</h2>
+<p>KMP算法是一个查找子串的算法，这种算法感觉在题目中都几乎不会出现了，但我们应当注意的是它的思想，算法思想大于算法本身。</p>
+<h2 id="问题">问题</h2>
+<p>KMP算法输入两个字符串A和B，问B是否是A的一个子串，例如”ell”是“hello的子串”。并且返回匹配的位置。</p>
+<h2 id="暴力思路">暴力思路</h2>
+<p>暴力思路就是以A的每个下标位置开始，判断B的长度次数，复杂度易得O(mn)。</p>
+<h2 id="KMP思路-O-m-n">KMP思路 O(m + n)</h2>
+<p>如果让你去优化，肯定首先想到动态规划的基本思想，我算过的东西，能否利用起来，此处也就是，我之前比较了的数据，能否利用起来呢？</p>
 <p>举一个例子：我在ABABABCAA 中寻找 ABABC</p>
 <p>当我开始一一比对时，比对到第五个字母，A和C显然不匹配，下一步，理想上来说应该从第三个字符开始比对。</p>
 <p>为什么跳到了第三个字符？</p>
@@ -76,9 +81,11 @@
 <p>为了方便说明，设定我们在O串中查找S串：</p>
 <p>我们换一种编码的形式来理解，已知S串为ABABC，O串为ABABABCAA。</p>
 <p>检查到第五个字符的时候，我们知道S串的前面ABAB是匹配的，并且ABAB首尾相同都是AB，我们把AB编码成T，此时就变成S串为TTC，O串为TTA???，当TTC对应TTA不成立的时候，就往后一位，TTC下一步对照TA???查看是否对应，此时我们看似是只移动了一步，实际上我们跨越的T就是两个字符。</p>
-<h3 id="跳跃的步数"><a href="#跳跃的步数" class="headerlink" title="跳跃的步数"></a>跳跃的步数</h3><p>因此这个跳跃的步数是由查找的S串决定的，因为跳跃的是我们此处的T的长度，T又恰好是前面已经匹配那段进行的编码。我们的编码采用的是寻找前后缀相同的部分编码起来，所以T的长度就是前后缀相同部分的长度。</p>
+<h3 id="跳跃的步数">跳跃的步数</h3>
+<p>因此这个跳跃的步数是由查找的S串决定的，因为跳跃的是我们此处的T的长度，T又恰好是前面已经匹配那段进行的编码。我们的编码采用的是寻找前后缀相同的部分编码起来，所以T的长度就是前后缀相同部分的长度。</p>
 <p>总结：跳跃的步数就是——前面已经匹配部分的前后缀最大相同长度。</p>
-<h3 id="代码实现"><a href="#代码实现" class="headerlink" title="代码实现"></a>代码实现</h3><p>所以我们可以得到一个next数组（先不讨论求法）next[i]为前i个字符的前后缀相同最大长度。</p>
+<h3 id="代码实现">代码实现</h3>
+<p>所以我们可以得到一个next数组（先不讨论求法）next[i]为前i个字符的前后缀相同最大长度。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">KMP</span><span class="token punctuation">(</span><span class="token keyword">const</span> string <span class="token operator">&amp;</span>s1<span class="token punctuation">,</span> <span class="token keyword">const</span> string <span class="token operator">&amp;</span>s2<span class="token punctuation">,</span> <span class="token keyword">const</span> vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token operator">&amp;</span>next<span class="token punctuation">)</span>
 <span class="token punctuation">&#123;</span>
     <span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
@@ -97,20 +104,21 @@
     <span class="token keyword">else</span>
         <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>复杂度分析，可见i不断递增，并且只走长度次，故复杂度为O(n).</p>
 <p>还有一个细节：在解析中我们所说的跳跃，并没有很直接的体现出来，实际上的跳跃后，前几位因为是相同的，所以并不需要匹配。</p>
-<h3 id="如何预处理出next数组"><a href="#如何预处理出next数组" class="headerlink" title="如何预处理出next数组"></a>如何预处理出next数组</h3><p>next[i]为前i个字符的前后缀相同最大长度。例如：</p>
+<h3 id="如何预处理出next数组">如何预处理出next数组</h3>
+<p>next[i]为前i个字符的前后缀相同最大长度。例如：</p>
 <p>A B A B C</p>
 <p>0 0 1 2 0</p>
 <p>推next数组的过程也是十分巧妙的，利用了同样DP的思想，使用之前计算的值。</p>
 <p>例如ABACABAB</p>
-<p>显然next[6] &#x3D; 2</p>
+<p>显然next[6] = 2</p>
 <p>对于next[7],</p>
-<p>如果S[2] &#x3D; S[6] ， 那么next[7] &#x3D; next[6] + 1.</p>
+<p>如果S[2] = S[6] ， 那么next[7] = next[6] + 1.</p>
 <p>如果不相等，那么也就是 ABAC  ≠ ABAB，上一个前缀是ABA</p>
 <p>注意，我虽然4是不成立的，接下来我要寻找比4更小的长度，此时对于上一个相同点ABA，ABA的前后缀长度1相等，都为1，那么就有可能在前面的 (ABA) C 中取第一个 A， 后面的 (ABA) ? 取第二个 A，检查后面的”?”是否等于ABAC中的B，此时就减少了一定量的计算，代码如下：</p>
-<h3 id="代码实现-1"><a href="#代码实现-1" class="headerlink" title="代码实现"></a>代码实现</h3><pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">buildNext</span><span class="token punctuation">(</span><span class="token keyword">const</span> string <span class="token operator">&amp;</span>s1<span class="token punctuation">)</span>
+<h3 id="代码实现-2">代码实现</h3>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">buildNext</span><span class="token punctuation">(</span><span class="token keyword">const</span> string <span class="token operator">&amp;</span>s1<span class="token punctuation">)</span>
 <span class="token punctuation">&#123;</span>
     vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token function">next</span><span class="token punctuation">(</span>s1<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
     next<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
@@ -134,9 +142,10 @@
     <span class="token punctuation">&#125;</span>
     <span class="token keyword">return</span> next<span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h2><p>在求两个字符串AB，A的前缀和B的后缀的最大公共部分，可以把两者合并在一起，然后求next数组，但是要注意长度问题，可以在A和B之间插入一个其他字符，也可以让答案取两者长度的最小值。</p>
-<h3 id="重复匹配"><a href="#重复匹配" class="headerlink" title="重复匹配"></a>重复匹配</h3><p>有的时候不仅仅是在查找子串，也要查找子串的个数，并且不允许重复，其实上只要在<code>if(j &gt;= len2)</code>时，让i修改位置，并计数加一即可。</p>
+<h2 id="应用">应用</h2>
+<p>在求两个字符串AB，A的前缀和B的后缀的最大公共部分，可以把两者合并在一起，然后求next数组，但是要注意长度问题，可以在A和B之间插入一个其他字符，也可以让答案取两者长度的最小值。</p>
+<h3 id="重复匹配">重复匹配</h3>
+<p>有的时候不仅仅是在查找子串，也要查找子串的个数，并且不允许重复，其实上只要在<code>if(j &gt;= len2)</code>时，让i修改位置，并计数加一即可。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">KMP</span><span class="token punctuation">(</span><span class="token keyword">const</span> string <span class="token operator">&amp;</span>s1<span class="token punctuation">,</span> <span class="token keyword">const</span> string <span class="token operator">&amp;</span>s2<span class="token punctuation">,</span> <span class="token keyword">const</span> vector<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> <span class="token operator">&amp;</span>next<span class="token punctuation">)</span>
 <span class="token punctuation">&#123;</span>   
     <span class="token keyword">int</span> res <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
@@ -225,5 +234,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

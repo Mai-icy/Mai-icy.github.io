@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,10 +61,11 @@
             <a href="/2024/04/26/learn-algorithm-note10/">算法学习笔记10——康托展开</a>
         </h2>
     
-        <p>算法学习笔记(10): 康托展开可以求一个组合的全排列的名次
+        <p>算法学习笔记(10): 康托展开
+可以求一个组合的全排列的名次
 比如：对于序列1,2,3
 则序列排名为   1 2 3；1 3 2； 2 1 3； 2 3 1； 3 1 2； 3 2 1
-这个排列...</p>
+这个排...</p>
     
         <div class="post-meta">
             <time class="date">2024.04.26</time>
@@ -119,5 +120,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

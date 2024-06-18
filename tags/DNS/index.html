@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,8 +61,10 @@
             <a href="/2024/06/07/computer-network-note4/">计算机网络笔记4——DNS服务</a>
         </h2>
     
-        <p>计算机网络笔记3——DNS服务DNS服务Domain Name System，管理域名的服务器，基于UDP，53端口。
-已知ip地址是访问的主要方式，但由于数字难以记忆，便有了域名，域名便于记忆...</p>
+        <p>计算机网络笔记3——DNS服务
+DNS服务
+Domain Name System，管理域名的服务器，基于UDP，53端口。
+已知ip地址是访问的主要方式，但由于数字难以记忆，便有了域名，域名便于...</p>
     
         <div class="post-meta">
             <time class="date">2024.06.07</time>
@@ -117,5 +119,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

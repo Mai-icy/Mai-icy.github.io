@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记7——根号分治"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,31 +61,35 @@
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-7-根号分治"><a href="#算法学习笔记-7-根号分治" class="headerlink" title="算法学习笔记(7): 根号分治"></a>算法学习笔记(7): 根号分治</h1><p>根号分治是一种对暴力的优化，类似于一种优雅的暴力。</p>
+            <h1>算法学习笔记(7): 根号分治</h1>
+<p>根号分治是一种对暴力的优化，类似于一种优雅的暴力。</p>
 <p>对于一个问题的解决，我们可能有多种暴力的思路，但对于暴力思路A来说，空间占用过大。对于暴力思路B来说，时间占用过大。</p>
 <p>两个暴力思路各有自己的优点。这里举出题目例子更好理解。</p>
-<h3 id="P3396-哈希冲突"><a href="#P3396-哈希冲突" class="headerlink" title="P3396 哈希冲突"></a>P3396 哈希冲突</h3><p>题目大意：给出一个数组arr，有多次查询，每次询问有两个值，m和k，问下标模m余k的所有元素之和。</p>
+<h3 id="P3396-哈希冲突">P3396 哈希冲突</h3>
+<p>题目大意：给出一个数组arr，有多次查询，每次询问有两个值，m和k，问下标模m余k的所有元素之和。</p>
 <p>对于这个题目要求，有两个暴力思路</p>
-<h4 id="思路A"><a href="#思路A" class="headerlink" title="思路A"></a>思路A</h4><p>如果只有一次查询，我们的暴力思路就是</p>
+<h4 id="思路A">思路A</h4>
+<p>如果只有一次查询，我们的暴力思路就是</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">int result &#x3D; 0;
 for(int i &#x3D; k; i &lt; n; i +&#x3D; m)
     result +&#x3D; arr[i];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>但实际有多次查询，这种查询十分消耗时间，m越小，需要添加的次数就越多</p>
 <p>为了减少这种多次查询的高时间复杂度，可以采用空间换时间的思路</p>
-<h4 id="思路B"><a href="#思路B" class="headerlink" title="思路B"></a>思路B</h4><p>使用一个二维数组保存查询结果</p>
+<h4 id="思路B">思路B</h4>
+<p>使用一个二维数组保存查询结果</p>
 <pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">cin &gt;&gt; a[i];
 for(int m &#x3D; 1; m&lt; n; m++)
     res[m][i % m] +&#x3D; a[i];<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
-
 <p>其中<code>res[m][k]</code>就代表了以m为除数，余数为k的数的总和。</p>
 <p>但是我们可以发现，res的大小是n * n，一旦n比较大，将会使用大量的空间，并且有一半的空间都属于空的没有用的状态，消耗了很多空间。但查询成功做到了O(1)</p>
-<h4 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h4><p>对两个思路进行分析，分析其优缺点。</p>
+<h4 id="分析">分析</h4>
+<p>对两个思路进行分析，分析其优缺点。</p>
 <p>思路A可以对大的m进行高效查找并且节约空间</p>
 <p>思路B可以对小的m进行高效缓存并且节约时间</p>
 <p>为此，不妨进行一个结合，如果找到一个分界点，让小的m使用思路B，让大的m使用思路A，就可以兼得两者的优点，达到空间和时间的平衡，对于这个思路，有一个结论就是，分界点取根号N的常数倍。</p>
 <p>这个思路就是根号分治</p>
-<h4 id="题解代码"><a href="#题解代码" class="headerlink" title="题解代码"></a>题解代码</h4><pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &lt;bits&#x2F;stdc++.h&gt;
+<h4 id="题解代码">题解代码</h4>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">#include &lt;bits&#x2F;stdc++.h&gt;
 
 using namespace std;
 
@@ -134,7 +138,6 @@ int main()
         &#125;
     &#125;
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>这种算法的时间复杂度是O(N根号N)</p>
 <p>根号分治适用于这种多查询的问题，其中对于查询来说，还有密度问题，前密后疏适合使用</p>
 <p>对于分界点，分界点越小，时间越大空间越小。分界点越大，时间越小空间越大</p>
@@ -208,5 +211,20 @@ int main()
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

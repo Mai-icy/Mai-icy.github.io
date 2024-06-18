@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="《How does a relational database work》阅读笔记"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -59,8 +59,10 @@
         </section>
         <article class="post-content">
         
-            <h1 id="《How-does-a-relational-database-work》阅读笔记"><a href="#《How-does-a-relational-database-work》阅读笔记" class="headerlink" title="《How does a relational database work》阅读笔记"></a>《How does a relational database work》阅读笔记</h1><p>当你进行一个数据库请求的时，会优先发送给<strong>客户端管理器</strong></p>
-<h2 id="客户端管理器"><a href="#客户端管理器" class="headerlink" title="客户端管理器"></a>客户端管理器</h2><ul>
+            <h1>《How does a relational database work》阅读笔记</h1>
+<p>当你进行一个数据库请求的时，会优先发送给<strong>客户端管理器</strong></p>
+<h2 id="客户端管理器">客户端管理器</h2>
+<ul>
 <li>查看你的用户密码是否有权限（是否有权限访问）</li>
 <li>查看是否有线程能处理请求</li>
 <li>查看数据库是否属于高负荷</li>
@@ -69,7 +71,8 @@
 <li>查询如果成功，将会从<strong>查询管理器</strong>获得到目标数据</li>
 <li>查询如果失败，就会返回给你错误原因，其他什么都不做</li>
 </ul>
-<h2 id="查询管理器"><a href="#查询管理器" class="headerlink" title="查询管理器"></a>查询管理器</h2><p>它接收到的是查询内容 ，同时查询管理器还包含了查询解析器和查询重写器以及查询优化器</p>
+<h2 id="查询管理器">查询管理器</h2>
+<p>它接收到的是查询内容 ，同时查询管理器还包含了查询解析器和查询重写器以及查询优化器</p>
 <ul>
 <li><strong>查询解析器</strong>检查是否合法</li>
 <li><strong>查询重写器</strong>去除无用字符，并进行预优化处理</li>
@@ -80,7 +83,8 @@
 <blockquote>
 <p>至于如何优化查询，SQLite的官方文档有描述</p>
 </blockquote>
-<h3 id="查询解析器"><a href="#查询解析器" class="headerlink" title="查询解析器"></a>查询解析器</h3><p>查询解析器会检查关键词语法和顺序，一旦不正确就会立即返回失败结果</p>
+<h3 id="查询解析器">查询解析器</h3>
+<p>查询解析器会检查关键词语法和顺序，一旦不正确就会立即返回失败结果</p>
 <ul>
 <li>查询表是否存在</li>
 <li>查询表的字段是否存在</li>
@@ -89,7 +93,8 @@
 <li>发送被转换的<strong>内部表示</strong>给<strong>查询重写器</strong></li>
 </ul>
 <p>解析过程中会把查询转换为<strong>内部表示</strong>（不同的数据库有不同的内部表示，通常是树）</p>
-<h3 id="查询重写器"><a href="#查询重写器" class="headerlink" title="查询重写器"></a>查询重写器</h3><p>查询重写器得到的是查询的<strong>内部表示</strong></p>
+<h3 id="查询重写器">查询重写器</h3>
+<p>查询重写器得到的是查询的<strong>内部表示</strong></p>
 <p>查询重写器主要是为了<strong>预优化查询</strong>，<strong>避免不必要操作</strong>，<strong>帮助优化器找到最佳解决</strong>。</p>
 <p>查询重写器会使用一些优化规则，例如：<strong>视图合并</strong>，<strong>子查询扁平化</strong>等</p>
 <p>这就是一个优化样例：</p>
@@ -99,36 +104,44 @@
 <span class="token punctuation">(</span><span class="token keyword">SELECT</span> MAILS<span class="token punctuation">.</span>person_key
 <span class="token keyword">FROM</span> MAILS
 <span class="token keyword">WHERE</span> MAILS<span class="token punctuation">.</span>mail <span class="token operator">LIKE</span> <span class="token string">'christophe%'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>会转换为：</p>
 <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> PERSON<span class="token punctuation">.</span><span class="token operator">*</span>
 <span class="token keyword">FROM</span> PERSON<span class="token punctuation">,</span> MAILS
 <span class="token keyword">WHERE</span> PERSON<span class="token punctuation">.</span>person_key <span class="token operator">=</span> MAILS<span class="token punctuation">.</span>person_key
 <span class="token operator">and</span> MAILS<span class="token punctuation">.</span>mail <span class="token operator">LIKE</span> <span class="token string">'christophe%'</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
-
 <ul>
-<li><p>去除不必要的运算符（DISTINCT但有UNIQUE 约束）</p>
+<li>
+<p>去除不必要的运算符（DISTINCT但有UNIQUE 约束）</p>
 </li>
-<li><p>排除冗余的联接（相同JOIN条件）</p>
+<li>
+<p>排除冗余的联接（相同JOIN条件）</p>
 </li>
-<li><p>常数计算赋值（用常量替代常量表达式）</p>
+<li>
+<p>常数计算赋值（用常量替代常量表达式）</p>
 </li>
-<li><p>(Advanced)分区裁剪：如果你用了分区表，重写器能够找到需要使用的分区</p>
+<li>
+<p>(Advanced)分区裁剪：如果你用了分区表，重写器能够找到需要使用的分区</p>
 </li>
-<li><p>(Advanced)物化视图重写：如果你有个物化视图匹配查询谓词的一个子集，重写器将检查视图是否最新并修改查询，令查询使用物化视图而不是原始表</p>
+<li>
+<p>(Advanced)物化视图重写：如果你有个物化视图匹配查询谓词的一个子集，重写器将检查视图是否最新并修改查询，令查询使用物化视图而不是原始表</p>
 </li>
-<li><p>(Advanced)自定义规则：自定义的规则去修改查询</p>
+<li>
+<p>(Advanced)自定义规则：自定义的规则去修改查询</p>
 </li>
-<li><p>(Advanced)OLAP转换：分析&#x2F;加窗 函数，星形联接，ROLLUP 函数……都会发生转换（可能由优化器完成）</p>
+<li>
+<p>(Advanced)OLAP转换：分析/加窗 函数，星形联接，ROLLUP 函数……都会发生转换（可能由优化器完成）</p>
 </li>
-<li><p>传输重写后的查询交给<strong>查询优化器</strong></p>
+<li>
+<p>传输重写后的查询交给<strong>查询优化器</strong></p>
 </li>
 </ul>
-<h3 id="统计"><a href="#统计" class="headerlink" title="统计"></a>统计</h3><p>数据库和操作系统使用一个最小单元叫做页或者块（4 KB or 8KB）</p>
-<p> 当数据库收集统计信息，会计算下列值：</p>
+<h3 id="统计">统计</h3>
+<p>数据库和操作系统使用一个最小单元叫做页或者块（4 KB or 8KB）</p>
+<p>当数据库收集统计信息，会计算下列值：</p>
 <ul>
 <li>表中行和页的数量</li>
-<li>表中每个列中的：<ul>
+<li>表中每个列中的：
+<ul>
 <li>唯一值</li>
 <li>数据长度（最小，最大，平均）</li>
 <li>数据范围（最小，最大，平均）</li>
@@ -136,7 +149,7 @@
 </li>
 <li>表的索引信息</li>
 </ul>
-<p>这些统计信息会帮助优化器估计查询所需的磁盘 I&#x2F;O、CPU、和内存使用</p>
+<p>这些统计信息会帮助优化器估计查询所需的磁盘 I/O、CPU、和内存使用</p>
 <blockquote>
 <p>例如列的统计的某个作用</p>
 <p>如果一个表 PERSON 需要联接 2 个列： LAST_NAME, FIRST_NAME。根据统计信息，FIRST_NAME只有 1,000 个不同的值，LAST_NAME 有 1,000,000 个不同的值。因此，应按照 LAST_NAME + FIRST_NAME 联接。因为 LAST_NAME重复的数据更少，在比较的时候在判断LAST_NAME时会更快的结束判断，这将减少比较的次数。</p>
@@ -147,10 +160,10 @@
 <li>分位数(quantiles)</li>
 <li>…</li>
 </ul>
-<p>这些额外的统计会帮助数据库找到更佳的查询计划，尤其是对于等式谓词（例如： WHERE AGE &#x3D; 18 ）或范围谓词（例如： WHERE AGE &gt; 10 and AGE &lt; 40），因为数据库可以更好的了解这些谓词相关的数字类型数据行（注：这个概念的技术名称叫选择率）。</p>
+<p>这些额外的统计会帮助数据库找到更佳的查询计划，尤其是对于等式谓词（例如： WHERE AGE = 18 ）或范围谓词（例如： WHERE AGE &gt; 10 and AGE &lt; 40），因为数据库可以更好的了解这些谓词相关的数字类型数据行（注：这个概念的技术名称叫选择率）。</p>
 <p>统计信息保存在数据库元数据内，例如（非分区）表的统计信息位置：</p>
 <ul>
-<li>Oracle： USER &#x2F; ALL &#x2F; DBA_TABLES 和 USER &#x2F; ALL &#x2F; DBA_TAB_COLUMNS</li>
+<li>Oracle： USER / ALL / DBA_TABLES 和 USER / ALL / DBA_TAB_COLUMNS</li>
 <li>DB2： SYSCAT.TABLES 和 SYSCAT.COLUMNS</li>
 </ul>
 <p><strong>统计信息必须及时更新</strong>。如果一个表有 1,000,000 行而数据库认为它只有 500 行就会发生错误的判断。数据库大多默认情况下不会自动计算统计信息，因为统计需要时间成本。数据达到百万级时统计会变得困难，这时候，可以选择仅做基本统计或者在一个数据库样本上执行统计。（但是也应当小心处理）</p>
@@ -158,27 +171,30 @@
 <p>作者说自己只统计10%导致一个拥有上亿数据的表的一次本应 30 秒的查询执行了8小时</p>
 <p>每个数据库还有其特定的更高级的统计。如果想了解更多信息，寻找的文档。推荐的官方文档来自PostgreSQL。</p>
 </blockquote>
-<h2 id="查询优化器"><a href="#查询优化器" class="headerlink" title="查询优化器"></a>查询优化器</h2><p>所有的现代数据库都在用<strong>基于成本的优化</strong>（即CBO）来优化查询。</p>
-<p>优化器关注CPU 成本、磁盘 I&#x2F;O 成本、和内存需求</p>
+<h2 id="查询优化器">查询优化器</h2>
+<p>所有的现代数据库都在用<strong>基于成本的优化</strong>（即CBO）来优化查询。</p>
+<p>优化器关注CPU 成本、磁盘 I/O 成本、和内存需求</p>
 <p>每一个高级代码运算都要特定数量的低级 CPU 运算。</p>
 <p>对于 Intel Core i7、Intel Pentium 4、AMD Opteron…等，（就 CPU 周期而言）CPU 的运算成本是不同的，也就是说它取决于 CPU 的架构。</p>
 <blockquote>
-<p>大多数时候瓶颈在于磁盘 I&#x2F;O 而不是 CPU 使用</p>
+<p>大多数时候瓶颈在于磁盘 I/O 而不是 CPU 使用</p>
 </blockquote>
 <p>用个例子来感受一下这个任务背后的复杂性，以理解CBO优化器的原理。</p>
 <p>对于联接两个表</p>
 <p>如果只考虑时间复杂度可以有三个种解法：<strong>嵌套循环联接</strong>， <strong>哈希联接</strong>，<strong>合并联接</strong></p>
-<h3 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h3><p>在此之前，我们需要一些前置知识</p>
-<h4 id="存取路径"><a href="#存取路径" class="headerlink" title="存取路径"></a>存取路径</h4><p>在应用联接运算符之前，首先需要获得数据。以下就是获得数据的方法。</p>
+<h3 id="前置知识">前置知识</h3>
+<p>在此之前，我们需要一些前置知识</p>
+<h4 id="存取路径">存取路径</h4>
+<p>在应用联接运算符之前，首先需要获得数据。以下就是获得数据的方法。</p>
 <ul>
 <li>全扫描</li>
 </ul>
-<p>全扫描就是数据库完整的读一个表或索引。就磁盘 I&#x2F;O 而言，很明显全表扫描的成本比索引全扫描要高昂。</p>
+<p>全扫描就是数据库完整的读一个表或索引。就磁盘 I/O 而言，很明显全表扫描的成本比索引全扫描要高昂。</p>
 <ul>
 <li>范围扫描</li>
 </ul>
 <p>其他类型的扫描有索引范围扫描，比如当使用谓词 ” WHERE AGE &gt; 20 AND AGE &lt; 40 ” 时</p>
-<p>范围查询的时间成本大约是 log(N)+M。在磁盘 I&#x2F;O 方面没有全扫描那么昂贵。</p>
+<p>范围查询的时间成本大约是 log(N)+M。在磁盘 I/O 方面没有全扫描那么昂贵。</p>
 <ul>
 <li>唯一扫描</li>
 </ul>
@@ -189,21 +205,21 @@
 <p>多数情况下，如果数据库使用索引，它就必须查找与索引相关的行，这样就会用到根据 ROW ID 存取的方式。</p>
 <p>例如运行：</p>
 <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> LASTNAME<span class="token punctuation">,</span> FIRSTNAME <span class="token keyword">from</span> PERSON <span class="token keyword">WHERE</span> AGE <span class="token operator">=</span> <span class="token number">28</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
 <p>如果 person 表的 age 列有索引，优化器会使用索引找到所有年龄为 28 的人，然后它会去表中读取相关的行，这是因为索引中只有 age 的信息而你要的是姓和名。</p>
 <p>但是例如运行：</p>
 <pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> TYPE_PERSON<span class="token punctuation">.</span>CATEGORY <span class="token keyword">from</span> PERSON <span class="token punctuation">,</span>TYPE_PERSON
 <span class="token keyword">WHERE</span> PERSON<span class="token punctuation">.</span>AGE <span class="token operator">=</span> TYPE_PERSON<span class="token punctuation">.</span>AGE<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
 <p>PERSON 表的索引会用来联接 TYPE_PERSON 表，但是 PERSON 表不会根据行ID 存取，因为你并没有要求这个表内的信息。</p>
-<p>虽然这个方法在少量存取时表现很好，这个运算的真正问题其实是磁盘 I&#x2F;O。假如需要大量的根据行ID存取，数据库也许会选择全扫描。</p>
-<h4 id="联接运算符"><a href="#联接运算符" class="headerlink" title="联接运算符"></a>联接运算符</h4><p>内关系和外关系可以是一个表，一个索引，上一个运算的中间结果。</p>
+<p>虽然这个方法在少量存取时表现很好，这个运算的真正问题其实是磁盘 I/O。假如需要大量的根据行ID存取，数据库也许会选择全扫描。</p>
+<h4 id="联接运算符">联接运算符</h4>
+<p>内关系和外关系可以是一个表，一个索引，上一个运算的中间结果。</p>
 <p>当你联接两个关系时，联接算法对两个关系的处理是不同的。</p>
 <p>假定 A JOIN B 是 A 和 B 的联接，这里 A 是外关系，B 是内关系。（假定外关系有 N 个元素，内关系有 M 个元素）</p>
 <p>多数情况下， <strong>A JOIN B 的成本跟 B JOIN A 的成本是不同的</strong>。</p>
-<h3 id="嵌套循环联接"><a href="#嵌套循环联接" class="headerlink" title="嵌套循环联接"></a>嵌套循环联接</h3><p>针对外关系的每一行，查看内关系里的所有行来寻找匹配的行</p>
+<h3 id="嵌套循环联接">嵌套循环联接</h3>
+<p>针对外关系的每一行，查看内关系里的所有行来寻找匹配的行</p>
 <p>可以说是暴力查找每个，查看是否是联接的</p>
-<p>由于这是个双迭代，**时间复杂度是 O(N*M)**。</p>
+<p>由于这是个双迭代，<strong>时间复杂度是 O(N*M)</strong>。</p>
 <p>同时考虑IO方面，需要进行一定优化，对于原本的计算，需要进行多次的磁盘读取，需要很大的成本</p>
 <p>以下是优化方案：</p>
 <ul>
@@ -217,27 +233,30 @@
 <p>原本的磁盘访问为N + N*M</p>
 <p>这个版本为 将N和M都转化为对应的数据簇数量，同时，增加数据簇的尺寸，可以降低磁盘访问。</p>
 </blockquote>
-<h3 id="哈希联接"><a href="#哈希联接" class="headerlink" title="哈希联接"></a>哈希联接</h3><p>意如其名，使用哈希表，对内关系进行哈希处理。</p>
+<h3 id="哈希联接">哈希联接</h3>
+<p>意如其名，使用哈希表，对内关系进行哈希处理。</p>
 <p>再对外关系进行哈希查表</p>
-<p>时间复杂度是 (M&#x2F;X) * N + 创建哈希表的成本(M) + 哈希函数的成本 * N 。</p>
+<p>时间复杂度是 (M/X) * N + 创建哈希表的成本(M) + 哈希函数的成本 * N 。</p>
 <p>如果哈希函数创建了足够小规模的哈希桶，那么复杂度就是 O(M+N)。</p>
 <blockquote>
-<p> 还有个哈希联接的版本，对内存有利但是对磁盘 I&#x2F;O 不够有利。 这回是这样的：</p>
-<p> 计算内关系和外关系双方的哈希表，保存哈希表到磁盘，逐个哈希桶比较（其中一个读入内存，另一个逐行读取）。</p>
+<p>还有个哈希联接的版本，对内存有利但是对磁盘 I/O 不够有利。 这回是这样的：</p>
+<p>计算内关系和外关系双方的哈希表，保存哈希表到磁盘，逐个哈希桶比较（其中一个读入内存，另一个逐行读取）。</p>
 </blockquote>
-<h3 id="合并联接"><a href="#合并联接" class="headerlink" title="合并联接"></a>合并联接</h3><p>合并联接就是两个输入源都按照联接关键字排序后再进行联接处理</p>
+<h3 id="合并联接">合并联接</h3>
+<p>合并联接就是两个输入源都按照联接关键字排序后再进行联接处理</p>
 <blockquote>
-<p> 有时数据集已经排序了</p>
+<p>有时数据集已经排序了</p>
 </blockquote>
 <p>对于两个已经排序的联接关键字</p>
 <ul>
-<li>在两个关系中，比较当前元素（当前&#x3D;头一次出现的第一个）</li>
+<li>在两个关系中，比较当前元素（当前=头一次出现的第一个）</li>
 <li>如果相同，就把两个元素都放入结果，再比较两个关系里的下一个元素</li>
 <li>如果不同，就去带有最小元素的关系里找下一个元素（因为下一个元素可能会匹配）</li>
 <li>重复 1、2、3步骤直到其中一个关系的最后一个元素。</li>
 </ul>
 <p>时间复杂度是 O(N+M)</p>
-<h3 id="比较"><a href="#比较" class="headerlink" title="比较"></a>比较</h3><p>不同情况下，各有不同的表现。</p>
+<h3 id="比较">比较</h3>
+<p>不同情况下，各有不同的表现。</p>
 <ul>
 <li>内存不足：哈希联接需要大量的内存，虽然效率很高。</li>
 <li><strong>两个数据集的大小</strong>。比如，如果一个大表联接一个很小的表，那么嵌套循环联接就比哈希联接快，因为后者有创建哈希的高昂成本；如果两个表都非常大，那么嵌套循环联接CPU成本就很高昂。</li>
@@ -245,13 +264,16 @@
 <li>结果是否需要排序：即使你用到的是未排序的数据集，你也可能想用成本较高的合并联接（带排序的），因为最终得到排序的结果后，你可以把它和另一个合并联接串起来</li>
 <li>数据的分布：如果联接条件的数据是倾斜的（比如根据姓氏来联接人，但是很多人同姓）某个或某些连接键（Join Key）的分布不均匀，导致部分键值的数据量远远超过其他键值。不建议用哈希联接，哈希函数将产生分布极不均匀的哈希桶。</li>
 </ul>
-<h3 id="实际优化器采用"><a href="#实际优化器采用" class="headerlink" title="实际优化器采用"></a>实际优化器采用</h3><p>使用一个例子来说明，假如有4个表ABCD需要被联接</p>
+<h3 id="实际优化器采用">实际优化器采用</h3>
+<p>使用一个例子来说明，假如有4个表ABCD需要被联接</p>
 <p>三次联接有多重方案。例如(A+B) + (C + D) 或者 ((A+B) + C )+ D等等。</p>
 <p>实际数据库采用<strong>动态规划</strong>，<strong>贪心算法</strong>和<strong>启发式算法</strong></p>
 <p>优化器会产生多个方案，并且对方案进行评估，使用最优的方案。</p>
-<h4 id="动态规划"><a href="#动态规划" class="headerlink" title="动态规划"></a>动态规划</h4><p>此时，如何计算多个方案的成本，动态规划体现在评估中，例如当评估(A+B) + (C + D) 或者 ((A+B) + C )+ D时，(A + B)都需要被评估，只需要储存结果之后使用即可。降低了评估的复杂度。</p>
+<h4 id="动态规划">动态规划</h4>
+<p>此时，如何计算多个方案的成本，动态规划体现在评估中，例如当评估(A+B) + (C + D) 或者 ((A+B) + C )+ D时，(A + B)都需要被评估，只需要储存结果之后使用即可。降低了评估的复杂度。</p>
 <p>为了最大利用已经评估的子问题，需要使用动态规划和一定的顺序来达成。</p>
-<h4 id="贪心算法"><a href="#贪心算法" class="headerlink" title="贪心算法"></a>贪心算法</h4><p>原理是按照一个规则以渐进的方式制定查询计划。在这个规则下，贪婪算法逐步寻找最佳算法，先处理一条JOIN，接着每一步按照同样规则加一条新的JOIN。</p>
+<h4 id="贪心算法">贪心算法</h4>
+<p>原理是按照一个规则以渐进的方式制定查询计划。在这个规则下，贪婪算法逐步寻找最佳算法，先处理一条JOIN，接着每一步按照同样规则加一条新的JOIN。</p>
 <p>例如从A开始每两个表之间的联接成本，选择最低的，再分析当前情况选择剩余最低的。至于何为最低，在不同时刻采用的可能是不同的规则。</p>
 <p>不仅从表 A 开始，还可以把同样的算法用在 B，然后 C，然后 D, 然后 E。（KNN算法）</p>
 <p>但是可能会存在以下情况：</p>
@@ -260,41 +282,57 @@
 <li>(A JOIN C) JOIN B 也许比 (A JOIN B) JOIN C 更好。</li>
 </ul>
 <p>为了改善这一状况，你可以多次使用基于不同规则的贪心算法，并保留最佳的执行计划。</p>
-<h4 id="查询计划缓存"><a href="#查询计划缓存" class="headerlink" title="查询计划缓存"></a>查询计划缓存</h4><p>由于创建查询计划是耗时的，大多数据库把计划保存在查询计划缓存，来避免重复计算。数据库需要知道什么时候更新过时的计划。办法是设置一个上限，如果一个表的统计变化超过了上限，关于该表的查询计划就从缓存中清除。</p>
-<h3 id="查询执行器"><a href="#查询执行器" class="headerlink" title="查询执行器"></a>查询执行器</h3><p>有了一个优化的执行计划，再编译为可执行代码，此时交给查询执行器。</p>
+<h4 id="查询计划缓存">查询计划缓存</h4>
+<p>由于创建查询计划是耗时的，大多数据库把计划保存在查询计划缓存，来避免重复计算。数据库需要知道什么时候更新过时的计划。办法是设置一个上限，如果一个表的统计变化超过了上限，关于该表的查询计划就从缓存中清除。</p>
+<h3 id="查询执行器">查询执行器</h3>
+<p>有了一个优化的执行计划，再编译为可执行代码，此时交给查询执行器。</p>
 <p>如果有足够资源（内存，CPU），查询执行器就会执行它。计划中的操作符 (JOIN, SORT BY …) 可以顺序或并行执行，这取决于执行器。</p>
-<h2 id="数据管理器"><a href="#数据管理器" class="headerlink" title="数据管理器"></a>数据管理器</h2><p>查询管理器执行了查询，需要从表和索引获取数据，于是向数据管理器提出请求。</p>
+<h2 id="数据管理器">数据管理器</h2>
+<p>查询管理器执行了查询，需要从表和索引获取数据，于是向数据管理器提出请求。</p>
 <p>效率：数据提取速度慢，需要一定优化地利用缓冲区</p>
 <p>冲突：事务模型导致同时多人使用访问数据时，不能获取。</p>
-<h3 id="缓存管理器"><a href="#缓存管理器" class="headerlink" title="缓存管理器"></a>缓存管理器</h3><p>缓存管理器负责了效率问题。</p>
+<h3 id="缓存管理器">缓存管理器</h3>
+<p>缓存管理器负责了效率问题。</p>
 <p>查询执行器从缓存管理器获取数据。缓存管理器有缓冲池，显著提升数据库性能。（直接文件io太慢了）</p>
 <p>为了提高性能，缓存管理器最好在查询执行器使用数据之前得到数据，否则查询管理器就要等待数据读出。</p>
-<h4 id="预读"><a href="#预读" class="headerlink" title="预读"></a>预读</h4><p>为了解决这个问题，采用了预读，最理想的预读结果就是</p>
+<h4 id="预读">预读</h4>
+<p>为了解决这个问题，采用了预读，最理想的预读结果就是</p>
 <p>处理数据A时，预读将要处理的B，处理B时预读将要处理的C，并且意识到A不再需要，从缓存池移除。</p>
 <p>然而有时查询执行器不知道它需要什么数据，这时就需要预判和猜测它需要的数据，例如推测预读法(按照读取规律预测)或者顺序预读法(按储存顺序读取)</p>
-<h4 id="缓存命中率"><a href="#缓存命中率" class="headerlink" title="缓存命中率"></a>缓存命中率</h4><p>对于预读的效率和效果，使用缓存命中率这个概念来判断。</p>
+<h4 id="缓存命中率">缓存命中率</h4>
+<p>对于预读的效率和效果，使用缓存命中率这个概念来判断。</p>
 <blockquote>
 <p>糟糕的缓存命中率不总是意味着缓存工作状态不佳。</p>
 </blockquote>
-<h4 id="缓冲区置换策略"><a href="#缓冲区置换策略" class="headerlink" title="缓冲区置换策略"></a>缓冲区置换策略</h4><p>同时，如果一个数据被反复读取，它可能更会被保留使用，现代数据库用缓冲区置换策略来解决这个问题。</p>
-<h5 id="LRU算法"><a href="#LRU算法" class="headerlink" title="LRU算法"></a>LRU算法</h5><p>LRU（Least Recently Used）算法：在缓存里保留的数据是最近使用的，所以更有可能再次使用</p>
+<h4 id="缓冲区置换策略">缓冲区置换策略</h4>
+<p>同时，如果一个数据被反复读取，它可能更会被保留使用，现代数据库用缓冲区置换策略来解决这个问题。</p>
+<h5 id="LRU算法">LRU算法</h5>
+<p>LRU（Least Recently Used）算法：在缓存里保留的数据是最近使用的，所以更有可能再次使用</p>
 <p>先假设没有没锁住的数据，缓存在根据需求添加数据时，一旦数据将缓冲区填满，再次添加时将覆盖最久没有使用的数据。</p>
 <p>对于全扫描的数据，缓冲区可能不够用。</p>
 <p>于是数据库对于非常大的表通常采用直接路径读取，避免填满缓冲区。对于中等大小的表，数据库可以使用直接读取或缓存读取。如果选择缓存读取，数据库把区块置于LRU的尾部，防止清空当前缓冲区。</p>
 <p>或者使用更高级的算法</p>
-<h5 id="LRU-K"><a href="#LRU-K" class="headerlink" title="LRU-K"></a>LRU-K</h5><p>考虑数据最后第K次使用的情况，数据使用的次数加进了权重，一批新数据加载进入缓存，旧的但是经常使用的数据不会被清除（因为权重更高），数据如果不再使用，权重值随着时间推移而降低。</p>
-<h5 id="其他算法"><a href="#其他算法" class="headerlink" title="其他算法"></a>其他算法</h5><ul>
-<li><p>2Q（类LRU-K算法）</p>
+<h5 id="LRU-K">LRU-K</h5>
+<p>考虑数据最后第K次使用的情况，数据使用的次数加进了权重，一批新数据加载进入缓存，旧的但是经常使用的数据不会被清除（因为权重更高），数据如果不再使用，权重值随着时间推移而降低。</p>
+<h5 id="其他算法">其他算法</h5>
+<ul>
+<li>
+<p>2Q（类LRU-K算法）</p>
 </li>
-<li><p>CLOCK（类LRU-K算法）</p>
+<li>
+<p>CLOCK（类LRU-K算法）</p>
 </li>
-<li><p>MRU（最新使用的算法，用LRU同样的逻辑但不同的规则）</p>
+<li>
+<p>MRU（最新使用的算法，用LRU同样的逻辑但不同的规则）</p>
 </li>
-<li><p>LRFU（Least Recently and Frequently Used，最近最少使用最近最不常用）</p>
+<li>
+<p>LRFU（Least Recently and Frequently Used，最近最少使用最近最不常用）</p>
 </li>
 </ul>
-<h4 id="写缓冲区"><a href="#写缓冲区" class="headerlink" title="写缓冲区"></a>写缓冲区</h4><p>缓冲区保存的是页（最小的数据单位），对于写缓冲区，可能有多次写的行为，但如果被修改了但还没有写入磁盘，就是脏页。有很多算法来决定写入脏页的最佳时机，但这个问题与事务的概念高度关联。</p>
-<h3 id="事务管理器"><a href="#事务管理器" class="headerlink" title="事务管理器"></a>事务管理器</h3><p>事务模型是计算机科学和数据库管理领域中的一个概念，用于描述一组操作的执行方式，使其具有以下特性：</p>
+<h4 id="写缓冲区">写缓冲区</h4>
+<p>缓冲区保存的是页（最小的数据单位），对于写缓冲区，可能有多次写的行为，但如果被修改了但还没有写入磁盘，就是脏页。有很多算法来决定写入脏页的最佳时机，但这个问题与事务的概念高度关联。</p>
+<h3 id="事务管理器">事务管理器</h3>
+<p>事务模型是计算机科学和数据库管理领域中的一个概念，用于描述一组操作的执行方式，使其具有以下特性：</p>
 <ol>
 <li><strong>原子性（Atomicity）：</strong> 事务是不可分割的工作单位，要么全部执行成功，要么全部失败回滚，不存在中间状态。</li>
 <li><strong>一致性（Consistency）：</strong> 事务的执行使系统从一个一致性状态转移到另一个一致性状态。这意味着事务在执行前后，数据库必须保持一致性，不破坏数据库的完整性约束。</li>
@@ -302,7 +340,8 @@
 <li><strong>持久性（Durability）：</strong> 一旦事务成功完成，其对数据库的改变是永久性的，即使系统崩溃或发生其他故障，事务的结果也不会丢失。</li>
 </ol>
 <p>对于一个数据库，想保证多个请求下互不冲突，最简单的办法就是依次执行，但依次执行只有单核心工作，效率很低。</p>
-<h3 id="并发控制"><a href="#并发控制" class="headerlink" title="并发控制"></a>并发控制</h3><p>对相同数据的写操作增删改：</p>
+<h3 id="并发控制">并发控制</h3>
+<p>对相同数据的写操作增删改：</p>
 <ul>
 <li>多个事务的读操作互不影响，可以同时处理。</li>
 <li>若有事务在修改的数据需要被其他事务读取，数据库应当对其它事务隐藏修改。并且要确保隐藏但不能被其他事务影响擦除。</li>
@@ -310,22 +349,26 @@
 <p>这个问题叫<strong>并发控制</strong>。</p>
 <p>一个理想的办法是，每次一个事务创建或取消时：</p>
 <ul>
-<li>监控所有事务的所有操作，检查是否有多个事务的部分操作因为读取&#x2F;修改相同的数据而存在冲突</li>
+<li>监控所有事务的所有操作，检查是否有多个事务的部分操作因为读取/修改相同的数据而存在冲突</li>
 <li>重新编排冲突事务中的操作来减少冲突的部分</li>
 <li>按照一定的顺序执行冲突的部分（同时非冲突事务仍然在并发运行）</li>
 <li>考虑事务有可能被取消</li>
 </ul>
 <p>用更正规的说法，这是对冲突的调度问题。更具体点儿说，这是个非常困难而且CPU开销很大的优化问题。企业级数据库无法承担等待几个小时，来寻找每个新事务活动最好的调度，因此就使用不那么理想的方式以避免更多的时间浪费在解决冲突上。</p>
-<h3 id="锁管理器"><a href="#锁管理器" class="headerlink" title="锁管理器"></a>锁管理器</h3><p>使用<strong>锁</strong>是一个很常见的解决方法，类似于多线程中听到的锁。用于解决并发控制问题</p>
-<h4 id="悲观锁"><a href="#悲观锁" class="headerlink" title="悲观锁"></a>悲观锁</h4><p>悲观锁（Pessimistic Lock）是一种并发控制的机制，用于在多个事务同时访问共享资源时保证数据的一致性和完整性。悲观锁的核心思想是在操作数据之前，先获取锁，确保在整个操作过程中其他事务无法修改该数据，从而避免并发引起的数据不一致问题。</p>
+<h3 id="锁管理器">锁管理器</h3>
+<p>使用<strong>锁</strong>是一个很常见的解决方法，类似于多线程中听到的锁。用于解决并发控制问题</p>
+<h4 id="悲观锁">悲观锁</h4>
+<p>悲观锁（Pessimistic Lock）是一种并发控制的机制，用于在多个事务同时访问共享资源时保证数据的一致性和完整性。悲观锁的核心思想是在操作数据之前，先获取锁，确保在整个操作过程中其他事务无法修改该数据，从而避免并发引起的数据不一致问题。</p>
 <p>悲观锁的具体实现方式有排他锁和共享锁</p>
-<h5 id="排他锁"><a href="#排他锁" class="headerlink" title="排他锁"></a>排他锁</h5><p>排他锁含义是，当我锁上这个数据，不允许其他事务操作。</p>
+<h5 id="排他锁">排他锁</h5>
+<p>排他锁含义是，当我锁上这个数据，不允许其他事务操作。</p>
 <ul>
 <li>如果一个事务需要一条数据，它就把数据锁住</li>
 <li>如果另一个事务也需要这条数据，它就必须要等第一个事务释放这条数据上的排他锁</li>
 </ul>
 <p>但其实我们没必要对多个读取同数据操作加排他锁，它们可以同时运行。</p>
-<h5 id="共享锁"><a href="#共享锁" class="headerlink" title="共享锁"></a>共享锁</h5><p>共享锁含义是，当我锁上这个数据，请保证数据不能被修改，但可以被读取。</p>
+<h5 id="共享锁">共享锁</h5>
+<p>共享锁含义是，当我锁上这个数据，请保证数据不能被修改，但可以被读取。</p>
 <ul>
 <li>如果一个事务只需要读取数据A, 它会给数据A加上『共享锁』并读取</li>
 <li>如果第二个事务也只需要读取数据A, 它会给数据A加上『共享锁』并读取</li>
@@ -337,7 +380,8 @@
 <li>数据被哪个事务加的锁</li>
 <li>数据被哪个事务等待</li>
 </ul>
-<h4 id="死锁"><a href="#死锁" class="headerlink" title="死锁"></a>死锁</h4><p>死锁是一种处理时产生的问题，需要我们去解决，其情况是：</p>
+<h4 id="死锁">死锁</h4>
+<p>死锁是一种处理时产生的问题，需要我们去解决，其情况是：</p>
 <ul>
 <li>事务A 给 数据1 加上排他锁并且等待获取数据2</li>
 <li>事务B 给 数据2 加上排他锁并且等待获取数据1</li>
@@ -354,7 +398,8 @@
 <li>杀死能用更少时间结束的事务（避免可能的资源饥荒）</li>
 <li>一旦发生回滚，有多少事务会受到回滚的影响</li>
 </ul>
-<h4 id="两段锁"><a href="#两段锁" class="headerlink" title="两段锁"></a>两段锁</h4><p>一个简单的思路是：事务开始时，加上所有会用到的锁，做完之后，释放所有结束使用的锁。</p>
+<h4 id="两段锁">两段锁</h4>
+<p>一个简单的思路是：事务开始时，加上所有会用到的锁，做完之后，释放所有结束使用的锁。</p>
 <p>但是为了等待所有的锁，大量的时间被浪费了。</p>
 <p>更快的方法是<strong>两段锁协议</strong>（Two-Phase Locking Protocol，由 DB2 和 SQL Server使用），在这里，事务分为两个阶段：</p>
 <ul>
@@ -366,8 +411,10 @@
 <p>如果修改了一条数据、释放了关联的锁后，事务被回滚，而另一个事务读到了修改后的值，但最后这个值需要被回滚。</p>
 <p>解决：</p>
 <p>所有独占锁必须在事务结束时释放。</p>
-<h4 id="更多"><a href="#更多" class="headerlink" title="更多"></a>更多</h4><p>真实的数据库涉及到更多类型的锁（比如意向锁，intention locks）和更多的粒度（行级锁、页级锁、分区锁、表锁、表空间锁），但是思路是相同的。</p>
-<h4 id="数据版本控制"><a href="#数据版本控制" class="headerlink" title="数据版本控制"></a>数据版本控制</h4><p>数据版本控制是解决这个问题的另一个方法。</p>
+<h4 id="更多">更多</h4>
+<p>真实的数据库涉及到更多类型的锁（比如意向锁，intention locks）和更多的粒度（行级锁、页级锁、分区锁、表锁、表空间锁），但是思路是相同的。</p>
+<h4 id="数据版本控制">数据版本控制</h4>
+<p>数据版本控制是解决这个问题的另一个方法。</p>
 <p>版本控制是这样的：</p>
 <ul>
 <li>每个事务可以在相同时刻修改相同的数据</li>
@@ -384,16 +431,18 @@
 <blockquote>
 <p>一些数据库，比如DB2（直到版本 9.7）和 SQL Server（不含快照隔离）仅使用锁机制。其他的像PostgreSQL, MySQL 和 Oracle 使用锁和鼠标版本控制混合机制。</p>
 </blockquote>
-<h3 id="日志管理器"><a href="#日志管理器" class="headerlink" title="日志管理器"></a>日志管理器</h3><p>当事务提交时服务器崩溃，崩溃时还在内存里的数据会丢失，这破坏了事务的持久性。你可能把所有数据都写在磁盘上，但是如果服务器崩溃，最终数据可能只有部分写入磁盘，这破坏了事务的原子性。</p>
+<h3 id="日志管理器">日志管理器</h3>
+<p>当事务提交时服务器崩溃，崩溃时还在内存里的数据会丢失，这破坏了事务的持久性。你可能把所有数据都写在磁盘上，但是如果服务器崩溃，最终数据可能只有部分写入磁盘，这破坏了事务的原子性。</p>
 <p>根据原子性：事务作出的任何修改必须是或者撤销，或者完成。</p>
 <p>有 2 个办法解决这个问题：</p>
 <ul>
-<li><strong>影子副本&#x2F;页（Shadow copies&#x2F;pages）</strong>：每个事务创建自己的(部分)数据库副本，并基于这个副本来工作。一旦出错，这个副本就被移除；一旦成功，数据库立即使用副本替换到数据中。</li>
+<li><strong>影子副本/页（Shadow copies/pages）</strong>：每个事务创建自己的(部分)数据库副本，并基于这个副本来工作。一旦出错，这个副本就被移除；一旦成功，数据库立即使用副本替换到数据中。</li>
 <li><strong>事务日志（Transaction log）</strong>：事务日志是一个存储空间，在每次写盘之前，数据库在事务日志中写入一些信息，这样当事务崩溃或回滚，数据库知道如何移除或完成尚未完成的事务。</li>
 </ul>
 <p>第一种方案在运行时的副本造成大量磁盘开销，所以现代数据库使用<strong>事务日志</strong>。</p>
 <p>事务日志必须保存在<strong>稳定的存储</strong>上，我不会深挖存储技术，但至少RAID磁盘是必须的，以防磁盘故障。</p>
-<h4 id="WAL（预写式日志）"><a href="#WAL（预写式日志）" class="headerlink" title="WAL（预写式日志）"></a>WAL（预写式日志）</h4><blockquote>
+<h4 id="WAL（预写式日志）">WAL（预写式日志）</h4>
+<blockquote>
 <p>多数数据库（至少是Oracle,SQL Server,DB2,PostgreSQL, MySQL 和SQLite) 使用预写日志协议（Write-Ahead Logging protocol ，WAL）来处理事务日志。</p>
 </blockquote>
 <p>WAL协议有 3 个规则：</p>
@@ -404,10 +453,11 @@
 <li>当一个事务提交时，在事务成功之前，提交顺序必须写入到事务日志。</li>
 </ul>
 <p>这个工作由日志管理器完成。</p>
-<p>简单的理解就是，日志管理器处于缓存管理器和数据访问管理器之间，每个 update &#x2F; delete &#x2F; create &#x2F; commit &#x2F; rollback 操作在写入磁盘之前先写入事务日志。</p>
+<p>简单的理解就是，日志管理器处于缓存管理器和数据访问管理器之间，每个 update / delete / create / commit / rollback 操作在写入磁盘之前先写入事务日志。</p>
 <p>但这个过程并不简单，因为如果事务日志写得太慢，整体都会慢下来。</p>
 <p>我们应当考虑 <strong>如何找到写日志的同时保持良好的性能的方法</strong></p>
-<h4 id="ARIES概念"><a href="#ARIES概念" class="headerlink" title="ARIES概念"></a>ARIES概念</h4><blockquote>
+<h4 id="ARIES概念">ARIES概念</h4>
+<blockquote>
 <p>1992年，IBM 研究人员“发明”了WAL的增强版，叫 ARIES。ARIES 或多或少地在现代数据库中使用，逻辑未必相同，但AIRES背后的概念无处不在。ARIES 代表  数据库恢复原型算法（Algorithms forRecovery andIsolationExploitingSemantics）。</p>
 </blockquote>
 <p>这个技术要达到一个双重目标：</p>
@@ -422,19 +472,21 @@
 <li>因为事务破坏了数据库完整性（比如一个列有唯一性约束而事务添加了重复值）</li>
 <li>因为死锁</li>
 </ul>
-<h4 id="日志信息"><a href="#日志信息" class="headerlink" title="日志信息"></a>日志信息</h4><p>事务的<strong>每一个操作（增&#x2F;删&#x2F;改）产生一条日志</strong>，由如下内容组成：</p>
+<h4 id="日志信息">日志信息</h4>
+<p>事务的<strong>每一个操作（增/删/改）产生一条日志</strong>，由如下内容组成：</p>
 <ul>
 <li>LSN：一个唯一的日志序列号（Log Sequence Number）。LSN是按时间顺序分配的，越早越小。</li>
 <li>TransID：产生操作的事务ID。</li>
 <li>PageID：被修改的数据在磁盘上的位置。磁盘数据的最小单位是页，所以数据的位置就是它所处页的位置。</li>
 <li>PrevLSN：同一个事务产生的上一条日志记录的链接。</li>
-<li>UNDO：取消本次操作的方法。比如，如果操作是一次更新，UNDO将或者保存元素更新前的值&#x2F;状态（物理UNDO），或者回到原来状态的反向操作（<strong>逻辑UNDO</strong>, 只使用逻辑UNDO，因为处理物理UNDO太过混乱了)。</li>
-<li>REDO：重复本次操作的方法。 同样的，有 2 种方法：或者保存操作后的元素值&#x2F;状态，或者保存操作本身以便重复。</li>
+<li>UNDO：取消本次操作的方法。比如，如果操作是一次更新，UNDO将或者保存元素更新前的值/状态（物理UNDO），或者回到原来状态的反向操作（<strong>逻辑UNDO</strong>, 只使用逻辑UNDO，因为处理物理UNDO太过混乱了)。</li>
+<li>REDO：重复本次操作的方法。 同样的，有 2 种方法：或者保存操作后的元素值/状态，或者保存操作本身以便重复。</li>
 <li>…：（还有 2 个字段：UndoNxtLSN 和 Type）</li>
 </ul>
 <p>由PrevLSN可以发现，同一个事务会产生多个日志，并且它们会依PrevLSN联接在一起并且按时间顺序。</p>
 <p>磁盘上每个页（保存数据的，不是保存日志的）都记录着最后一个修改该数据操作的LSN。</p>
-<h4 id="日志缓冲区"><a href="#日志缓冲区" class="headerlink" title="日志缓冲区"></a>日志缓冲区</h4><p>为了防止写日志成为主要的瓶颈，数据库使用了日志缓冲区。</p>
+<h4 id="日志缓冲区">日志缓冲区</h4>
+<p>为了防止写日志成为主要的瓶颈，数据库使用了日志缓冲区。</p>
 <p>当查询执行器要求做一次修改会有以下五步：</p>
 <ul>
 <li>缓存管理器将修改存入自己的缓冲区；</li>
@@ -444,29 +496,32 @@
 <li>接着缓存管理器把修改写入磁盘，什么时候写盘由某算法来决定。</li>
 </ul>
 <p><strong>当事务提交，意味着事务每一个操作的5个步骤都完成了</strong>。写事务日志是很快的，因为它只是『在事务日志某处增加一条日志』；而数据写盘就更复杂了，因为要用『能够快速读取的方式写入数据』。</p>
-<h4 id="STEAL-和-FORCE-策略"><a href="#STEAL-和-FORCE-策略" class="headerlink" title="STEAL 和 FORCE 策略"></a>STEAL 和 FORCE 策略</h4><blockquote>
+<h4 id="STEAL-和-FORCE-策略">STEAL 和 FORCE 策略</h4>
+<blockquote>
 <p>出于性能方面的原因，<strong>第 5 步有可能在提交之后完成</strong>，因为一旦发生崩溃，还有可能用REDO日志恢复事务。这叫做 <strong>NO-FORCE策略</strong>。</p>
 </blockquote>
 <p><strong>NO-FORCE策略</strong>：第 5 步有可能在提交之后完成</p>
 <p><strong>FORCE策略</strong>：第 5 步在提交之前必须完成</p>
 <p>数据库使用FORCE策略可以用来降低恢复时的负载。</p>
 <p><strong>STEAL策略</strong>：数据是一步步的写入</p>
-<p><strong>NO-STEAL策略</strong>: 缓冲管理器需要等待提交命令来一次性全部写入 </p>
+<p><strong>NO-STEAL策略</strong>: 缓冲管理器需要等待提交命令来一次性全部写入</p>
 <p>选择STEAL还是NO-STEAL取决于你想要什么：快速写入但是从 UNDO 日志恢复缓慢，还是快速恢复。</p>
 <p>下面是这些策略对恢复的影响：</p>
 <ul>
-<li><strong>STEAL&#x2F;NO-FORCE 需要 UNDO 和 REDO: 性能高</strong>，但是日志和恢复过程更复杂 (比如 ARIES)。多数数据库选择这个策略。</li>
-<li>STEAL&#x2F; FORCE 只需要 UNDO.</li>
-<li>NO-STEAL&#x2F;NO-FORCE 只需要 REDO.</li>
-<li>NO-STEAL&#x2F;FORCE 什么也不需要: 性能最差，而且需要巨大的内存。</li>
+<li><strong>STEAL/NO-FORCE 需要 UNDO 和 REDO: 性能高</strong>，但是日志和恢复过程更复杂 (比如 ARIES)。多数数据库选择这个策略。</li>
+<li>STEAL/ FORCE 只需要 UNDO.</li>
+<li>NO-STEAL/NO-FORCE 只需要 REDO.</li>
+<li>NO-STEAL/FORCE 什么也不需要: 性能最差，而且需要巨大的内存。</li>
 </ul>
-<h4 id="恢复"><a href="#恢复" class="headerlink" title="恢复"></a>恢复</h4><p>ARIES从崩溃中恢复有三个阶段：</p>
+<h4 id="恢复">恢复</h4>
+<p>ARIES从崩溃中恢复有三个阶段：</p>
 <ul>
 <li><strong>分析阶段</strong>：恢复进程读取全部事务日志，来重建崩溃过程中所发生事情的时间线，判断哪些事务要回滚、崩溃时哪些数据需要写盘。</li>
-<li><strong>Redo阶段</strong>：这一关从分析中选中的一条日志记录开始，使用 REDO 来将数据库恢复到崩溃之前的状态。<ul>
+<li><strong>Redo阶段</strong>：这一关从分析中选中的一条日志记录开始，使用 REDO 来将数据库恢复到崩溃之前的状态。
+<ul>
 <li>在REDO阶段，REDO日志依据LSN按照时间顺序处理。</li>
 <li>对每一条日志，恢复进程需要读取包含数据的磁盘页LSN。</li>
-<li>如果LSN（磁盘页）&gt;&#x3D; LSN（日志记录），说明数据已经在崩溃前写到磁盘，不需要做什么。</li>
+<li>如果LSN（磁盘页）&gt;= LSN（日志记录），说明数据已经在崩溃前写到磁盘，不需要做什么。</li>
 <li>如果LSN（磁盘页）&lt; LSN（日志记录），那么磁盘上的页将被更新。</li>
 <li>即使将被回滚的事务，REDO也是要做的，因为这样简化了恢复过程。</li>
 </ul>
@@ -552,5 +607,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

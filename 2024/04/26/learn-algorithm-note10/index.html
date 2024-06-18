@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="算法学习笔记10——康托展开"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,14 +61,16 @@
         </section>
         <article class="post-content">
         
-            <h1 id="算法学习笔记-10-康托展开"><a href="#算法学习笔记-10-康托展开" class="headerlink" title="算法学习笔记(10): 康托展开"></a>算法学习笔记(10): 康托展开</h1><p>可以求一个组合的全排列的名次</p>
+            <h1>算法学习笔记(10): 康托展开</h1>
+<p>可以求一个组合的全排列的名次</p>
 <p>比如：对于序列1,2,3</p>
 <p>则序列排名为   1 2 3；1 3 2； 2 1 3； 2 3 1； 3 1 2； 3 2 1</p>
 <p>这个排列是按字典序排名的。</p>
 <p>故依据康托展开，它是一个全排列到自然数的双射，也就是排列映射到排名，排名映射到排列，后者又称作康托逆展开。</p>
-<h2 id="求排名过程"><a href="#求排名过程" class="headerlink" title="求排名过程"></a>求排名过程</h2><p>对于排列 2 5 3 4 1，这个排列绝对大于以1开头的排列，有4！种。</p>
+<h2 id="求排名过程">求排名过程</h2>
+<p>对于排列 2 5 3 4 1，这个排列绝对大于以1开头的排列，有4！种。</p>
 <p>对于第二位5，已经锁定了第一位为2，所以剩下四个数，要第二位更小，有3x3！种更小的排列。</p>
-<p>以此类推有 4! + 3 x 3! + 2! + 1&#x3D; 45 ,有45个比它小的，所以它是46名。</p>
+<p>以此类推有 4! + 3 x 3! + 2! + 1= 45 ,有45个比它小的，所以它是46名。</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">const</span> <span class="token keyword">int</span> factorial<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">24</span><span class="token punctuation">,</span><span class="token number">120</span><span class="token punctuation">,</span><span class="token number">720</span><span class="token punctuation">,</span><span class="token number">5040</span><span class="token punctuation">,</span><span class="token number">40320</span><span class="token punctuation">,</span><span class="token number">362880</span><span class="token punctuation">,</span><span class="token number">3628800</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span class="token comment">//阶乘0-10</span>
 <span class="token keyword">int</span> <span class="token function">cantor</span><span class="token punctuation">(</span><span class="token keyword">int</span> a<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span><span class="token keyword">int</span> n<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
 		<span class="token comment">//cantor展开,n表示是n位的全排列，a[]表示全排列的数（用数组表示）</span>
@@ -82,10 +84,10 @@
     <span class="token punctuation">&#125;</span>
     <span class="token keyword">return</span> ans <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="求排列过程"><a href="#求排列过程" class="headerlink" title="求排列过程"></a>求排列过程</h2><p>对于名次46，要找到排列 2 5 3 4 1</p>
+<h2 id="求排列过程">求排列过程</h2>
+<p>对于名次46，要找到排列 2 5 3 4 1</p>
 <p>已知排列公式为</p>
-<p>$X &#x3D; a_n(n - 1)! + a_{n - 1}(n - 2)! + \dots + a_1 \cdot 0!$</p>
+<p><img src="https://math.now.sh?inline=X%20%3D%20a_n%28n%20-%201%29!%20%2B%20a_%7Bn%20-%201%7D(n%20-%202)!%20%2B%20%5Cdots%20%2B%20a_1%20%5Ccdot%200!" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
 <p>又因为 n!严格大于 1~n-1的阶乘和</p>
 <p>所以整除向下取整即可求得位的值</p>
 <pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> <span class="token keyword">const</span> <span class="token keyword">int</span> FAC<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">,</span> <span class="token number">24</span><span class="token punctuation">,</span> <span class="token number">120</span><span class="token punctuation">,</span> <span class="token number">720</span><span class="token punctuation">,</span> <span class="token number">5040</span><span class="token punctuation">,</span> <span class="token number">40320</span><span class="token punctuation">,</span> <span class="token number">362880</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>   <span class="token comment">// 阶乘</span>
@@ -106,9 +108,10 @@
         v<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>v<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span>t<span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 移除选做当前位的数</span>
     <span class="token punctuation">&#125;</span>
 <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<h2 id="时间优化"><a href="#时间优化" class="headerlink" title="时间优化"></a>时间优化</h2><p>使用树状数组可以加快计算逆序对的数量。复杂度从 O(N2) → O(NlogN)</p>
-<h2 id="八数码问题"><a href="#八数码问题" class="headerlink" title="八数码问题"></a>八数码问题</h2><p>八数码问题是指一个移动格子的小游戏，对于一个3x3的区域，有1~8编号的格子，它们只能相邻移动到空位，问最少几次可以排列完成。</p>
+<h2 id="时间优化">时间优化</h2>
+<p>使用树状数组可以加快计算逆序对的数量。复杂度从 O(N2) → O(NlogN)</p>
+<h2 id="八数码问题">八数码问题</h2>
+<p>八数码问题是指一个移动格子的小游戏，对于一个3x3的区域，有1~8编号的格子，它们只能相邻移动到空位，问最少几次可以排列完成。</p>
 <p>显然你可以利用BFS，暴力搜索所有选择，因为走一步变成一个新的状态。然而对于一个BFS，它没有减枝，没有去除重复计算的部分，需要考虑重复计算，就需要保存所有状态的一个visited数组，然而如何对一个状态进行编码。这就用到了康托展开。</p>
 <p>康托展开在此处被作为一个哈希函数，把八数码问题的不同排列状态哈希成一个数，这就可以用于处理。</p>
 
@@ -178,5 +181,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

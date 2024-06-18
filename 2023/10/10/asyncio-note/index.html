@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="Python异步底层原理"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,17 +61,21 @@
         </section>
         <article class="post-content">
         
-            <blockquote>这篇文章上次修改于 252 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
+            <blockquote>这篇文章上次修改于 253 天前，可能其部分内容已经发生变化，如有疑问可询问作者。</blockquote>
         
-            <h1 id="Python-异步基础以及原理深层理解"><a href="#Python-异步基础以及原理深层理解" class="headerlink" title="Python 异步基础以及原理深层理解"></a>Python 异步基础以及原理深层理解</h1><h4 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h4><p>python的<strong>异步</strong>是基于python的<strong>生成器</strong>机制，利用生成器的特性，可以完成在多个函数之间互相切换。我们可以关注到生成器的一个特性，就是在<code>next</code>了之后，这个函数属于一个暂停状态，如果让多个函数在多次暂停下互相切换，就可以做到异步的效果。</p>
-<h4 id="asyncio-异步基础"><a href="#asyncio-异步基础" class="headerlink" title="asyncio 异步基础"></a>asyncio 异步基础</h4><p>关于python异步有几个常见的类型</p>
+            <h1>Python 异步基础以及原理深层理解</h1>
+<h4 id="概述">概述</h4>
+<p>python的<strong>异步</strong>是基于python的<strong>生成器</strong>机制，利用生成器的特性，可以完成在多个函数之间互相切换。我们可以关注到生成器的一个特性，就是在<code>next</code>了之后，这个函数属于一个暂停状态，如果让多个函数在多次暂停下互相切换，就可以做到异步的效果。</p>
+<h4 id="asyncio-异步基础">asyncio 异步基础</h4>
+<p>关于python异步有几个常见的类型</p>
 <ol>
 <li>异步函数：通过<code>async def</code>定义的函数，不能直接运行，并且一旦调用就会出现<code>RuntimeWarning</code>，他会返回一个<code>coroutine</code>协程对象。</li>
 <li>协程对象(<code>coroutine</code>)：通过异步函数调用获取，包含着程序的行为操作。</li>
 <li>任务对象 (<code>Task</code>)：包装了协程对象，便于管理和查看协程对象的执行状态，和控制它的执行，使得协程更容易被管理和监控。</li>
 <li><code>Future</code> 对象：是用于表示异步操作结果的对象。它是 <code>asyncio</code> 模块中的一个核心概念，用于表示尚未完成的异步操作</li>
 </ol>
-<h4 id="关于await的机制"><a href="#关于await的机制" class="headerlink" title="关于await的机制"></a>关于<code>await</code>的机制</h4><p>await后面可以跟上<code>coroutine</code>或者<code>task</code>或者<code>Future</code>，我们现在主要讨论的就是await面对他们进行的行为，我们先讨论两种不同的情况。</p>
+<h4 id="关于await的机制">关于<code>await</code>的机制</h4>
+<p>await后面可以跟上<code>coroutine</code>或者<code>task</code>或者<code>Future</code>，我们现在主要讨论的就是await面对他们进行的行为，我们先讨论两种不同的情况。</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">async</span> <span class="token keyword">def</span> <span class="token function">example1</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"start"</span><span class="token punctuation">)</span>
     <span class="token keyword">await</span> asyncio<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
@@ -83,14 +87,12 @@
     task <span class="token operator">=</span> asyncio<span class="token punctuation">.</span>create_task<span class="token punctuation">(</span>asyncio<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
     <span class="token keyword">await</span> task
     <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"end"</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>他们有同样的运行结果，通过viztracor，我们可以发现他们的不同。以下分别是example1和example2</p>
-<img src="/2023/10/10/asyncio-note/10/10/asyncio-note/example1.png" class title="This is an example image">
-
-<img src="/2023/10/10/asyncio-note/10/10/asyncio-note/example2.png" class title="This is an example image">
-
+<p><img src="/2023/10/10/asyncio-note/example1.png" alt="example1.png"></p>
+<p><img src="/2023/10/10/asyncio-note/example2.png" alt="example2.png"></p>
 <p>可以发现，example1在await之后并没有交出控制权，而是像等待生成器一样等待asyncio结果。而example2则是在await后结束了，并在之后进行sleep，再回到example2。</p>
-<h3 id="何为协程的本质，如何做到中间停止"><a href="#何为协程的本质，如何做到中间停止" class="headerlink" title="何为协程的本质，如何做到中间停止"></a>何为协程的本质，如何做到中间停止</h3><p>至于await的具体行为就需要从底层入手</p>
+<h3 id="何为协程的本质，如何做到中间停止">何为协程的本质，如何做到中间停止</h3>
+<p>至于await的具体行为就需要从底层入手</p>
 <p>通过dis可见</p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"> <span class="token number">9</span>           <span class="token number">0</span> LOAD_GLOBAL              <span class="token number">0</span> <span class="token punctuation">(</span><span class="token keyword">print</span><span class="token punctuation">)</span>
              <span class="token number">2</span> LOAD_CONST               <span class="token number">1</span> <span class="token punctuation">(</span><span class="token string">'start'</span><span class="token punctuation">)</span>
@@ -112,9 +114,9 @@
             <span class="token number">30</span> POP_TOP
             <span class="token number">32</span> LOAD_CONST               <span class="token number">0</span> <span class="token punctuation">(</span><span class="token boolean">None</span><span class="token punctuation">)</span>
             <span class="token number">34</span> RETURN_VALUE<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>说明遇到<code>await</code>的时候，运行了<code>GET_AWAITABLE</code>字节码到<code>YIELD_FROM</code>字节码</p>
-<h4 id="关于字节码GET-AWAITABLE"><a href="#关于字节码GET-AWAITABLE" class="headerlink" title="关于字节码GET_AWAITABLE"></a>关于字节码<code>GET_AWAITABLE</code></h4><p>先看看<code>GET_AWAITABLE</code>的源码</p>
+<h4 id="关于字节码GET-AWAITABLE">关于字节码<code>GET_AWAITABLE</code></h4>
+<p>先看看<code>GET_AWAITABLE</code>的源码</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">case TARGET(GET_AWAITABLE): &#123;
     PREDICTED(GET_AWAITABLE);
     PyObject *iterable &#x3D; TOP();
@@ -155,11 +157,11 @@
     PREDICT(LOAD_CONST);
     DISPATCH();
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>其中的关键函数<code>_PyCoro_GetAwaitableIter</code>的注释说明了：</p>
 <p>如果参数是一个<code>coroutine</code>，返回它本身，如果不是则运行并返回<code>__await__</code>函数的值存入<code>iter</code></p>
 <p>然后使用了<code>SET_TOP(iter);</code>将其放在了栈顶，以便下次使用。</p>
-<h4 id="什么是-await-函数"><a href="#什么是-await-函数" class="headerlink" title="什么是__await__函数"></a>什么是<code>__await__</code>函数</h4><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Future</span><span class="token punctuation">:</span>
+<h4 id="什么是-await-函数">什么是<code>__await__</code>函数</h4>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Future</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""其他代码略"""</span>
     <span class="token keyword">def</span> <span class="token function">__await__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
         <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>done<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -168,7 +170,6 @@
         <span class="token keyword">if</span> <span class="token keyword">not</span> self<span class="token punctuation">.</span>done<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
             <span class="token keyword">raise</span> RuntimeError<span class="token punctuation">(</span><span class="token string">"await wasn't used with future"</span><span class="token punctuation">)</span>
         <span class="token keyword">return</span> self<span class="token punctuation">.</span>result<span class="token punctuation">(</span><span class="token punctuation">)</span>  <span class="token comment"># May raise too.</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p><code>task</code>继承于<code>Future</code>，他们都有这个<code>__await__</code>函数</p>
 <ol>
 <li>首先，它检查Future对象是否已经完成（即是否具有结果）。如果Future对象已经完成，它会立即返回结果，允许程序继续执行下一步操作。</li>
@@ -177,7 +178,8 @@
 <li>最后，它返回Future对象的结果，如果有的话。</li>
 </ol>
 <p>可见，<code>__await__</code>可以保证已经完成的任务不再被执行，总之就是做了一个前置的检查，查看任务是否已经完成。</p>
-<h4 id="关于字节码YIELD-FROM"><a href="#关于字节码YIELD-FROM" class="headerlink" title="关于字节码YIELD_FROM"></a>关于字节码<code>YIELD_FROM</code></h4><p>现在开始具体分析<code>YIELD_FROM</code>（已手动添加注释）</p>
+<h4 id="关于字节码YIELD-FROM">关于字节码<code>YIELD_FROM</code></h4>
+<p>现在开始具体分析<code>YIELD_FROM</code>（已手动添加注释）</p>
 <pre class="line-numbers language-C" data-language="C"><code class="language-C">case TARGET(YIELD_FROM): &#123;
     PyObject *v &#x3D; POP();
     PyObject *receiver &#x3D; TOP(); &#x2F;&#x2F; 上次GET_AWAITABLE获取的coro
@@ -217,11 +219,11 @@
     f-&gt;f_lasti -&#x3D; sizeof(_Py_CODEUNIT); &#x2F;&#x2F; 调整counter回到上一句指令，下次调用还会从推出位置开始
     goto exiting; &#x2F;&#x2F; 后面的代码省略，大致就是把yield出来得到的值 返回回去
 &#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>以上说明了一个<code>coroutine</code>是如何让程序在运行到一半的时候停住，实际上和生成器的原理是一样的</p>
 <p>并且有个需要注意的语法糖，在协程函数和生成器函数中出现的<code>return</code>的实际原理是raise了一个<code>StopIteration</code>并且把return的值存入这个异常的内容。</p>
 <p>这里具体讲述了当await时，发生的具体行为</p>
-<h3 id="如何做到并行和相互依赖"><a href="#如何做到并行和相互依赖" class="headerlink" title="如何做到并行和相互依赖"></a>如何做到并行和相互依赖</h3><pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Task</span><span class="token punctuation">(</span>futures<span class="token punctuation">.</span>_PyFuture<span class="token punctuation">)</span><span class="token punctuation">:</span>
+<h3 id="如何做到并行和相互依赖">如何做到并行和相互依赖</h3>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">Task</span><span class="token punctuation">(</span>futures<span class="token punctuation">.</span>_PyFuture<span class="token punctuation">)</span><span class="token punctuation">:</span>
     _log_destroy_pending <span class="token operator">=</span> <span class="token boolean">True</span>
 
     <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> coro<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token punctuation">,</span> loop<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> name<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -244,7 +246,6 @@
 
         self<span class="token punctuation">.</span>_loop<span class="token punctuation">.</span>call_soon<span class="token punctuation">(</span>self<span class="token punctuation">.</span>__step<span class="token punctuation">,</span> context<span class="token operator">=</span>self<span class="token punctuation">.</span>_context<span class="token punctuation">)</span>  <span class="token comment"># </span>
         _register_task<span class="token punctuation">(</span>self<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>当一个task被创建的时候可见<code>self._loop.call_soon(self.__step, context=self._context)</code></p>
 <p>要求事件循环运行函数<code>__step</code></p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">__step</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> exc<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -294,7 +295,6 @@
         _leave_task<span class="token punctuation">(</span>self<span class="token punctuation">.</span>_loop<span class="token punctuation">,</span> self<span class="token punctuation">)</span>
         self <span class="token operator">=</span> <span class="token boolean">None</span>  <span class="token comment"># Needed to break cycles when an exception occurs.  # 离开了loop，只有被唤醒才会再被加入</span>
         <span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>举例子，在A运行的时候await了B，此时的result就是B，A让B完成了之后再叫A，这个标记就是<code>add_done_callback</code></p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">add_done_callback</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> fn<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token punctuation">,</span> context<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Add a callback to be run when the future becomes done.
@@ -309,7 +309,6 @@
         <span class="token keyword">if</span> context <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
             context <span class="token operator">=</span> contextvars<span class="token punctuation">.</span>copy_context<span class="token punctuation">(</span><span class="token punctuation">)</span>
         self<span class="token punctuation">.</span>_callbacks<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">(</span>fn<span class="token punctuation">,</span> context<span class="token punctuation">)</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>在完成的时候源码会有这样一行</p>
 <p><code>                super().set_result(exc.value)  # 设置返回的结果</code></p>
 <p>负责设置返回结果，同时，这个coroutine也结束了，</p>
@@ -324,7 +323,6 @@
     self<span class="token punctuation">.</span>_result <span class="token operator">=</span> result
     self<span class="token punctuation">.</span>_state <span class="token operator">=</span> _FINISHED
     self<span class="token punctuation">.</span>__schedule_callbacks<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>结尾调用了<code>self.__schedule_callbacks()</code></p>
 <pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">__schedule_callbacks</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Internal: Ask the event loop to call all callbacks.
@@ -339,7 +337,6 @@
     self<span class="token punctuation">.</span>_callbacks<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
     <span class="token keyword">for</span> callback<span class="token punctuation">,</span> ctx <span class="token keyword">in</span> callbacks<span class="token punctuation">:</span>
         self<span class="token punctuation">.</span>_loop<span class="token punctuation">.</span>call_soon<span class="token punctuation">(</span>callback<span class="token punctuation">,</span> self<span class="token punctuation">,</span> context<span class="token operator">=</span>ctx<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
 <p>此处就是运行了我们<code>add_done_callback</code>加入的<code>__wake</code>，唤醒了被卡住的那个coroutine。</p>
 <p>至此也就解释了互相依赖的原理。</p>
 
@@ -409,5 +406,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

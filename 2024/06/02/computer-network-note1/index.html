@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content="计算机网络笔记1——网络概述"/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,63 +61,89 @@
         </section>
         <article class="post-content">
         
-            <h1 id="计算机网络笔记1——网络概述"><a href="#计算机网络笔记1——网络概述" class="headerlink" title="计算机网络笔记1——网络概述"></a>计算机网络笔记1——网络概述</h1><h2 id="接入技术"><a href="#接入技术" class="headerlink" title="接入技术"></a>接入技术</h2><h3 id="住宅接入技术"><a href="#住宅接入技术" class="headerlink" title="住宅接入技术"></a>住宅接入技术</h3><ol>
-<li><p><strong>数字用户线路（DSL，Digital Subscriber Line）</strong>：</p>
+            <h1>计算机网络笔记1——网络概述</h1>
+<h2 id="接入技术">接入技术</h2>
+<h3 id="住宅接入技术">住宅接入技术</h3>
+<ol>
+<li>
+<p><strong>数字用户线路（DSL，Digital Subscriber Line）</strong>：</p>
 <p>利用现有的电话线提供高速互联网接入。</p>
 </li>
-<li><p><strong>光纤到户（FTTH，Fiber to the Home）</strong>：</p>
+<li>
+<p><strong>光纤到户（FTTH，Fiber to the Home）</strong>：</p>
 <p>使用光纤电缆直接连接到家庭，提供高速互联网接入。</p>
 </li>
-<li><p><strong>电缆调制解调器（Cable Modem）</strong>：</p>
+<li>
+<p><strong>电缆调制解调器（Cable Modem）</strong>：</p>
 <p>利用有线电视网络提供互联网接入。</p>
 </li>
 </ol>
-<h3 id="公司接入技术"><a href="#公司接入技术" class="headerlink" title="公司接入技术"></a>公司接入技术</h3><ol>
-<li><p><strong>以太网（Ethernet）</strong>：</p>
+<h3 id="公司接入技术">公司接入技术</h3>
+<ol>
+<li>
+<p><strong>以太网（Ethernet）</strong>：</p>
 <p>通常通过局域网（LAN）连接公司内部的计算机和设备。</p>
 </li>
-<li><p><strong>T1&#x2F;E1 线路</strong>：</p>
+<li>
+<p><strong>T1/E1 线路</strong>：</p>
 <p>专用于企业网络连接的高带宽专线。</p>
 </li>
 </ol>
-<h3 id="广域无线接入技术"><a href="#广域无线接入技术" class="headerlink" title="广域无线接入技术"></a>广域无线接入技术</h3><ol>
-<li><p><strong>蜂窝网络（Cellular Networks，如4G LTE、5G）</strong>：</p>
+<h3 id="广域无线接入技术">广域无线接入技术</h3>
+<ol>
+<li>
+<p><strong>蜂窝网络（Cellular Networks，如4G LTE、5G）</strong>：</p>
 <p>使用蜂窝基站提供大范围的无线互联网接入。</p>
 </li>
 </ol>
-<h2 id="网络"><a href="#网络" class="headerlink" title="网络"></a>网络</h2><p>交换机有两类：路由器和链路层交换机</p>
-<h3 id="分组交换网络"><a href="#分组交换网络" class="headerlink" title="分组交换网络"></a>分组交换网络</h3><p>对于数据的传输，先形成报文，报文可以包含文件等，报文根据大小被划分成多个数据块，称为分组（packet）。每个分组包含必要的头部信息，如源地址、目的地址、序列号和其他控制信息。</p>
+<h2 id="网络">网络</h2>
+<p>交换机有两类：路由器和链路层交换机</p>
+<h3 id="分组交换网络">分组交换网络</h3>
+<p>对于数据的传输，先形成报文，报文可以包含文件等，报文根据大小被划分成多个数据块，称为分组（packet）。每个分组包含必要的头部信息，如源地址、目的地址、序列号和其他控制信息。</p>
 <p>存储转发传输机制：</p>
 <p>交换机作为中间者，需要把数据从A接受送到B，A发送多个分组到达交换机，交换机在收到所有的分组后，再把这些分组转发给B</p>
 <p>排队时延和分组丢失：</p>
 <p>由于交换机需要接收到所有分组才能转发，因此这些分组被储存在交换机，交换机就需要缓存，并且交换机在往外发出的链路有速度的限制，一旦输入交换机的速度大于交换机输出的速度，需要的缓存就会越来越大，并且其中的分组也会因为排队受到排队时延。一旦缓存满了，就会存在丢包，也就是分组丢失。</p>
-<h3 id="电路交换网络"><a href="#电路交换网络" class="headerlink" title="电路交换网络"></a>电路交换网络</h3><p>对于数据的传输，产生报文，然后在传输之前，两边要先建立起一条连接，并且双方要都为这个连接分配资源例如宽带，电路交换网络主要用于语音通信，如传统的公共交换电话网（PSTN）。</p>
+<h3 id="电路交换网络">电路交换网络</h3>
+<p>对于数据的传输，产生报文，然后在传输之前，两边要先建立起一条连接，并且双方要都为这个连接分配资源例如宽带，电路交换网络主要用于语音通信，如传统的公共交换电话网（PSTN）。</p>
 <p>这个连接在建立之前需要双方交换信令信息以确定路径，数据以连续的方式传输，实时性和低延迟</p>
 <p>电路交换网络复用：</p>
 <p>频分复用：</p>
 <p>允许多个信号通过不同的频率带宽在同一传输介质上同时传输，可以同时在一条线路上传输多个数据流</p>
 <p>时分复用：</p>
 <p>它通过将时间划分成多个时隙，每个时隙分配给不同的信号，从而在同一传输介质上实现多个信号的传输</p>
-<h3 id="时延"><a href="#时延" class="headerlink" title="时延"></a>时延</h3><p>端到端时延 &#x3D; 处理时延+排队时延+传输时延</p>
-<h2 id="协议分层"><a href="#协议分层" class="headerlink" title="协议分层"></a>协议分层</h2><p>根据分层模型，一个数据包在经过多次传输过程中，每一次传输的服务都要建立在一定基础上。例如，在硬件上传输需要一些数据，在交换机上传输需要一些传输信息。在每次传输中，它们都要各自负责好自己的这些传输所需数据，因此就利用了分层的形式，便于每一层传输的成功。各层的所有协议被称为协议栈。</p>
+<h3 id="时延">时延</h3>
+<p>端到端时延 = 处理时延+排队时延+传输时延</p>
+<h2 id="协议分层">协议分层</h2>
+<p>根据分层模型，一个数据包在经过多次传输过程中，每一次传输的服务都要建立在一定基础上。例如，在硬件上传输需要一些数据，在交换机上传输需要一些传输信息。在每次传输中，它们都要各自负责好自己的这些传输所需数据，因此就利用了分层的形式，便于每一层传输的成功。各层的所有协议被称为协议栈。</p>
 <p>因特网的协议栈通常由5个层次组成：物理层、链路层、网络层、传输层和应用层。</p>
-<h3 id="应用层"><a href="#应用层" class="headerlink" title="应用层"></a>应用层</h3><p>关于应用的传输协议例如HTTP、SMTP、FTP等等，这类协议也可以自己定制。</p>
+<h3 id="应用层">应用层</h3>
+<p>关于应用的传输协议例如HTTP、SMTP、FTP等等，这类协议也可以自己定制。</p>
 <p>在应用层传输的信息分组我们称作<strong>报文（Message）</strong>。</p>
-<h3 id="传输层"><a href="#传输层" class="headerlink" title="传输层"></a>传输层</h3><p>有两种主要的传输协议，即TCP和UDP。TCP的传输建立在先搭建双方连接的基础上，提供可靠的传输。UDP的传输属于无连接服务，不提供流量控制和重传机制。</p>
+<h3 id="传输层">传输层</h3>
+<p>有两种主要的传输协议，即TCP和UDP。TCP的传输建立在先搭建双方连接的基础上，提供可靠的传输。UDP的传输属于无连接服务，不提供流量控制和重传机制。</p>
 <p>在传输层传输的信息分组我们称作<strong>报文段（Segment）</strong>（TCP）或<strong>数据报（Datagram）</strong>（UDP）。</p>
-<h3 id="网络层"><a href="#网络层" class="headerlink" title="网络层"></a>网络层</h3><p>负责包含传输的目的地，进行网络层面的路由选择和地址管理。例如IPv4、IPv6等协议，负责网络传输的部分，说明来源和目的地，以及网络传输相关的基本信息。</p>
+<h3 id="网络层">网络层</h3>
+<p>负责包含传输的目的地，进行网络层面的路由选择和地址管理。例如IPv4、IPv6等协议，负责网络传输的部分，说明来源和目的地，以及网络传输相关的基本信息。</p>
 <p>在网络层传输的信息分组我们称作<strong>数据报（Packet）</strong>。</p>
-<h3 id="链路层"><a href="#链路层" class="headerlink" title="链路层"></a>链路层</h3><p>负责传输过程中链路的众多数据，例如交换机之间的传输数据，主要任务是确保相邻设备之间的可靠通信。有以太网（Ethernet）、PPP（点对点协议）等协议。</p>
+<h3 id="链路层">链路层</h3>
+<p>负责传输过程中链路的众多数据，例如交换机之间的传输数据，主要任务是确保相邻设备之间的可靠通信。有以太网（Ethernet）、PPP（点对点协议）等协议。</p>
 <p>在链路层传输的信息分组我们称作<strong>帧（Frame）</strong>。</p>
-<h3 id="物理层"><a href="#物理层" class="headerlink" title="物理层"></a>物理层</h3><p>物理层偏向于传输介质等物理上的传输媒体有关，例如双绞铜线、单模光纤。</p>
-<h3 id="封装"><a href="#封装" class="headerlink" title="封装"></a>封装</h3><p>协议栈之所以被称作栈，是因为层层结构在传输过程中被添加和解析的过程是和栈一样的。数据从上层向下层传递时，每一层都会增加自己的头部信息，这个过程称为封装；当数据从下层向上层传递时，每一层会移除其头部信息，这个过程称为解封装。</p>
-<h2 id="网络攻击"><a href="#网络攻击" class="headerlink" title="网络攻击"></a>网络攻击</h2><h3 id="Ddos攻击"><a href="#Ddos攻击" class="headerlink" title="Ddos攻击"></a>Ddos攻击</h3><ul>
+<h3 id="物理层">物理层</h3>
+<p>物理层偏向于传输介质等物理上的传输媒体有关，例如双绞铜线、单模光纤。</p>
+<h3 id="封装">封装</h3>
+<p>协议栈之所以被称作栈，是因为层层结构在传输过程中被添加和解析的过程是和栈一样的。数据从上层向下层传递时，每一层都会增加自己的头部信息，这个过程称为封装；当数据从下层向上层传递时，每一层会移除其头部信息，这个过程称为解封装。</p>
+<h2 id="网络攻击">网络攻击</h2>
+<h3 id="Ddos攻击">Ddos攻击</h3>
+<ul>
 <li>弱点攻击：对容易出问题的应用程序或者操作系统发送会导致崩溃的报文</li>
 <li>带宽洪泛：发送大量分组，导致服务的接入链路堵塞</li>
 <li>连接洪泛：创建大量的半开或全开TCP连接，导致不能建立正常的服务连接</li>
 </ul>
-<h3 id="分组嗅探"><a href="#分组嗅探" class="headerlink" title="分组嗅探"></a>分组嗅探</h3><p>利用工具在无线网络中获取无线网传输的分组，分组可能会包含敏感信息被获取</p>
-<h3 id="IP哄骗"><a href="#IP哄骗" class="headerlink" title="IP哄骗"></a>IP哄骗</h3><p>攻击者通过伪造源IP地址，使其看起来像是来自另一个合法的IP地址，从而隐藏攻击者的真实身份并绕过安全措施。IP哄骗的基本原理是修改数据包的源IP地址。</p>
+<h3 id="分组嗅探">分组嗅探</h3>
+<p>利用工具在无线网络中获取无线网传输的分组，分组可能会包含敏感信息被获取</p>
+<h3 id="IP哄骗">IP哄骗</h3>
+<p>攻击者通过伪造源IP地址，使其看起来像是来自另一个合法的IP地址，从而隐藏攻击者的真实身份并绕过安全措施。IP哄骗的基本原理是修改数据包的源IP地址。</p>
 
         </article>
         <section class="post-near">
@@ -185,5 +211,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>

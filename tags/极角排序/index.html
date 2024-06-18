@@ -17,7 +17,7 @@
     <meta property="og:site_name" content="Mai Icy">
     <meta property="og:title" content=""/>
     
-<meta name="generator" content="Hexo 6.0.0"></head>
+<meta name="generator" content="Hexo 6.2.0"></head>
 
   <body>
     <header>
@@ -61,7 +61,9 @@
             <a href="/2023/12/04/learn-algorithm-note1/">算法学习笔记1——极角排序</a>
         </h2>
     
-        <p>算法学习笔记1——极角排序基础含义对于一个平面的多个点，选择一个点作为极点O，再从O出去一条射线定为极轴OX（一般把X轴正半轴作为极轴），对于每个平面上的点我们有一种新的表示方法：极坐标（γ、θ...</p>
+        <p>算法学习笔记1——极角排序
+基础含义
+对于一个平面的多个点，选择一个点作为极点O，再从O出去一条射线定为极轴OX（一般把X轴正半轴作为极轴），对于每个平面上的点我们有一种新的表示方法：极坐标（γ...</p>
     
         <div class="post-meta">
             <time class="date">2023.12.04</time>
@@ -116,5 +118,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
