@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>计算机网络笔记8——RDT - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="计算机网络笔记8——RDT"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>计算机网络笔记8——RDT</h2>
+            <div class="post-meta">
+                <time class="date">2024.06.19</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <ul>
+<li>
+<h1>计算机网络笔记8——RDT</h1>
+<h2 id="可靠数据传输">可靠数据传输</h2>
+<p>可靠数据传输在运输层、链路层、应用层都会出现。</p>
+<p>可靠信道：指在数据传输中，保证数据包不会丢失、损坏或以错误的顺序从端到端的一种通信信道。</p>
+<p>然而实际的底层是不可靠信道，例如底层有概率会丢失，损坏，顺序错误等等，我们需要使用<strong>可靠数据传输协议</strong>用于保证在上层体现为可靠信道。</p>
+<p>有限状态机（Finite State Machine，FSM）</p>
+<p>是一种模型，用于描述具有有限个状态和状态转移的系统。</p>
+<h2 id="RDT（Reliable-Data-Transfer）">RDT（Reliable Data Transfer）</h2>
+<h3 id="rdt1-0">rdt1.0</h3>
+<p>RDT 1.0是计算机网络课程中引入的最基本的可靠数据传输协议模型。RDT 1.0的设计假设底层网络是可靠信道。这种假设在实际应用中是不现实的。</p>
+<p>RDT 1.0的目的是帮助理解更复杂的可靠数据传输协议的基础。</p>
+<p>接收方和发送方都是FSM。</p>
+<p>发送方：</p>
+<ol>
+<li>从上层应用接收数据。</li>
+<li>封装数据为数据包。</li>
+<li>将数据包发送到接收方。</li>
+</ol>
+<p>接收方：</p>
+<ol>
+<li>从下层网络接收数据包。</li>
+<li>处理数据包中的数据。</li>
+<li>将数据传递到上层应用。</li>
+</ol>
+<h3 id="rdt2-0">rdt2.0</h3>
+<p>经具有比特差错信道的可靠数据传输</p>
+<p>RDT 2.0引入了错误检测、确认（ACK）和重传机制。这些机制确保了即使在不可靠的信道上（即存在比特错误的信道），数据仍然可以被可靠地传输。</p>
+<p>特性：</p>
+<ol>
+<li><strong>错误检测</strong>：使用校验和（checksum）来检测数据包中的比特错误。</li>
+<li><strong>肯定确认（ACK）和否定确认（NAK）</strong>：接收方在收到数据包后发送ACK或NAK来通知发送方数据包是否正确接收。</li>
+<li><strong>重传机制</strong>：如果接收方检测到错误（收到NAK），发送方将重传数据包。</li>
+</ol>
+<p>发送方：</p>
+<ol>
+<li>从上层应用接收数据。</li>
+<li>生成数据包，并计算校验和。</li>
+<li>发送数据包到接收方。</li>
+<li>如果接收到ACK，发送下一个数据包；如果接收到NAK，重传当前数据包。</li>
+</ol>
+<p>接收方：</p>
+<ol>
+<li>接收数据包并计算校验和。</li>
+<li>如果校验和匹配（无错误），发送ACK；如果校验和不匹配（有错误），发送NAK。</li>
+<li>如果数据包无错误，将数据传递到上层应用。</li>
+</ol>
+<p>但rdt2.0没有考虑到ACK或NAK分组受损的可能性。</p>
+<p>解决方法尝试：</p>
+<ul>
+<li>如果回复传输有问题，发送方可以再次询问接收方正确的回答。</li>
+<li>进行足够多的检验，使发送方不仅可以发现差错，还可以恢复处理。</li>
+<li>如果收到出问题的回复，就再发一遍原来的分组，会导致冗余分组，但是接收方无法知道这个新发来的是重发还是新的。因为它不知道自己的回复是否成功发送。</li>
+</ul>
+<h3 id="rdt2-1">rdt2.1</h3>
+<p>RDT 2.1 在 RDT 2.0 的基础上引入了序列号（Sequence Number）机制，这是其与 RDT 2.0 最显著的不同之处。</p>
+<p>序号只需要1bit，因为它只要让接受者知道这是上一个包还是新的包就可以了。而接受方回复的ACK和ANK不需要序号。</p>
+<p>如果发送方接收到两个一样序号的ACK，就知道自己的上一个数据包没有成功传输。</p>
+<h3 id="rdt2-2">rdt2.2</h3>
+<p>rdt2. 1和rdt2.2之间的细微变化在于，接收方此时必须包括由一个ACK报 文所确认的分组序号(这可以通过在接收方FSM中，在make.pkt()中包括参数ACK 0或 ACK1来实现)，发送方此时必须检查接收到的ACK报文中被确认的分组序号(这可通过 在发送方FSM中，在isACK()中包括参数0或1来实现)。</p>
+<h3 id="rdt3-0">rdt3.0</h3>
+<p>经具有比特差错的丢包信道的可靠数据传输</p>
+<p>不同于rdt2，rdt3可以解决丢包问题，如果发生丢包，双方都收不到想要的响应。</p>
+<p>我们通常可以想到发送方如果认为超时，就再次发送。设定恰当的重发时间，同时rdt2.2已经解决冗余分组的问题。</p>
+<p>重发时间的实现就是在发送的时候启动一个timer计时器。</p>
+<p>此时我们得到了一个可靠数据传输协议。</p>
+<p>模拟一下情况，如果A发送给B，A发给B的时候丢包，A会在一定时间后再发，如果只是因为传输时间过慢，发送了两个包，B也会对这两个包回复一样的ack，A就知道了之前的包冗余，并且也不需要再处理了。</p>
+<h2 id="流水线可靠数据传输协议">流水线可靠数据传输协议</h2>
+<p>rdt的问题主要在于它是一个停等协议，在传输后，需要等到回复才会去发送下一包数据，但是不断地发送过程中就有很多的等待状态，效率很低。</p>
+<p>解决：不停等</p>
+<p>允许发送方发送多个分组而无须等待确认，或者理解成一次性多发送几个分组，等待回复。</p>
+<p>影响</p>
+<ul>
+<li>此时我们的序号就不能是1和0，需要更大的范围保证能指明到前面的哪个包接受失败。</li>
+<li>需要一次性缓存多个分组，不能马上确保某个分组是否传输成功，随时准备重发。</li>
+</ul>
+<p>对丢包解决产生两种方法：回退（go-back-N） 和 选择重传（SR）</p>
+<h3 id="回退协议（GBN-滑动窗口协议）">回退协议（GBN 滑动窗口协议）</h3>
+<p>概念解释：</p>
+<ul>
+<li>发送滑动窗口：发送方维护一个窗口，窗口的大小通常为N，表示可以连续发送的未确认数据包的最大数量。</li>
+<li>接收滑动窗口：接收方通常只有一个固定大小为1的窗口，表示每次只接收按顺序到达的一个数据包。</li>
+<li>序号：每个数据包都有一个唯一的序号，序号的范围通常是0到(2^k)−1，其中k是分组序号的比特数，所有涉及序号运算都要取模，类似于一个环。</li>
+<li>基于ACK无NAK：接收方接收数据包后，会发送一个ACK来确认接收到的数据包。如果接收方接收到的不是期望的下一个数据包，它会丢弃并不予确认。</li>
+</ul>
+<p>工作原理：</p>
+<p>发送方：</p>
+<p>发送窗口内的数据包可以连续发送而无需等待ACK。发送方维护一个基序号（base）和下一个待发送的数据包序号（nextSeqNum）。发送窗口的大小为N，即base,base+N−1。当发送方发送一个数据包时，nextSeqNum增加。发送方启动一个计时器用于未确认数据包的重传。如果在计时器超时之前没有收到ACK，发送方会重传从基序号开始的所有未确认的数据包（回退N步）。</p>
+<p>接收方：</p>
+<p>接收方只接收按序到达的数据包。如果接收到的包的序列号等于期望的序列号，接收方会接收该包并发送ACK。如果接收到的包的序列号不是期望的序列号，接收方会丢弃该包并重传上次发送的ACK。</p>
+<p>示例：</p>
+<p>假设发送窗口大小为4（N=4）：</p>
+<ol>
+<li>发送方发送序列号为0, 1, 2, 3的数据包。</li>
+<li>接收方按顺序接收数据包0, 1，并发送ACK0, ACK1。</li>
+<li>发送方收到ACK0, ACK1，将基序号更新为2，并发送序列号为4, 5的数据包。</li>
+<li>如果发送方未收到ACK2并发生超时，发送方将重传序列号2, 3, 4, 5的数据包。</li>
+</ol>
+<p>缺点：</p>
+<p>当窗口长度和带宽时延积都很大时，一个分组的问题可能会引起很多分组的重传。</p>
+<h3 id="选择重传（SR协议）">选择重传（SR协议）</h3>
+<p>我个人感觉选择重传更容易理解。</p>
+<p>发送方</p>
+<p>发送方接收到ACK后，将相应的数据包标记为已确认，并更新发送窗口。</p>
+<p>发送方为每个未确认的数据包启动一个独立的计时器。</p>
+<p>如果计时器超时（即未在规定时间内收到ACK），发送方仅重传超时的数据包。</p>
+<p>接收方</p>
+<p>接收方为每个成功接收的数据包发送ACK，ACK中包含被确认的数据包的序列号。</p>
+<p>接收方可以缓存乱序到达的数据包，等待缺失的数据包到达后按序递交给上层。</p>
+<p>当所有数据包按序到达后，接收窗口滑动以接受新的数据包。</p>
+</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/06/18/acm-class-note19/">ACM程序课算法笔记19——矩阵快速幂</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/RDT/" rel="tag">RDT</a><a class="-none-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://sdn.geekzu.org/avatar/b4bb31de44ce157568a6b61fa63ebfd8?s=80" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/06/19/computer-network-note8/">计算机网络笔记8——RDT</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/18/acm-class-note19/">ACM程序课算法笔记19——矩阵快速幂</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/17/computer-network-note7/">计算机网络笔记7——UDP</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/11/computer-network-note6/">计算机网络笔记6——视频流和内容分发网</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/10/computer-network-note5/">计算机网络笔记5——P2P</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/06/10/acm-class-note18/">ACM程序课算法笔记18——中国剩余定理</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12.5px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/requests/" style="font-size: 12.5px;">requests</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 10px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12.5px;">源码阅读</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 17.5px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
