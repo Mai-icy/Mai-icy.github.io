@@ -3,7 +3,7 @@
   <head>
      
     <meta charset="UTF-8">
-    <title>2024 年 8 月 - Mai Icy</title>
+    <title>算法学习笔记18——网络流最小割 - Mai Icy</title>
     <link rel="shortcut icon" href="/static/img/icon.png">
     <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
     
@@ -15,7 +15,7 @@
 
     <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
     <meta property="og:site_name" content="Mai Icy">
-    <meta property="og:title" content=""/>
+    <meta property="og:title" content="算法学习笔记18——网络流最小割"/>
     
 <meta name="generator" content="Hexo 6.2.0"></head>
 
@@ -50,64 +50,140 @@
 
     <main>
     <div class="wrap min">
-        <section class="home-title">
+        <section class="post-title">
+            <h2>算法学习笔记18——网络流最小割</h2>
+            <div class="post-meta">
+                <time class="date">2024.08.07</time>
             
-            <h1>“2024 年 8 月”</h1>
+                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a></span>
+            
+            </div>
         </section>
-        <section class="home-posts">
-    
-    <div class="post-item">
-        <h2>
-            <a href="/2024/08/07/learn-algorithm-note18/">算法学习笔记18——网络流最小割</a>
-        </h2>
-    
-        <p>算法学习笔记(18): 网络流最小割
-最小割概念
-先忽略网络流，对于一个联通图的割是边的集合，删去这些边可以使原来图上的点集连通性变成两个块。
-网络流的割要求两个联通块分别包含S和T（源点和汇点...</p>
-    
-        <div class="post-meta">
-            <time class="date">2024.08.07</time>
-            
-                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a></span>
-            
-            
-                <span class="tags"><a class="-none-link" href="/tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a>，<a class="-none-link" href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" rel="tag">最小割</a>，<a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>，<a class="-none-link" href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" rel="tag">网络流</a></span>
-            
-        </div>
-    </div>
-    
-    <div class="post-item">
-        <h2>
-            <a href="/2024/08/04/learn-algorithm-note17/">算法学习笔记17——tarjan算法</a>
-        </h2>
-    
-        <p>算法学习笔记(17): tarjan算法
-tarjan算法在众多问题都有解决方法。
-新概念定义
-建立在一个有向图的DFS生成树中：
-graph TD
-1((1))
-2((2))
-3((3))
-4...</p>
-    
-        <div class="post-meta">
-            <time class="date">2024.08.04</time>
-            
-                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a></span>
-            
-            
-                <span class="tags"><a class="-none-link" href="/tags/tarjan/" rel="tag">tarjan</a>，<a class="-none-link" href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" rel="tag">双连通分量</a>，<a class="-none-link" href="/tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a>，<a class="-none-link" href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" rel="tag">强联通分量</a>，<a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a></span>
-            
-        </div>
-    </div>
-    
-</section>
+        <article class="post-content">
+        
+            <h1>算法学习笔记(18): 网络流最小割</h1>
+<h2 id="最小割概念">最小割概念</h2>
+<p>先忽略网络流，对于一个联通图的割是边的集合，删去这些边可以使原来图上的点集连通性变成两个块。</p>
+<p>网络流的割要求两个联通块分别包含S和T（源点和汇点）。其中最小割指的是割中所有边的容量最小。</p>
+<p>可以理解为一个联通图有很多边带权，求得一个割，称所有割中权值最小的为最小割。</p>
+<h2 id="最大流最小割定理"><strong>最大流最小割定理</strong></h2>
+<p>结论：对于任意网络，其最大流就等于最小割。</p>
+<p>证明：对于任意割，任意流，都有流 ≤ 割，因为删去割会导致最大流直接归0。</p>
+<p>当不存在增广路径时的流与割的关系：</p>
+<ul>
+<li>如果在残差网络中不存在从 s 到 t 的路径，则说明此时的流量已经是最大流。</li>
+<li>此时我们可以将节点集合 V 划分为两个部分：从 s 出发可以到达的节点集 S，以及其他节点 T=V−S。</li>
+<li>边从 S 指向 T 的所有边构成一个割，并且这个割的容量即为从 S 到 T 的所有边的容量之和。</li>
+</ul>
+<p>证明最大流等于最小割：</p>
+<ul>
+<li>由于在增广路径不存在的情况下，割的容量等于当前的流量。</li>
+<li>并且，由于流量在之前的步骤中是通过增广路径一步步增加的，直到无法再增加，因此此流量必然是最大流。</li>
+<li>也就是说，此时的最大流等于最小割的容量。</li>
+</ul>
+<p>通过最小割可以把最大流计算用于许多问题的解决</p>
+<h2 id="二选一关联模型">二选一关联模型</h2>
+<h3 id="问题模型">问题模型</h3>
+<p>有n个物品和两个集合A, B，如果一个物品没有放入A会花费 ai, 如果没有放入b 会花费 bi, 对于某几对物品，如果这对物品不在一个集合内，就会额外花费wi。每个物品只能在一个集合，求最小花费。</p>
+<h3 id="构造方法">构造方法</h3>
+<ul>
+<li>建立超级源点 s 和超级汇点 t</li>
+<li>对于每个物品抽象成每个点，与 s 连接权值为 ai的边， 与 t 连接权值为bi 的边</li>
+<li>对于每对物品关联，对这两个点建立wi的双向边</li>
+<li>最小花费就是最小割</li>
+</ul>
+<p>(注：如果是多个物品，可以建立新节点建立联系)</p>
+<h3 id="证明-说明">证明&amp;说明</h3>
+<p>对于每个物品而言，选择放入A即将和 t 的边加入割，与s就不需要加入割了。这是一个二选一的关系。</p>
+<p>对于额外关系，如果p1，p2不在同一个集合，p1p2之间的双向边就会有一个和原来的两条边形成ST通路，需要将其加入割边。所以对于题目任意符合条件的选择，都是对应构造网络流的一个割。</p>
+<p>将费用最小化即是最小割。</p>
+<h2 id="二分图最大带权独立集-最小点权覆盖集">二分图最大带权独立集&amp;<strong>最小点权覆盖集</strong></h2>
+<h3 id="概念">概念</h3>
+<ul>
+<li>独立集：点集，独立集中的所有点之间都没有边</li>
+<li>覆盖集：点集，所有点的边就是整个图的边</li>
+<li>二分图：或称二部图，指图中的点可以分成两部分，在同一个部分的点之间没有边</li>
+</ul>
+<h3 id="问题模型-2">问题模型</h3>
+<p>最小点权覆盖集**：**</p>
+<p>给定一张二部图，每个点都有自己的权值，找出所有点覆盖集中权值最大的。</p>
+<p>最大带权独立集：</p>
+<p>给定一张二部图，每个点都有自己的权值，找出所有独立集中权值最大的独立集。</p>
+<p>根据两者的互补关系可得：</p>
+<p>最大带权独立集权值 = 全部点权值 - 最小点权覆盖集权值</p>
+<p>故我们直接考虑最小点权覆盖集权值</p>
+<h3 id="构造方法-2">构造方法</h3>
+<ul>
+<li>建立超级源点 s 和超级汇点 t</li>
+<li>将二部图分为两部分处理，一部分连接超级源点，边权为点权</li>
+<li>另一部分连接 t， 边权为点权</li>
+<li>原来二部图上的所有边改为有向边，从第一部分连接到第二部分，权值为INF</li>
+</ul>
+<h3 id="证明-说明-2">证明&amp;说明</h3>
+<p>结论：最小点权覆盖集权值就是最小割</p>
+<p>对于一个割来说，当我们选择了二部图中的一个点时，也就是将这个点与s或t的边断开，此时，它后面连接到的边的点就没有强制性要求了，</p>
+<p>如果我们没有选择一个点，也就是对应的边不加入割，那么为了保证不连通，这个点在二部图内连接到的后面的点都需要对应的边作为割，恰恰好对应了最小点覆盖的规律，所以点覆盖集对应的边也就必定是原图的一个割集。</p>
+<p>则最小点权覆盖集权值就是最小割也就是最大流。</p>
+<p>最大带权独立集权值 = 全部点权值 - 最小点权覆盖集权值 = 全部点权值 - 最大流</p>
+<h2 id="最大权闭合子图问题"><strong>最大权闭合子图问题</strong></h2>
+<h3 id="问题模型-3">问题模型</h3>
+<p>给定一个点权有向图，选择一个权值和最大的子图，使得子图中每个节点指向的节点也在图中。</p>
+<h3 id="构造方法-3">构造方法</h3>
+<ul>
+<li>建立超级源点 s 和超级汇点 t</li>
+<li>如果一个节点x的权值w是正，建立 s → x 的权值为w</li>
+<li>如果节点x的权值为-w是负值，则建立一条 x → t 的边，权值为w。</li>
+<li>保留原图所有边，且权值为INF。</li>
+<li>用所有正权值减去最大流即可。</li>
+</ul>
+<h3 id="证明-说明-3">证明&amp;说明</h3>
+<p>结论1：每一个符合<strong>最大权闭合子图</strong>条件的子图都对应流量网络中的一个割。</p>
+<p>这里的子图对应到割有以下含义：</p>
+<ul>
+<li>正权值的点被选择代表 s → x 的边不在割内</li>
+<li>正权值的点不被选择代表 s → x 的边在割内</li>
+<li>负权值的点被选择代表 x → t 的边在割内</li>
+<li>负权值的点不被选择代表 x → t 的边不在割内</li>
+</ul>
+<p>割为了保证不连通：</p>
+<ul>
+<li>如果选择了 s → x 的边作为割，那么关于这个点的后继节点都不用它考虑了，爱选不选。相当于没有选择这个点。</li>
+<li>如果没选择 s → x 的边作为割，那么为了保证不连通，需要后面所有的负权点 x → t 的边作为割。相当于选择了这个点。</li>
+</ul>
+<p>结论2：我们所选择的那部分子图，权值和 = 正权值和 - (没选的正权 + 选了的负权(取正))</p>
+<p>有趣的是，我们正权值点选择是反的，而负权值选择则是对应的，但是负权值的点对应边的权值恰好都被取负成为正数。因此现在我们不妨考虑减去值，将正权值的点也作为减去值，此时选择这个点就要减去，不选就不减去，恰好此时的闭合子图所有点代表的边的权值之和就是我们要减去的。</p>
+<p>结论3：于是上述式子转化为：权值和 = 所有正权值之和 - 割的容量</p>
+<p>最大权值和 = 所有正权值之和 - 最小割 = 所有正权值之和 - 最大流。</p>
 
-        <section class="page-navigator">
-            <span class="page-number current">1</span>
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/08/04/learn-algorithm-note17/">算法学习笔记17——tarjan算法</a></li>
+                
+            </ul>
         </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a><a class="-none-link" href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" rel="tag">最小割</a><a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a><a class="-none-link" href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" rel="tag">网络流</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
     </div>
 </main>
 
