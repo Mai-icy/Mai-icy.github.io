@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>算法学习笔记20——网络流费用流 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="算法学习笔记20——网络流费用流"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>算法学习笔记20——网络流费用流</h2>
+            <div class="post-meta">
+                <time class="date">2024.09.10</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>算法学习笔记(20): 网络流费用流</h1>
+<h2 id="简介">简介</h2>
+<p>在基础的网络图上，每条边多了一个属性，即费用。这个费用是单位费用，即当这条边有流量 f 的时候，有 f * w 的 费用。</p>
+<p>最小费用最大流：在所有的最大流情况下，费用最小的一个情况，称作最小费用最大流。</p>
+<h2 id="SSP算法">SSP算法</h2>
+<p>SSP算法思想为贪心。即在找最大流的时候额外多加一个费用条件。</p>
+<p>注意: 我们需要先排除一个情况，就是最小费用流不能存在负价环，不然SSP无法解决。</p>
+<p>复习一下原来的步骤：</p>
+<ul>
+<li>建立剩余流量图的分层图</li>
+<li>找到分层图的一个堵塞流（注意）</li>
+<li>在剩余流量图中进行对应的减少以及建立反向边</li>
+<li>当分层图找不到堵塞流停止</li>
+</ul>
+<p>在原来的基础上，将寻找堵塞流的算法改为优先寻找单位费用最小的路径。</p>
+<p>只需要修改原来的寻找堵塞流方法即可.</p>
+<p>其中最小费用路径等同于最短路径，以下使用SPFA完成。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">CostFlow</span>
+<span class="token punctuation">&#123;</span>
+    <span class="token keyword">struct</span> <span class="token class-name">Edge</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">int</span> next<span class="token punctuation">,</span> to<span class="token punctuation">,</span> capacity<span class="token punctuation">,</span> weight<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+    Edge edges<span class="token punctuation">[</span>M<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> head<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">,</span> edgeCount <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">void</span> <span class="token function">addPath</span><span class="token punctuation">(</span><span class="token keyword">int</span> from<span class="token punctuation">,</span> <span class="token keyword">int</span> to<span class="token punctuation">,</span> <span class="token keyword">int</span> capacity<span class="token punctuation">,</span> <span class="token keyword">int</span> weight<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        edges<span class="token punctuation">[</span><span class="token operator">++</span>edgeCount<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>Edge<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>head<span class="token punctuation">[</span>from<span class="token punctuation">]</span><span class="token punctuation">,</span> to<span class="token punctuation">,</span> capacity<span class="token punctuation">,</span> weight<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+        head<span class="token punctuation">[</span>from<span class="token punctuation">]</span> <span class="token operator">=</span> edgeCount<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">addFlow</span><span class="token punctuation">(</span><span class="token keyword">int</span> from<span class="token punctuation">,</span> <span class="token keyword">int</span> to<span class="token punctuation">,</span> <span class="token keyword">int</span> capacity<span class="token punctuation">,</span> <span class="token keyword">int</span> weight<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">addPath</span><span class="token punctuation">(</span>from<span class="token punctuation">,</span> to<span class="token punctuation">,</span> capacity<span class="token punctuation">,</span> weight<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">addPath</span><span class="token punctuation">(</span>to<span class="token punctuation">,</span> from<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token operator">-</span>weight<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">int</span> dist<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">,</span> previous<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">,</span> flow<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">bool</span> visited<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">int</span> source <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> sink <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">bool</span> <span class="token function">spfa</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">memset</span><span class="token punctuation">(</span>dist<span class="token punctuation">,</span> <span class="token number">0x3f</span><span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>dist<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        queue<span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span> q<span class="token punctuation">;</span>
+        q<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>source<span class="token punctuation">)</span><span class="token punctuation">,</span> dist<span class="token punctuation">[</span>source<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> flow<span class="token punctuation">[</span>source<span class="token punctuation">]</span> <span class="token operator">=</span> INF<span class="token punctuation">,</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>q<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">int</span> u <span class="token operator">=</span> q<span class="token punctuation">.</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            q<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> head<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">;</span> i<span class="token punctuation">;</span> i <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">const</span> <span class="token keyword">int</span> <span class="token operator">&amp;</span>v <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>to<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cap <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>capacity<span class="token punctuation">,</span> <span class="token operator">&amp;</span>cost <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>weight<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>cap <span class="token operator">==</span> <span class="token number">0</span> <span class="token operator">||</span> dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">&lt;=</span> dist<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> cost<span class="token punctuation">)</span> <span class="token keyword">continue</span><span class="token punctuation">;</span>
+                dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> dist<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> cost<span class="token punctuation">,</span> flow<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>cap<span class="token punctuation">,</span> flow<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span> previous<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> i<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> q<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">,</span> visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">int</span> maxFlow<span class="token punctuation">,</span> minCost<span class="token punctuation">;</span>
+
+    <span class="token keyword">void</span> <span class="token function">update</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        maxFlow <span class="token operator">+=</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> u <span class="token operator">=</span> sink<span class="token punctuation">;</span> u <span class="token operator">!=</span> source<span class="token punctuation">;</span> u <span class="token operator">=</span> edges<span class="token punctuation">[</span>previous<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">^</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>to<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            edges<span class="token punctuation">[</span>previous<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">.</span>capacity <span class="token operator">-=</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            edges<span class="token punctuation">[</span>previous<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">^</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>capacity <span class="token operator">+=</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            minCost <span class="token operator">+=</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span> <span class="token operator">*</span> edges<span class="token punctuation">[</span>previous<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">.</span>weight<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">int</span> <span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token function">spfa</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            <span class="token function">update</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="对比理解">对比理解</h3>
+<p>对于原来的最大流算法，在为了摆脱 复杂度和最大流挂钩，使用了EK算法思路，将图看做无权图，并去寻找最短路径，实际这个时候，最短路径就是边最少的情况。</p>
+<p>而后来Danic为了加速多次的这种寻找，使用了分层图，效果显著。</p>
+<p>此时最小费用流的思路是去找最小费用的路径，也就是将图看做其单价费用作为权的 有权图最短路径。SPFA就可以完成这个步骤，同样，在找到最短路后进行增广反向。</p>
+<h3 id="缺点分析">缺点分析</h3>
+<p>复习一下SPFA，实际上是基于队列优化的贝尔曼福特算法，SPFA算法很容易被卡死，一旦遇到了菊花图，队列一下就需要加入一群点。</p>
+<h2 id="Primal-Dual-原始对偶算法"><strong>Primal-Dual 原始对偶算法</strong></h2>
+<p>既然用到了最短路算法，除了作为代表的SPFA，我们应当想到dijkstra算法，但是它在本题中，本题的图频繁出现负权边，干扰了dijkstra算法的贪心正确性。</p>
+<p>我们已经知道了费用流的基本步骤，不同于最大流的唯一之处就是寻找堵塞流。而这个寻找也就是模板问题：</p>
+<p>在有向带负权图中找到最短路。</p>
+<p>这也是为什么我们使用了SPFA，SPFA可以很好的解决这个问题。</p>
+<p>但如果结合 Johnson 全源最短路径算法，又可以通过Dijstra来找到算法。</p>
+<p>tips：推荐在 本博客的以前文章 中复习一遍再继续看。</p>
+<p>原算法中，有一个势能的概念，而在本题中增广路会在残量中增加边权，因此，需要在每次修改势能，设增广后 s 点到 i 点的最短路径是d。</p>
+<p>则H[ i ] += d;</p>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx"><span class="token keyword">const</span> int maxN <span class="token operator">=</span> <span class="token number">1e5</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> int maxE <span class="token operator">=</span> <span class="token number">1e5</span><span class="token punctuation">;</span>
+struct CostFlow <span class="token punctuation">&#123;</span>
+    struct Edge <span class="token punctuation">&#123;</span>
+        int to<span class="token punctuation">,</span> flow<span class="token punctuation">,</span> cost<span class="token punctuation">,</span> next<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> edges<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    struct Parent <span class="token punctuation">&#123;</span>
+        int vertex<span class="token punctuation">,</span> edge<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> parent<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    struct MyPair <span class="token punctuation">&#123;</span>
+        int distance<span class="token punctuation">,</span> vertex<span class="token punctuation">;</span>
+
+        bool operator<span class="token operator">&lt;</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyPair<span class="token operator">&amp;</span> other<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">return</span> distance <span class="token operator">></span> other<span class="token punctuation">.</span>distance<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token function">MyPair</span><span class="token punctuation">(</span><span class="token parameter">int d<span class="token punctuation">,</span> int v</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> distance <span class="token operator">=</span> d<span class="token punctuation">,</span> vertex <span class="token operator">=</span> v<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+    int head<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">,</span> dist<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">,</span> visited<span class="token punctuation">[</span>maxN<span class="token punctuation">]</span><span class="token punctuation">,</span> potential<span class="token punctuation">[</span>maxN<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    int vertexCount<span class="token punctuation">,</span> edgeCount<span class="token punctuation">,</span> source<span class="token punctuation">,</span> sink<span class="token punctuation">,</span> edgeIndex <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> maxFlow<span class="token punctuation">,</span> minCost<span class="token punctuation">;</span>
+
+    <span class="token keyword">void</span> <span class="token function">addEdge</span><span class="token punctuation">(</span><span class="token parameter">int from<span class="token punctuation">,</span> int to<span class="token punctuation">,</span> int flow<span class="token punctuation">,</span> int cost</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        edges<span class="token punctuation">[</span><span class="token operator">++</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>to <span class="token operator">=</span> to<span class="token punctuation">;</span>
+        edges<span class="token punctuation">[</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">=</span> flow<span class="token punctuation">;</span>
+        edges<span class="token punctuation">[</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>cost <span class="token operator">=</span> cost<span class="token punctuation">;</span>
+        edges<span class="token punctuation">[</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>next <span class="token operator">=</span> head<span class="token punctuation">[</span>from<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        head<span class="token punctuation">[</span>from<span class="token punctuation">]</span> <span class="token operator">=</span> edgeIndex<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    bool <span class="token function">dijkstra</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        priority_queue<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token class-name">MyPair</span></span><span class="token punctuation">></span></span><span class="token plain-text"> pq;
+        for (int i = 1; i &lt;= vertexCount; i++) dist[i] = INF;
+        memset(visited, 0, sizeof(visited));
+        dist[source] = 0;
+        pq.push(MyPair(0, source));
+        while (!pq.empty()) </span><span class="token punctuation">&#123;</span>
+            int u <span class="token operator">=</span> pq<span class="token punctuation">.</span><span class="token function">top</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>vertex<span class="token punctuation">;</span>
+            pq<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> head<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">;</span> i<span class="token punctuation">;</span> i <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                int v <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>to<span class="token punctuation">,</span>
+                    newCost <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>cost <span class="token operator">+</span> potential<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">-</span> potential<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">&amp;&amp;</span> dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">></span> dist<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> newCost<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> dist<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> newCost<span class="token punctuation">;</span>
+                    parent<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">.</span>vertex <span class="token operator">=</span> u<span class="token punctuation">;</span>
+                    parent<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">.</span>edge <span class="token operator">=</span> i<span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> pq<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span><span class="token function">MyPair</span><span class="token punctuation">(</span>dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">,</span> v<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token plain-text">
+        return dist[sink] != INF;
+    &#125;
+
+    void spfa() </span><span class="token punctuation">&#123;</span>
+        queue<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>int</span><span class="token punctuation">></span></span><span class="token plain-text"> q;
+        memset(potential, 63, sizeof(potential));
+        potential[source] = 0, visited[source] = 1;
+        q.push(source);
+        while (!q.empty()) </span><span class="token punctuation">&#123;</span>
+            int u <span class="token operator">=</span> q<span class="token punctuation">.</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            q<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> head<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">;</span> i<span class="token punctuation">;</span> i <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                int v <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>to<span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span>edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">&amp;&amp;</span>
+                    potential<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">></span> potential<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>cost<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    potential<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> potential<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>cost<span class="token punctuation">;</span>
+                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                        visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+                        q<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                    <span class="token punctuation">&#125;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span><span class="token plain-text">
+    &#125;
+
+    void start(int s, int t, int n)</span><span class="token punctuation">&#123;</span>
+        vertexCount <span class="token operator">=</span> n<span class="token punctuation">;</span>
+        source <span class="token operator">=</span> s<span class="token punctuation">;</span>
+        sink <span class="token operator">=</span> t<span class="token punctuation">;</span>
+        <span class="token function">spfa</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">dijkstra</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            int minFlow <span class="token operator">=</span> <span class="token constant">INF</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> vertexCount<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> potential<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> dist<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> sink<span class="token punctuation">;</span> i <span class="token operator">!=</span> source<span class="token punctuation">;</span> i <span class="token operator">=</span> parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>vertex<span class="token punctuation">)</span>
+                minFlow <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>minFlow<span class="token punctuation">,</span> edges<span class="token punctuation">[</span>parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>edge<span class="token punctuation">]</span><span class="token punctuation">.</span>flow<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> sink<span class="token punctuation">;</span> i <span class="token operator">!=</span> source<span class="token punctuation">;</span> i <span class="token operator">=</span> parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>vertex<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                edges<span class="token punctuation">[</span>parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>edge<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">-=</span> minFlow<span class="token punctuation">;</span>
+                edges<span class="token punctuation">[</span>parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>edge <span class="token operator">^</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">+=</span> minFlow<span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            maxFlow <span class="token operator">+=</span> minFlow<span class="token punctuation">;</span>
+            minCost <span class="token operator">+=</span> minFlow <span class="token operator">*</span> potential<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token plain-text">
+&#125;;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/09/03/learn-algorithm-note19/">算法学习笔记19——Manacher算法</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a><a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a><a class="-none-link" href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" rel="tag">网络流</a><a class="-none-link" href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" rel="tag">费用流</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/09/10/learn-algorithm-note20/">算法学习笔记20——网络流费用流</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/03/learn-algorithm-note19/">算法学习笔记19——Manacher算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/08/07/learn-algorithm-note18/">算法学习笔记18——网络流最小割</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/08/04/learn-algorithm-note17/">算法学习笔记17——tarjan算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/29/learn-algorithm-note16/">算法学习笔记16——网络流最大流</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/27/learn-algorithm-note15/">算法学习笔记15——状压DP</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 10px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
