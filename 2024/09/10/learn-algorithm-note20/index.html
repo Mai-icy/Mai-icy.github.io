@@ -78,14 +78,18 @@
 <p>在原来的基础上，将寻找堵塞流的算法改为优先寻找单位费用最小的路径。</p>
 <p>只需要修改原来的寻找堵塞流方法即可.</p>
 <p>其中最小费用路径等同于最短路径，以下使用SPFA完成。</p>
-<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">CostFlow</span>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">const</span> <span class="token keyword">int</span> N <span class="token operator">=</span> <span class="token number">1e4</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token keyword">int</span> M <span class="token operator">=</span> <span class="token number">1e5</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> <span class="token keyword">int</span> INF <span class="token operator">=</span> <span class="token number">0x3f3f3f3f</span><span class="token punctuation">;</span>
+
+<span class="token keyword">namespace</span> CostFlow
 <span class="token punctuation">&#123;</span>
     <span class="token keyword">struct</span> <span class="token class-name">Edge</span> <span class="token punctuation">&#123;</span>
         <span class="token keyword">int</span> next<span class="token punctuation">,</span> to<span class="token punctuation">,</span> capacity<span class="token punctuation">,</span> weight<span class="token punctuation">;</span>
     <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
 
     Edge edges<span class="token punctuation">[</span>M<span class="token punctuation">]</span><span class="token punctuation">;</span>
-    <span class="token keyword">int</span> head<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">,</span> edgeCount <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> head<span class="token punctuation">[</span>M<span class="token punctuation">]</span><span class="token punctuation">,</span> edgeCount <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
 
     <span class="token keyword">void</span> <span class="token function">addPath</span><span class="token punctuation">(</span><span class="token keyword">int</span> from<span class="token punctuation">,</span> <span class="token keyword">int</span> to<span class="token punctuation">,</span> <span class="token keyword">int</span> capacity<span class="token punctuation">,</span> <span class="token keyword">int</span> weight<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
         edges<span class="token punctuation">[</span><span class="token operator">++</span>edgeCount<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>Edge<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>head<span class="token punctuation">[</span>from<span class="token punctuation">]</span><span class="token punctuation">,</span> to<span class="token punctuation">,</span> capacity<span class="token punctuation">,</span> weight<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
@@ -120,7 +124,7 @@
         <span class="token keyword">return</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
     <span class="token punctuation">&#125;</span>
 
-    <span class="token keyword">int</span> maxFlow<span class="token punctuation">,</span> minCost<span class="token punctuation">;</span>
+    <span class="token keyword">int</span> maxFlow <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span> minCost <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
 
     <span class="token keyword">void</span> <span class="token function">update</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
         maxFlow <span class="token operator">+=</span> flow<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
@@ -131,12 +135,14 @@
         <span class="token punctuation">&#125;</span>
     <span class="token punctuation">&#125;</span>
 
-    <span class="token keyword">int</span> <span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">void</span> <span class="token function">start</span><span class="token punctuation">(</span><span class="token keyword">int</span> S<span class="token punctuation">,</span> <span class="token keyword">int</span> T<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        source <span class="token operator">=</span> S<span class="token punctuation">;</span>
+        sink <span class="token operator">=</span> T<span class="token punctuation">;</span>
         <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token function">spfa</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
             <span class="token function">update</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
         <span class="token punctuation">&#125;</span>
     <span class="token punctuation">&#125;</span>
-<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 <h3 id="对比理解">对比理解</h3>
 <p>对于原来的最大流算法，在为了摆脱 复杂度和最大流挂钩，使用了EK算法思路，将图看做无权图，并去寻找最短路径，实际这个时候，最短路径就是边最少的情况。</p>
 <p>而后来Danic为了加速多次的这种寻找，使用了分层图，效果显著。</p>
@@ -152,105 +158,111 @@
 <p>tips：推荐在 本博客的以前文章 中复习一遍再继续看。</p>
 <p>原算法中，有一个势能的概念，而在本题中增广路会在残量中增加边权，因此，需要在每次修改势能，设增广后 s 点到 i 点的最短路径是d。</p>
 <p>则H[ i ] += d;</p>
-<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx"><span class="token keyword">const</span> int maxN <span class="token operator">=</span> <span class="token number">1e5</span><span class="token punctuation">;</span>
-<span class="token keyword">const</span> int maxE <span class="token operator">=</span> <span class="token number">1e5</span><span class="token punctuation">;</span>
-struct CostFlow <span class="token punctuation">&#123;</span>
-    struct Edge <span class="token punctuation">&#123;</span>
-        int to<span class="token punctuation">,</span> flow<span class="token punctuation">,</span> cost<span class="token punctuation">,</span> next<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span> edges<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+<pre class="line-numbers language-c++" data-language="c++"><code class="language-c++">const int maxN &#x3D; 1e4;
+const int maxE &#x3D; 1e5;
+const int INF &#x3D; 0x3fffffff;
+namespace CostFlow &#123;
+    struct Edge &#123;
+        int to, flow, cost, next;
+    &#125; edges[maxE];
 
-    struct Parent <span class="token punctuation">&#123;</span>
-        int vertex<span class="token punctuation">,</span> edge<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span> parent<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    struct Parent &#123;
+        int vertex, edge;
+    &#125; parent[maxE];
 
-    struct MyPair <span class="token punctuation">&#123;</span>
-        int distance<span class="token punctuation">,</span> vertex<span class="token punctuation">;</span>
+    struct MyPair &#123;
+        int distance, vertex;
 
-        bool operator<span class="token operator">&lt;</span><span class="token punctuation">(</span><span class="token keyword">const</span> MyPair<span class="token operator">&amp;</span> other<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
-            <span class="token keyword">return</span> distance <span class="token operator">></span> other<span class="token punctuation">.</span>distance<span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
+        bool operator&lt;(const MyPair&amp; other) const &#123;
+            return distance &gt; other.distance;
+        &#125;
 
-        <span class="token function">MyPair</span><span class="token punctuation">(</span><span class="token parameter">int d<span class="token punctuation">,</span> int v</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> distance <span class="token operator">=</span> d<span class="token punctuation">,</span> vertex <span class="token operator">=</span> v<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+        MyPair(int d, int v) &#123; distance &#x3D; d, vertex &#x3D; v; &#125;
+    &#125;;
 
-    int head<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">,</span> dist<span class="token punctuation">[</span>maxE<span class="token punctuation">]</span><span class="token punctuation">,</span> visited<span class="token punctuation">[</span>maxN<span class="token punctuation">]</span><span class="token punctuation">,</span> potential<span class="token punctuation">[</span>maxN<span class="token punctuation">]</span><span class="token punctuation">;</span>
-    int vertexCount<span class="token punctuation">,</span> edgeCount<span class="token punctuation">,</span> source<span class="token punctuation">,</span> sink<span class="token punctuation">,</span> edgeIndex <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> maxFlow<span class="token punctuation">,</span> minCost<span class="token punctuation">;</span>
+    int head[maxE], dist[maxE], visited[maxN], potential[maxN];
+    int vertexCount, source, sink, edgeIndex &#x3D; 1, maxFlow &#x3D; 0, minCost &#x3D; 0;
 
-    <span class="token keyword">void</span> <span class="token function">addEdge</span><span class="token punctuation">(</span><span class="token parameter">int from<span class="token punctuation">,</span> int to<span class="token punctuation">,</span> int flow<span class="token punctuation">,</span> int cost</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        edges<span class="token punctuation">[</span><span class="token operator">++</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>to <span class="token operator">=</span> to<span class="token punctuation">;</span>
-        edges<span class="token punctuation">[</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">=</span> flow<span class="token punctuation">;</span>
-        edges<span class="token punctuation">[</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>cost <span class="token operator">=</span> cost<span class="token punctuation">;</span>
-        edges<span class="token punctuation">[</span>edgeIndex<span class="token punctuation">]</span><span class="token punctuation">.</span>next <span class="token operator">=</span> head<span class="token punctuation">[</span>from<span class="token punctuation">]</span><span class="token punctuation">;</span>
-        head<span class="token punctuation">[</span>from<span class="token punctuation">]</span> <span class="token operator">=</span> edgeIndex<span class="token punctuation">;</span>
-    <span class="token punctuation">&#125;</span>
+    void addEdge(int from, int to, int flow, int cost) &#123;
+        edges[++edgeIndex].to &#x3D; to;
+        edges[edgeIndex].flow &#x3D; flow;
+        edges[edgeIndex].cost &#x3D; cost;
+        edges[edgeIndex].next &#x3D; head[from];
+        head[from] &#x3D; edgeIndex;
+    &#125;
 
-    bool <span class="token function">dijkstra</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-        priority_queue<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token class-name">MyPair</span></span><span class="token punctuation">></span></span><span class="token plain-text"> pq;
-        for (int i = 1; i &lt;= vertexCount; i++) dist[i] = INF;
+    void addFlow(int from, int to, int flow, int cost) &#123;
+        addEdge(from, to, flow, cost);
+        addEdge(to, from, 0, -cost);
+    &#125;
+
+    bool dijkstra() &#123;
+        priority_queue&lt;MyPair&gt; pq;
+        for (int i &#x3D; 1; i &lt;&#x3D; vertexCount; i++) dist[i] &#x3D; INF;
         memset(visited, 0, sizeof(visited));
-        dist[source] = 0;
+        dist[source] &#x3D; 0;
         pq.push(MyPair(0, source));
-        while (!pq.empty()) </span><span class="token punctuation">&#123;</span>
-            int u <span class="token operator">=</span> pq<span class="token punctuation">.</span><span class="token function">top</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>vertex<span class="token punctuation">;</span>
-            pq<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">continue</span><span class="token punctuation">;</span>
-            visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> head<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">;</span> i<span class="token punctuation">;</span> i <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                int v <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>to<span class="token punctuation">,</span>
-                    newCost <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>cost <span class="token operator">+</span> potential<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">-</span> potential<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">&amp;&amp;</span> dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">></span> dist<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> newCost<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                    dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> dist<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> newCost<span class="token punctuation">;</span>
-                    parent<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">.</span>vertex <span class="token operator">=</span> u<span class="token punctuation">;</span>
-                    parent<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">.</span>edge <span class="token operator">=</span> i<span class="token punctuation">;</span>
-                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> pq<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span><span class="token function">MyPair</span><span class="token punctuation">(</span>dist<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">,</span> v<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token punctuation">&#125;</span>
-            <span class="token punctuation">&#125;</span>
-        <span class="token punctuation">&#125;</span><span class="token plain-text">
-        return dist[sink] != INF;
+        while (!pq.empty()) &#123;
+            int u &#x3D; pq.top().vertex;
+            pq.pop();
+            if (visited[u]) continue;
+            visited[u] &#x3D; 1;
+            for (int i &#x3D; head[u]; i; i &#x3D; edges[i].next) &#123;
+                int v &#x3D; edges[i].to,
+                    newCost &#x3D; edges[i].cost + potential[u] - potential[v];
+                if (edges[i].flow &amp;&amp; dist[v] &gt; dist[u] + newCost) &#123;
+                    dist[v] &#x3D; dist[u] + newCost;
+                    parent[v].vertex &#x3D; u;
+                    parent[v].edge &#x3D; i;
+                    if (!visited[v]) pq.push(MyPair(dist[v], v));
+                &#125;
+            &#125;
+        &#125;
+        return dist[sink] !&#x3D; INF;
     &#125;
 
-    void spfa() </span><span class="token punctuation">&#123;</span>
-        queue<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>int</span><span class="token punctuation">></span></span><span class="token plain-text"> q;
+    void spfa() &#123;
+        queue&lt;int&gt; q;
         memset(potential, 63, sizeof(potential));
-        potential[source] = 0, visited[source] = 1;
+        potential[source] &#x3D; 0, visited[source] &#x3D; 1;
         q.push(source);
-        while (!q.empty()) </span><span class="token punctuation">&#123;</span>
-            int u <span class="token operator">=</span> q<span class="token punctuation">.</span><span class="token function">front</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            q<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            visited<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> head<span class="token punctuation">[</span>u<span class="token punctuation">]</span><span class="token punctuation">;</span> i<span class="token punctuation">;</span> i <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>next<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                int v <span class="token operator">=</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>to<span class="token punctuation">;</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">&amp;&amp;</span>
-                    potential<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">></span> potential<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>cost<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                    potential<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> potential<span class="token punctuation">[</span>u<span class="token punctuation">]</span> <span class="token operator">+</span> edges<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>cost<span class="token punctuation">;</span>
-                    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                        visited<span class="token punctuation">[</span>v<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
-                        q<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                    <span class="token punctuation">&#125;</span>
-                <span class="token punctuation">&#125;</span>
-            <span class="token punctuation">&#125;</span>
-        <span class="token punctuation">&#125;</span><span class="token plain-text">
+        while (!q.empty()) &#123;
+            int u &#x3D; q.front();
+            q.pop();
+            visited[u] &#x3D; 0;
+            for (int i &#x3D; head[u]; i; i &#x3D; edges[i].next) &#123;
+                int v &#x3D; edges[i].to;
+                if (edges[i].flow &amp;&amp;
+                    potential[v] &gt; potential[u] + edges[i].cost) &#123;
+                    potential[v] &#x3D; potential[u] + edges[i].cost;
+                    if (!visited[v]) &#123;
+                        visited[v] &#x3D; 1;
+                        q.push(v);
+                    &#125;
+                &#125;
+            &#125;
+        &#125;
     &#125;
 
-    void start(int s, int t, int n)</span><span class="token punctuation">&#123;</span>
-        vertexCount <span class="token operator">=</span> n<span class="token punctuation">;</span>
-        source <span class="token operator">=</span> s<span class="token punctuation">;</span>
-        sink <span class="token operator">=</span> t<span class="token punctuation">;</span>
-        <span class="token function">spfa</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token function">dijkstra</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-            int minFlow <span class="token operator">=</span> <span class="token constant">INF</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span> i <span class="token operator">&lt;=</span> vertexCount<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> potential<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">+=</span> dist<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> sink<span class="token punctuation">;</span> i <span class="token operator">!=</span> source<span class="token punctuation">;</span> i <span class="token operator">=</span> parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>vertex<span class="token punctuation">)</span>
-                minFlow <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>minFlow<span class="token punctuation">,</span> edges<span class="token punctuation">[</span>parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>edge<span class="token punctuation">]</span><span class="token punctuation">.</span>flow<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">for</span> <span class="token punctuation">(</span>int i <span class="token operator">=</span> sink<span class="token punctuation">;</span> i <span class="token operator">!=</span> source<span class="token punctuation">;</span> i <span class="token operator">=</span> parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>vertex<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
-                edges<span class="token punctuation">[</span>parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>edge<span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">-=</span> minFlow<span class="token punctuation">;</span>
-                edges<span class="token punctuation">[</span>parent<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span>edge <span class="token operator">^</span> <span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">.</span>flow <span class="token operator">+=</span> minFlow<span class="token punctuation">;</span>
-            <span class="token punctuation">&#125;</span>
-            maxFlow <span class="token operator">+=</span> minFlow<span class="token punctuation">;</span>
-            minCost <span class="token operator">+=</span> minFlow <span class="token operator">*</span> potential<span class="token punctuation">[</span>sink<span class="token punctuation">]</span><span class="token punctuation">;</span>
-        <span class="token punctuation">&#125;</span>
-    <span class="token punctuation">&#125;</span><span class="token plain-text">
-&#125;;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+    void start(int s, int t, int n)&#123;
+        vertexCount &#x3D; n;
+        source &#x3D; s;
+        sink &#x3D; t;
+        spfa();
+        while (dijkstra()) &#123;
+            int minFlow &#x3D; INF;
+            for (int i &#x3D; 1; i &lt;&#x3D; vertexCount; i++) potential[i] +&#x3D; dist[i];
+            for (int i &#x3D; sink; i !&#x3D; source; i &#x3D; parent[i].vertex)
+                minFlow &#x3D; min(minFlow, edges[parent[i].edge].flow);
+            for (int i &#x3D; sink; i !&#x3D; source; i &#x3D; parent[i].vertex) &#123;
+                edges[parent[i].edge].flow -&#x3D; minFlow;
+                edges[parent[i].edge ^ 1].flow +&#x3D; minFlow;
+            &#125;
+            maxFlow +&#x3D; minFlow;
+            minCost +&#x3D; minFlow * potential[sink];
+        &#125;
+    &#125;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
 
         </article>
         <section class="post-near">
