@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库管理系统——数据库储存引擎 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库管理系统——数据库储存引擎"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库管理系统——数据库储存引擎</h2>
+            <div class="post-meta">
+                <time class="date">2024.09.23</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>数据库管理系统——数据库储存引擎</h1>
+<h2 id="存储概览">存储概览</h2>
+<p>SQL引擎 —— 执行器 —— 存储引擎 —— 存储介质</p>
+<p>存储引擎：文件组织 页面组织 元数据 日志 索引 缓冲区 故障恢复 并发控制</p>
+<p><img src="/2024/09/23/learn-database-note4/1.png" alt="1.png"></p>
+<p>对于把数据放在磁盘中，直接写入会导致并发的效果很差。因此引入页面的概念。</p>
+<p>把文件分成很多个页面，把数据放在页面中，页面大小固定，通常是（4K, 8K, 16K）。每次插入时，找到有空闲空间的页面，涉及到了空闲空间管理。</p>
+<p>记录指的是一行表中的数据，如何查找记录，就涉及到<strong>记录组织</strong>。 <strong>索引</strong>在数据库系统中是用于提高查询操作的效率，使得对表中数据的查找、检索更加快速。</p>
+<p><strong>数据字典</strong>是数据库系统中的一个重要组件，用于存储和管理关于数据库结构和元数据的信息。它包含了数据库中所有表、索引、视图、存储过程、触发器、权限等对象的定义和描述。</p>
+<p>缓冲区管理了数据字典，数据页面，索引页面，日志以确保高效数据传输。一旦发生丢失，就需要通过日志进行回滚和重做。</p>
+<p>对于缓冲区的页面管理，当我用到一个页面不在缓冲区，我就去从磁盘读取，如果缓冲区空间不足，就把一些页面从缓存淘汰出去。</p>
+<p>对于写入到磁盘，通常是异步的写入，项数据字典，数据页面，索引页面等，会需要从内存写入到磁盘。</p>
+<p><img src="/2024/09/23/learn-database-note4/2.png" alt="2.png"></p>
+<p>堆表是数据库中一种没有聚簇索引的表，数据记录以无序的方式存储在物理磁盘上。堆表是一种最简单的表存储方式，每当有新的数据插入时，它直接将记录放在第一个可用的空闲位置，而不按照特定顺序排列数据。</p>
+<p>脏页指的是在内存中的页被更新，但是还没写到磁盘当中。脏页游一定的队列，异步地刷入磁盘。</p>
+<p><strong>Checkpoint</strong> 是数据库系统中的一种机制。记录了数据库在某个时间点上数据的一致性状态。这个时间点之前的所有更改已经从内存（缓冲区）同步到磁盘，并且这些更改不再依赖WAL日志来恢复数据。</p>
+<p><strong>WAL（Write-Ahead Logging，预写日志）</strong> 是一种数据库恢复机制，确保在将数据实际写入磁盘之前，先把对数据的修改写入日志文件中。WAL日志可以确保即使系统崩溃，数据库也能通过重放日志恢复到一致的状态。</p>
+<h2 id="数据组织">数据组织</h2>
+<p><img src="/2024/09/23/learn-database-note4/3.png" alt="3.png"></p>
+<p>当插入一个记录，会去申请数据的内存，但是一次申请一个页面的效率太低，因此一次性申请1段 = 256 区，其中 1 区 = 128 页。同时，还可以确保这些页面或者说区是连续的，确保读写效率。</p>
+<p>记录不仅有数据量，还有数据属性。要把数据属性，数据量，放入页面中，对于页面，甚至还分槽，一个槽来负责一个记录。</p>
+<h2 id="页面组织">页面组织</h2>
+<p>元组管理和追加日志管理（元组管理写改速度均衡，追加日志管理写快改慢）</p>
+<p><img src="/2024/09/23/learn-database-note4/4.png" alt="4.png"></p>
+<p>页面头：</p>
+<ul>
+<li>记录数量：record的个数</li>
+<li>checksum：校验和，用于判断页面的内容是否正确，防止读写错误</li>
+<li>上下页指针：上一页的指针和下一页的指针</li>
+</ul>
+<p>对于表中的空值NULL，为了避免占用空间，可以选择使用空值向量，可以确定记录中每个位置是否是空值。</p>
+<h3 id="定长记录">定长记录</h3>
+<p>长度固定，页面中记录数目固定，易于定位。</p>
+<p><strong>记录组织：</strong></p>
+<ul>
+<li>记录头：事务信息、NULL值bitmap</li>
+<li>每个属性值</li>
+</ul>
+<p><strong>页面组织：</strong></p>
+<p>页面头：</p>
+<ul>
+<li>记录数量</li>
+<li>Checksum：防止读写错误</li>
+<li>上下页面指针（PageID）</li>
+<li>页面在文件的offset（由于定长，所以知道对应的offset或者第几页就可以快速定位）</li>
+<li>页面类型：索引、数据</li>
+<li>空闲空间（Bitmap）</li>
+</ul>
+<p>记录内容</p>
+<p>对于空闲空间管理，使用页面头中的空闲空间Bitmap，记录了每个槽位的空闲情况，如果一条记录被删除，就记录这个位置为空闲。因此有以下操作</p>
+<ul>
+<li>Insert插入：找到第一个空槽</li>
+<li>Delete删除：清楚槽标志位</li>
+<li>Bitmap数目根据页面大小和记录长度计算</li>
+</ul>
+<h3 id="变长记录">变长记录</h3>
+<p>记录中的变长属性通过偏移量和长度定位</p>
+<p>对于页面内如何保存记录，由于记录是变长的，所以我们不妨用槽位的概念，把记录定义为一个槽位，槽位有两个值的属性：偏移和长度（起始地点和槽位大小）。槽位属性值是固定大小的，因此它可以像定长一样储存在页面中，然而槽位本身是变长的，两者要互不干扰，我们就让槽位属性放在前面，槽位放在页面后面。</p>
+<p>同时对于空闲空间，我们不能再用bitmap来表示，因为能塞多少条我们是不知道的。</p>
+<p>但对于前塞属性后塞内容，中间的那一块是空闲的，我们称作剩余空间。剩余空间的起点是容易得到的（属性值的最后），终点就需要在页面头当中记录了。</p>
+<p>变长记录组织</p>
+<ul>
+<li>记录头：事务信息、NULL值bitmap</li>
+<li>属性槽位：起始位置和长度</li>
+</ul>
+<p>页面内记录组织</p>
+<ul>
+<li>页面头：页类型、状态</li>
+<li>槽位：记录起始地址、长度（索引会指向槽位）</li>
+<li>两头挤：页面、槽位等页面内从前往后；记录从后往前</li>
+</ul>
+<p>对于插入，就直接在空余空间中塞入即可。但是对于删除，有两个阶段。当删除时，删除对应的记录属性即可，在删除了一定的量之后，页面会重新排布空间，把剩余空间再次腾空在中间位置。</p>
+<h3 id="页面组织思考">页面组织思考</h3>
+<p>如何处理记录长度大于页面大小？</p>
+<ul>
+<li>记录跨页链接</li>
+<li>专门存储方式</li>
+</ul>
+<p>如何处理一条记录有很多NULL值？</p>
+<ul>
+<li>利用bitmap对NULL值进行压缩</li>
+</ul>
+<h2 id="文件组织">文件组织</h2>
+<h3 id="1-堆表">1. <strong>堆表</strong></h3>
+<ul>
+<li><strong>定义</strong>：堆表是一种无序的数据存储方式，数据以随机的方式插入到页面中。每个数据页面中的记录按照插入的顺序存储，没有特定的顺序。</li>
+</ul>
+<p><strong>堆表的多级空闲空间数组</strong></p>
+<p>快速找到空闲空间的位置， 从高到低扫描各级空闲空间数组（也可以用大根堆替代空闲空间数组，维护各页面空闲空间比例）</p>
+<ul>
+<li>
+<p>特点：</p>
+<p>插入效率高，查找效率低，删除复杂</p>
+</li>
+</ul>
+<h3 id="2-顺序表">2. <strong>顺序表</strong></h3>
+<ul>
+<li>
+<p><strong>定义</strong>：顺序表是一种有序的数据存储方式，数据按照某一列（通常是主键或索引列）进行排序。</p>
+</li>
+<li>
+<p><strong>特点</strong>：</p>
+<p>查找效率高，插入和删除复杂</p>
+</li>
+</ul>
+<h3 id="3-哈希表">3. <strong>哈希表</strong></h3>
+<ul>
+<li>
+<p><strong>定义</strong>：哈希表通过哈希函数将键值映射到固定大小的数组中，以实现快速访问。</p>
+</li>
+<li>
+<p><strong>特点</strong>：</p>
+<p>查找效率高，插入和删除效率高</p>
+<p>限制：哈希表适用于点查找，但对于范围查询不太合适，因为数据不是有序的。</p>
+</li>
+</ul>
+<h3 id="4-B-树">4. <strong>B+树</strong></h3>
+<ul>
+<li>
+<p><strong>定义</strong>：B+树是一种自平衡的树数据结构，用于实现动态集合的高效存储和查找。B+树的所有值都存储在叶子节点中，内节点仅存储索引信息。</p>
+</li>
+<li>
+<p><strong>特点</strong>：</p>
+<p>高效的查找、插入和删除，支持范围查询，适合磁盘存储</p>
+</li>
+</ul>
+<h3 id="空闲空间管理">空闲空间管理</h3>
+<ul>
+<li>插入一条长为x的记录，应该插入到哪个页面？</li>
+<li>堆表需要找到合适的页面（空闲空间大于x的页面）</li>
+<li>记录每个页面空间空间大小</li>
+<li>利用倒排列表</li>
+</ul>
+<p>示例说明：</p>
+<p>有页面有足够空闲大小</p>
+<p><img src="/2024/09/23/learn-database-note4/5.png" alt="5.png"></p>
+<p>（如果无空闲记录，就需要创建申请新的区）</p>
+<p>查询记录（有索引）</p>
+<p><img src="/2024/09/23/learn-database-note4/6.png" alt="6.png"></p>
+<p>（无索引就遍历每个页面）</p>
+<h3 id="删除和更新记录">删除和更新记录</h3>
+<p>删除一条记录：首先查找到该条记录，然后删除</p>
+<ul>
+<li>定长：bitmap置为0</li>
+<li>变长：槽位清零</li>
+</ul>
+<p>更新一条记录：首先查找到该条记录，然后更新</p>
+<ul>
+<li>定长：直接可以原位更新</li>
+<li>变长： 如果新纪录不长于老记录，原位更新，更新槽位 如果新纪录长于老记录，槽位清零，插入新纪录 （若本页面可以容纳，则插入本页面，若本页面不可以容纳，则插入其他页面）</li>
+</ul>
+<h2 id="元数据存储">元数据存储</h2>
+<p>关系表本身的属性</p>
+<ul>
+<li>表名，即关系表名称</li>
+<li>列名，即关系表的属性名</li>
+<li>属性的域和长度</li>
+<li>视图的名称和定义</li>
+<li>完整性约束，例如外键约束</li>
+<li>关系表的属性的统计信息，可用于辅助查询优化</li>
+<li>索引信息</li>
+</ul>
+<p>实际上就是多个表，和关系表一样储存即可。</p>
+<h2 id="缓冲区">缓冲区</h2>
+<p><img src="/2024/09/23/learn-database-note4/7.png" alt="7.png"></p>
+<ol>
+<li>更新缓冲区页面</li>
+<li>更新缓冲区索引</li>
+<li>更新缓冲区日志</li>
+<li>更新磁盘日志</li>
+<li>返回提交成功</li>
+<li>异步刷新数据和索引页面</li>
+</ol>
+<p>当程序请求访问磁盘页面时</p>
+<ul>
+<li>如果该页面已经在缓冲区中，则返回缓冲区中的页面数据</li>
+<li>如果该页面不在缓冲区中，则从磁盘上读取该页面：</li>
+</ul>
+<p>如果缓冲区未满，则将数据写入缓冲区</p>
+<p>如果缓冲区已满，则根据缓冲区页面替换策略挑选其他页面剔除或写回到磁盘上，再读入新页面</p>
+<p>（日志页面也是同理的）</p>
+<h3 id="缓冲区页面固定和锁">缓冲区页面固定和锁</h3>
+<p>当一个进程正在读取或写入某个页面时，该页面不应该被剔除，否则会读取或写入错误的数据</p>
+<ul>
+<li>因此需要将使用中的页面暂时固定住（pin）</li>
+<li>共享锁（shared locks）：使多个进程可同时读取页面</li>
+<li>和排他锁（exclusive locks）：保证一个进程在修改页面时其他进程不可访问页面</li>
+</ul>
+<h3 id="缓冲区页面替换策略">缓冲区页面替换策略</h3>
+<ul>
+<li>最近最少使用策略LRU：前1次使用时间越晚（越近期）的页面将来越有机会被使用，越不应该 被替换</li>
+<li>最不经常使用策略LFU：使用频率越高的页面将来越有机会被使用，越不应该被替换</li>
+<li>LRU-K策略：前第K次访问的时间越晚的页面将来越有机会被使用，越不应该被替换</li>
+</ul>
+<h2 id="行存储和列存储">行存储和列存储</h2>
+<h3 id="行存储">行存储</h3>
+<p>适合数据增删改</p>
+<p>优点：</p>
+<ul>
+<li>数据被保存在一起</li>
+<li>插入和更新速度快</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>选择操作时即使只涉及某几列，所有数据也都会被读取</li>
+</ul>
+<p>使用场景：</p>
+<ul>
+<li>点查询（返回记录少，基于索引的简单查询）</li>
+<li>增、删、改操作较多的场景</li>
+</ul>
+<h3 id="列存储">列存储</h3>
+<p>提高数据分析查询的速度；提升数据压缩率</p>
+<p>优点：</p>
+<ul>
+<li>查询操作时只有涉及的列会被读取</li>
+<li>投影操作很高效</li>
+<li>易于压缩</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>选择操作完成时，被选择的列要重新组装</li>
+<li>插入和更新速度慢</li>
+</ul>
+<p>使用场景：</p>
+<ul>
+<li>统计分析类查询（关联、分组操作较多的场景）</li>
+<li>即席查询（用户灵活自定义条件，查询条件不确定，行存表扫描难以使用索引）</li>
+</ul>
+<h3 id="行列转换">行列转换</h3>
+<p><img src="/2024/09/23/learn-database-note4/8.png" alt="8.png"></p>
+<p>先按照行插入删除更新，等到固定下来后，对行数据组进行分组压缩，转换成列储存进行保存插入。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/09/21/learn-database-note3/">数据库系统概论（绪论）</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/09/23/learn-database-note4/">数据库管理系统——数据库储存引擎</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/21/learn-database-note3/">数据库系统概论（绪论）</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/10/learn-algorithm-note20/">算法学习笔记20——网络流费用流</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/03/learn-algorithm-note19/">算法学习笔记19——Manacher算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/08/07/learn-algorithm-note18/">算法学习笔记18——网络流最小割</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/08/04/learn-algorithm-note17/">算法学习笔记17——tarjan算法</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
