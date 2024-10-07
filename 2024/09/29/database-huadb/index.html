@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库内核实验报告一 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库内核实验报告一"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库内核实验报告一</h2>
+            <div class="post-meta">
+                <time class="date">2024.09.29</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>基础实现思路和难度总结</h1>
+<p>使用VM虚拟机搭建ubuntu 的linux系统环境，安装cmake，git，g++等等关键依赖。</p>
+<h2 id="数据类认识">数据类认识</h2>
+<p>对于table来说，有TablePage，TableScan，Table，Record，RecordHeader</p>
+<ul>
+<li>TablePage：是对数据底层进行操作的中间者，在读入Page数据后，对数据的位置进行解析，作为底层数据的管理者，可以操作和读取或修改指定的例如lower upper指针，下一页指针等数据。进行的修改会直接改到数据页上。</li>
+<li>Table：TablePage的上层，类似于用于提供给用户，更加简练的功能函数。</li>
+<li>Record：记录，也就是插入的数据条，由记录头和记录数据本身组成，也是对底面数据的管理者。</li>
+<li>RecordHeader：精化版Record，只读取头文件部分，有的时候只要头文件数据。</li>
+<li>BufferPool：管理内存池，用于申请页内存和清理内存等等。</li>
+<li>Page：页类，存储页的数据，存储页的状态（是否是脏页），可以交给TablePage在Page上进行修改。</li>
+</ul>
+<h2 id="记录插入查找lab-10">记录插入查找lab/10</h2>
+<h2 id="table-table-cpp">table/table.cpp</h2>
+<h3 id="插入记录功能InsertRecord">插入记录功能InsertRecord</h3>
+<p>原理理解：</p>
+<p>插入记录功能实际上就是往页当中放入数据，如果页有剩余空间，就把记录插入这个页，如果没有剩余空间，就去看下一个页是否有，如果都没有，就去向内存池需求一个页面。</p>
+<p>函数实现：</p>
+<p>可以通过参数和类里面的成员变量从BufferPool中读取到第一个页面。</p>
+<p>由于页面Page是单纯的底层数据，因此利用TablePage，可以获取到下一个Page的指针，TablePage也允许支持了获取剩余空间大小，对于参数Record，也可以获取大小，就可以判断是否有足够的空间。</p>
+<p>先对起始页面进行判断是否有足够空间或者是否没有页。</p>
+<p>类链表地遍历所有页面，如果有空间，则插入。</p>
+<p>如果没有空间，创建新页面，同时要设置指针更新。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">Rid <span class="token class-name">Table</span><span class="token double-colon punctuation">::</span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> record<span class="token punctuation">,</span> xid_t xid<span class="token punctuation">,</span> cid_t cid<span class="token punctuation">,</span> <span class="token keyword">bool</span> write_log<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> MAX_RECORD_SIZE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"Record size too large: "</span> <span class="token operator">+</span> std<span class="token double-colon punctuation">::</span><span class="token function">to_string</span><span class="token punctuation">(</span>record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token comment">// LAB 1 DONE</span>
+  pageid_t curPageID <span class="token operator">=</span> first_page_id_<span class="token punctuation">;</span>
+  <span class="token keyword">bool</span> hasInserted <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>TablePage<span class="token operator">></span> curPageHandle<span class="token punctuation">;</span>
+
+  slotid_t resSlotID <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  pageid_t resPageID <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>first_page_id_ <span class="token operator">==</span> NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> newPgae <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">NewPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    first_page_id_ <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    curPageHandle <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>TablePage<span class="token operator">></span></span></span><span class="token punctuation">(</span>newPgae<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    hasInserted <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+
+    resSlotID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>record<span class="token punctuation">,</span> xid<span class="token punctuation">,</span> cid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    resPageID <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token operator">not</span> hasInserted<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> curPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>TablePage<span class="token operator">></span></span></span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>curPageHandle<span class="token operator">-></span><span class="token function">GetFreeSpaceSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      hasInserted <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+      resSlotID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>record<span class="token punctuation">,</span> xid<span class="token punctuation">,</span> cid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      resPageID <span class="token operator">=</span> curPageID<span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>curPageHandle<span class="token operator">-></span><span class="token function">GetNextPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      curPageID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">GetNextPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> hasInserted<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    pageid_t newPageID <span class="token operator">=</span> curPageID <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>newPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> newPage <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">NewPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> newPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    curPageHandle <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>TablePage<span class="token operator">></span></span></span><span class="token punctuation">(</span>newPage<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    hasInserted <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    resSlotID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>record<span class="token punctuation">,</span> xid<span class="token punctuation">,</span> cid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    resPageID <span class="token operator">=</span> newPageID<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">return</span> <span class="token punctuation">&#123;</span>resPageID<span class="token punctuation">,</span> resSlotID<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="table-table-page-cpp">table/table_page.cpp</h2>
+<h3 id="底层插入记录功能InsertRecord">底层插入记录功能InsertRecord</h3>
+<p>原理理解：</p>
+<p>先要了解记录在底层数据上是如何管理的，本架构建立于变长记录的存储，因此，每个数据分成两份，一份是记录位置的，一份是记录数据本身。</p>
+<p>记录位置由于是固定长度，所以存储在开头位置，数据本身由于是变长数据，因此放在尾巴，记录位置的数据要记录尾巴里数据的位置。这也被称作为一个槽。完成对页面数据的修改后，不能忘记将页变为脏页。</p>
+<p>函数实现：</p>
+<p>我们已经知道有lower指针和upper指针了，根据原理，lower指针应当存放槽的数据位置信息，在本架构中有Slot类，有两个数据，offset以及size。</p>
+<p>根据数据大小，先更新upper和lower指针，upper加上一个Slot的大小，lower减去一个Record大小长度。</p>
+<p>对于数据，使用架构中有的反序列化函数写入Upper指针，再将当前的数据位置和大小信息存入Slot，丢入Slot数组（写入）。</p>
+<p>通过Page类标记Page为脏页。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">slotid_t <span class="token class-name">TablePage</span><span class="token double-colon punctuation">::</span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> record<span class="token punctuation">,</span> xid_t xid<span class="token punctuation">,</span> cid_t cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// LAB 1 DONE</span>
+  db_size_t recordSize <span class="token operator">=</span> record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  slotid_t slot_id <span class="token operator">=</span> <span class="token function">GetRecordCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token operator">*</span>upper_ <span class="token operator">-=</span> recordSize<span class="token punctuation">;</span>
+  <span class="token operator">*</span>lower_ <span class="token operator">+=</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>Slot<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_ <span class="token operator">=</span> <span class="token operator">*</span>upper_<span class="token punctuation">;</span>
+  slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>size_ <span class="token operator">=</span> recordSize<span class="token punctuation">;</span>
+
+  record<span class="token operator">-></span><span class="token function">SerializeTo</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  page_<span class="token operator">-></span><span class="token function">SetDirty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">return</span> slot_id<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="获取数据记录功能GetRecord">获取数据记录功能GetRecord</h3>
+<p>原理理解：</p>
+<p>通过slot_id找到指定数据位置，从对应的数据位置读取Record即可。</p>
+<p>函数实现：</p>
+<p>从slot数组也就是Page的前面获取offet，创建一个Record共享指针，通过offset读取对应数据。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">TablePage</span><span class="token double-colon punctuation">::</span><span class="token function">GetRecord</span><span class="token punctuation">(</span>Rid rid<span class="token punctuation">,</span> <span class="token keyword">const</span> ColumnList <span class="token operator">&amp;</span>column_list<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// LAB 1 DONE</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> result <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>Record<span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  result<span class="token operator">-></span><span class="token function">SetRid</span><span class="token punctuation">(</span>rid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  db_size_t offset <span class="token operator">=</span> slots_<span class="token punctuation">[</span>rid<span class="token punctuation">.</span>slot_id_<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_<span class="token punctuation">;</span>
+  result<span class="token operator">-></span><span class="token function">DeserializeFrom</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> offset<span class="token punctuation">,</span> column_list<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="table-table-scan-cpp">table/table_scan.cpp</h2>
+<p>原理理解：</p>
+<p>对表内的所有数据进行读取，这是一个类似于迭代器一样的函数，使用一次就会返回一个数据并且更新自己的状态，用于迭代表内的所有记录，迭代完成之后就会返回空指针。所以实际上，也就是从数据表中获取所有页，对页面进行迭代，再对页面的所有记录进行迭代并返回即可。</p>
+<p>函数实现：</p>
+<p>先获取锁在的Page，使用TablePage读取数据，进行迭代，获取槽的数量，遍历每个页面的每个槽。需要注意的是，如果读取到被删除的数据则需要跳过当前读取下一个。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">TableScan</span><span class="token double-colon punctuation">::</span><span class="token function">GetNextRecord</span><span class="token punctuation">(</span>xid_t xid<span class="token punctuation">,</span> IsolationLevel isolation_level<span class="token punctuation">,</span> cid_t cid<span class="token punctuation">,</span>
+                                                 <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>unordered_set<span class="token operator">&lt;</span>xid_t<span class="token operator">></span> <span class="token operator">&amp;</span>active_xids<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>rid_<span class="token punctuation">.</span>page_id_ <span class="token operator">==</span> NULL_PAGE_ID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  oid_t dbOid <span class="token operator">=</span> table_<span class="token operator">-></span><span class="token function">GetDbOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  oid_t oid <span class="token operator">=</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> curPage <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>dbOid<span class="token punctuation">,</span> oid<span class="token punctuation">,</span> rid_<span class="token punctuation">.</span>page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>curPage <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>curPage<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  db_size_t recordCnt <span class="token operator">=</span> pageHandle<span class="token punctuation">.</span><span class="token function">GetRecordCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>rid_<span class="token punctuation">.</span>slot_id_ <span class="token operator">>=</span> recordCnt<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      rid_<span class="token punctuation">.</span>page_id_ <span class="token operator">=</span> pageHandle<span class="token punctuation">.</span><span class="token function">GetNextPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      rid_<span class="token punctuation">.</span>slot_id_ <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>rid_<span class="token punctuation">.</span>page_id_ <span class="token operator">==</span> NULL_PAGE_ID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      curPage <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>dbOid<span class="token punctuation">,</span> oid<span class="token punctuation">,</span> rid_<span class="token punctuation">.</span>page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>curPage <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      pageHandle <span class="token operator">=</span> <span class="token function">TablePage</span><span class="token punctuation">(</span>curPage<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      recordCnt <span class="token operator">=</span> pageHandle<span class="token punctuation">.</span><span class="token function">GetRecordCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> result <span class="token operator">=</span> pageHandle<span class="token punctuation">.</span><span class="token function">GetRecord</span><span class="token punctuation">(</span>rid_<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetColumnList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>result<span class="token operator">-></span><span class="token function">IsDeleted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      rid_<span class="token punctuation">.</span>slot_id_<span class="token operator">++</span><span class="token punctuation">;</span>
+      <span class="token keyword">continue</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    rid_<span class="token punctuation">.</span>slot_id_<span class="token operator">++</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此完成lab/10的所有实验测试 PASS</p>
+<h2 id="数据删除">数据删除</h2>
+<h2 id="table-table-cpp-2">table/table.cpp</h2>
+<h3 id="记录删除功能DeleteRecord">记录删除功能DeleteRecord</h3>
+<p>原理理解：</p>
+<p>作为删除记录的上层操作，只要根据接口做事即可，也就是先获得Page位置，再根据槽id删除对应数据。</p>
+<p>函数实现：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">Table</span><span class="token double-colon punctuation">::</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span><span class="token keyword">const</span> Rid <span class="token operator">&amp;</span>rid<span class="token punctuation">,</span> xid_t xid<span class="token punctuation">,</span> <span class="token keyword">bool</span> write_log<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> rid<span class="token punctuation">.</span>page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span>rid<span class="token punctuation">.</span>slot_id_<span class="token punctuation">,</span> xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="table-table-page-cpp-2">table/table_page.cpp</h2>
+<h3 id="底层记录删除功能DeleteRecord">底层记录删除功能DeleteRecord</h3>
+<p>原理理解：</p>
+<p>从数据的底层角度来考虑，对于数据来说，如果一个数据被删除，并不需要清除他的空间，只需要做一个标记，等待他被其他数据覆写即可。因此实际的删除操作只要去做一个标记就可以了</p>
+<p>函数实现：</p>
+<p>这个标记处于记录的头数据中，因此使用Header读取，只修改Header中的是否删除标记即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">TablePage</span><span class="token double-colon punctuation">::</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span>slotid_t slot_id<span class="token punctuation">,</span> xid_t xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// LAB 1 DONE</span>
+  Record header<span class="token punctuation">;</span>
+  header<span class="token punctuation">.</span><span class="token function">DeserializeHeaderFrom</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  header<span class="token punctuation">.</span><span class="token function">SetDeleted</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  header<span class="token punctuation">.</span><span class="token function">SerializeHeaderTo</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  page_<span class="token operator">-></span><span class="token function">SetDirty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此完成lab/20和lab/30，删除和更新，由于本架构的更新是删除加插入，因此也同步完成。</p>
+<h2 id="LRU缓存替换策略">LRU缓存替换策略</h2>
+<p>原理理解：</p>
+<p>缓存替换发生在缓存的页面过多，当我读取一个没有缓存的页面，就有页面需要被释放掉，根据启发式的贪心，我们可以认为，此时应该释放最少使用的，根据LRU策略，我们使用一个队列来具体化操作行为，如果使用了一个点，这个点如果不在队列中，就把他塞入头部，如果在队列中，那就把它从队列中移动到头部。如果需要释放最不常用的Page，那么恭喜，就在队列的尾巴处。</p>
+<p>函数实现：</p>
+<p>由以上原理我们可以发现，需要我们对中间的元素进行删除和插入到开头，同时还要对尾巴使用删除。因此我们认为，双向链表可以很好的做到这个事情。同时，我们要记录元素对应的指针位置，不然很难判断这个元素是否在队列内，并且删除的时候需要知道他的位置。我们使用一个哈希表来完成这个任务。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">LRUBufferStrategy</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">BufferStrategy</span></span> <span class="token punctuation">&#123;</span>
+ <span class="token keyword">public</span><span class="token operator">:</span>
+	<span class="token keyword">void</span> <span class="token class-name">LRUBufferStrategy</span><span class="token double-colon punctuation">::</span><span class="token function">Access</span><span class="token punctuation">(</span>size_t frame_no<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	  <span class="token comment">// 缓存页面访问</span>
+	  <span class="token comment">// LAB 1 DONE</span>
+	  <span class="token keyword">auto</span> it <span class="token operator">=</span> cache_map_<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>frame_no<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	  <span class="token keyword">if</span><span class="token punctuation">(</span>it <span class="token operator">==</span> cache_map_<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+	    cache_items_<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>cache_items_<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> frame_no<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	    cache_map_<span class="token punctuation">[</span>frame_no<span class="token punctuation">]</span> <span class="token operator">=</span> cache_items_<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+	    cache_items_<span class="token punctuation">.</span><span class="token function">splice</span><span class="token punctuation">(</span>cache_items_<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cache_items_<span class="token punctuation">,</span> it<span class="token operator">-></span>second<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	  <span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+	size_t <span class="token class-name">LRUBufferStrategy</span><span class="token double-colon punctuation">::</span><span class="token function">Evict</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	  <span class="token comment">// 缓存页面淘汰，返回淘汰的页面在 buffer pool 中的下标</span>
+	  <span class="token comment">// LAB 1 DONE</span>
+	  size_t res <span class="token operator">=</span> cache_items_<span class="token punctuation">.</span><span class="token function">back</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	  cache_items_<span class="token punctuation">.</span><span class="token function">pop_back</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+	  <span class="token keyword">return</span> res<span class="token punctuation">;</span>
+	<span class="token punctuation">&#125;</span>
+ <span class="token keyword">private</span><span class="token operator">:</span>
+  std<span class="token double-colon punctuation">::</span>list<span class="token operator">&lt;</span>size_t<span class="token operator">></span> cache_items_<span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>unordered_map<span class="token operator">&lt;</span>size_t<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>list<span class="token operator">&lt;</span>size_t<span class="token operator">></span><span class="token double-colon punctuation">::</span>iterator<span class="token operator">></span> cache_map_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此完成lab/50测试</p>
+<h2 id="难度和坑的总结">难度和坑的总结</h2>
+<p>总体实验需要先对框架的类和函数有一定的了解和分析。</p>
+<p>在这个角度上，踩了一个坑，没有提前发现TablePage的Iinit初始化函数，在从bufferpool获取到内存后，没有用TablePage进行初始化，导致后面读取了未知数据，在查找实验中频繁出错，折腾了好久才发现。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li>
+                
+                
+                    <li>下一篇: <a href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" rel="tag">数据库实验</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/29/database-huadb/">数据库内核实验报告一</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/23/learn-database-note4/">数据库管理系统——数据库储存引擎</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/21/learn-database-note3/">数据库系统概论（绪论）</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/10/learn-algorithm-note20/">算法学习笔记20——网络流费用流</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.67px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/requests/" style="font-size: 11.67px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.67px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 15px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.67px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 16.67px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 10px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.67px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 13.33px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.33px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  </body>
+</html>
