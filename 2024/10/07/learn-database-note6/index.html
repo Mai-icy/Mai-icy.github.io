@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库管理系统——故障恢复1 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库管理系统——故障恢复1"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库管理系统——故障恢复1</h2>
+            <div class="post-meta">
+                <time class="date">2024.10.07</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>保证事务的原子性和持久性需求：</p>
+<p>原子性：</p>
+<ul>
+<li>事务运行期间不刷盘，系统故障重启后保证原子性。</li>
+<li>事务运行期间刷盘，系统故障重启后需回滚该事务。</li>
+</ul>
+<p>持久性：</p>
+<ul>
+<li>事务完成时刷盘，故障系统重启后自动保证持久性。</li>
+<li>事务完成时不刷盘，故障系统重启后需要重做该事务。</li>
+</ul>
+<h3 id="数据库故障类别">数据库故障类别</h3>
+<p>事务故障：资源冲突和死锁等导致执行失败</p>
+<p>系统崩溃：数据库或操作系统故障导致进程意外终止</p>
+<p>磁盘故障：磁盘损坏导致读取异常</p>
+<p>自然灾害：自然灾害对数据库物理环境造成破坏</p>
+<h1>数据库恢复机制架构</h1>
+<p>场景的解释和应对策略：</p>
+<ul>
+<li>无故障事务回滚：原子性，撤销该事务已做操作</li>
+<li>故障回滚：原子性，撤销该事务已做操作</li>
+<li>系统故障：原子性 持久性，已经提交的事务通过日志恢复到持久存储，未结束的事务被撤销</li>
+<li>系统崩溃不能重启：持久性，一主多备</li>
+<li>磁盘故障：持久性，数据多备份</li>
+<li>自然灾害：持久性，异地多机容灾</li>
+</ul>
+<h3 id="存储机制应对策略">存储机制应对策略</h3>
+<p>单机：</p>
+<ul>
+<li>单个机器单个存储</li>
+<li>单机数据库恢复解决：故障回滚，无故障事务回滚，系统故障</li>
+</ul>
+<p>单机多数据备份：</p>
+<ul>
+<li>但机器，多磁盘同步（避免短板，使用一致性协议：大部分完成即可）</li>
+<li>解决：磁盘故障</li>
+</ul>
+<p>一主多备：</p>
+<ul>
+<li>一主机多备机，内存中的日志相互同步（日志一致保证内容一致）</li>
+<li>解决：系统崩溃不能重启</li>
+</ul>
+<p>异地容灾：</p>
+<ul>
+<li>多地区不同机器，日志同步传输。</li>
+<li>解决：自然灾害</li>
+</ul>
+<h2 id="对恢复快慢的评估（高可用指标）">对恢复快慢的评估（高可用指标）</h2>
+<h3 id="通用高可用指标：">通用高可用指标：</h3>
+<ol>
+<li>平均故障间隔时间 (MTBF, Mean Time Between Failures)
+<ul>
+<li>系统在相邻两次故障之间正常运行的平均时间。</li>
+</ul>
+</li>
+<li>平均恢复时间 (MTTR, Mean Time to Repair)
+<ul>
+<li>系统发生故障后，恢复到正常运行状态所需的平均时间。</li>
+</ul>
+</li>
+<li>平均损坏时间 (MTTF, Mean Time to Failure)
+<ul>
+<li>系统出现损坏或永久性失效的平均时间。</li>
+</ul>
+</li>
+</ol>
+<h3 id="数据库容灾指标：">数据库容灾指标：</h3>
+<ol>
+<li>恢复点目标 (RPO, Recovery Point Objective)
+<ul>
+<li>系统发生故障后，能够容忍的数据丢失量，即可以恢复的最远时间点。</li>
+</ul>
+</li>
+<li>恢复时间目标 (RTO, Recovery Time Objective)
+<ul>
+<li>系统发生故障后，能够容忍的最长恢复时间，即业务中断时间。</li>
+</ul>
+</li>
+<li>n个9（例如“几个九”可用性）
+<ul>
+<li>系统的可用性用n个9表示。
+<ul>
+<li>99%：一年最多不可用时间为 365 * 24 * 60 * 0.01 = 5256分钟，即87.6小时。</li>
+<li>99.9%：一年最多不可用时间为 365 * 24 * 60 * 0.1% = 525.6分钟，即8.76小时。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="崩溃恢复策略设计">崩溃恢复策略设计</h2>
+<p>简略说明一下崩溃恢复的情况和处理：</p>
+<p>在系统崩溃时，事务的状态有三种：已经提交commit，abort事务，未完成的事务。</p>
+<ul>
+<li>已提交commit：已刷脏：正确，未刷脏：重做</li>
+<li>中止abort事务：已刷脏：正确，未刷脏：重做</li>
+<li>未完成事务：已刷脏：回滚，未刷脏：正确</li>
+</ul>
+<h3 id="原子性保证：">原子性保证：</h3>
+<p>NO-STEAL（非窃取）：</p>
+<ul>
+<li>未结束事务不能将脏页写入磁盘，没有原子性问题。</li>
+<li>事务执行过程中不能刷新磁盘，必须占有较大的缓冲区空间，不利于多个事务的并发执行</li>
+</ul>
+<p>STEAL（窃取）：</p>
+<ul>
+<li>未结束事务能将脏页写入磁盘，影响原子性，需要回滚。</li>
+<li>利用Undo日志撤销事务，Undo日志记录撤销事务所需的内容</li>
+</ul>
+<h3 id="持久性保证：">持久性保证：</h3>
+<p>Force（强制）：</p>
+<ul>
+<li>已完成事务强制将脏页写入磁盘，不存在持久性问题。</li>
+<li>每次事务提交都必须刷新脏页，消耗大量IO读写资源</li>
+</ul>
+<p>No-Force（非强制）：</p>
+<ul>
+<li>已完成事务不强制将脏页写入磁盘，影响持久性，需要重做。</li>
+<li>利用Redo日志重做事务，Redo日志记录事务对数据库的所有影响</li>
+</ul>
+<p>每种各两个选择，一共有四种选择，决定了是否有undo和redo日志</p>
+<h3 id="数据页面写回磁盘时机：">数据页面写回磁盘时机：</h3>
+<ul>
+<li>数据库关闭时，缓冲区中的所有脏页需要写回磁盘</li>
+<li>缓冲区中的数据页面已经满了，如果需要继续读入数据页面，就必须将被替换的脏页写回磁盘</li>
+<li>数据库会设置一个单独线程定时刷脏：全量、增量</li>
+</ul>
+<h1>数据库日志</h1>
+<p>日志记录是数据库活动的最小单位，每条记录反映一次操作，包含数据更新和事务的开始/结束信息。日志一旦写入磁盘便不会被修改，保证了高效的顺序写入，这为高可用恢复机制提供了基础</p>
+<h2 id="日志分类">日志分类</h2>
+<p>按照功能：</p>
+<ul>
+<li>undo回滚日志</li>
+<li>redo重做日志</li>
+</ul>
+<p>按照性质：</p>
+<ul>
+<li>物理日志</li>
+<li>逻辑日志</li>
+<li>物理逻辑日志</li>
+</ul>
+<h2 id="Undo回滚日志">Undo回滚日志</h2>
+<p>格式：&lt;T, X, Vold&gt;</p>
+<ul>
+<li>T：事务唯一标识符</li>
+<li>X：数据项</li>
+<li>Vold：数据项修改以前的值</li>
+</ul>
+<p>当事务T修改数据项Wt(X)后产生</p>
+<h2 id="Redo重做日志">Redo重做日志</h2>
+<p>格式：&lt;T, X, Vnew&gt;</p>
+<ul>
+<li>T：事务唯一标识符</li>
+<li>X：数据项</li>
+<li>Vnew：数据项修改以前的值</li>
+</ul>
+<p>当事务T修改数据项Wt(X)后产生</p>
+<h2 id="预写日志WAL">预写日志WAL</h2>
+<ul>
+<li>日志必须比数据更早的写入磁盘</li>
+<li>日志写回磁盘的顺序必须和日志生成的时间相一致</li>
+<li>对于事务原子性保证，每当页面写回磁盘时，和事务相关的undo日志需要先写回磁盘</li>
+<li>对于事务持久性保证，每当事务提交的时候，和事务相关的redo日志需要先写回磁盘</li>
+</ul>
+<h2 id="日志记录方案">日志记录方案</h2>
+<h3 id="概念与实例">概念与实例</h3>
+<p>UPDATE Student SET Sname=“Mike” WHERE Sno = “1”;</p>
+<ul>
+<li>逻辑日志：记录事务中高层抽象的逻辑操作：（UPDATE DELETE INSERT的操作文本信息）</li>
+</ul>
+<p>&lt; T’, Query=“UPDATE“, Student SET Sname = Mike WHERE Sno = 1” &gt;</p>
+<ul>
+<li>物理日志：记录数据库中具体物理变化：（第十个页面第100偏移量的值修改）</li>
+</ul>
+<p>&lt; T’, Table= Student, Page=99, Offset=4, Before=James, After=Mike &gt; &lt; T’, Index=X_PKEY, Page=45, Offset=9, Key=(1,Record1) &gt;</p>
+<ul>
+<li>物理逻辑日志：结合了物理日志和逻辑日志混合方法</li>
+</ul>
+<p>&lt;T’, Table= Student, Page=99, ObjectId=1, Before=James, After=Mike &gt; &lt; T’, Index=X_PKEY, IndexPage=45, Key=(1,Record1) &gt;</p>
+<h3 id="日志性质">日志性质</h3>
+<ul>
+<li>幂等性：一条日志记录执行多次和一次结果一致。例如 x = x + 1不幂等.</li>
+</ul>
+<p>物理日志满足，逻辑日志不满足</p>
+<ul>
+<li>失败可重做性：一条日志执行失败后，是否可以重做一遍达成恢复目的。插入记录时若发生故障，重做插入可以恢复数据库状态。</li>
+</ul>
+<p>物理日志满足，逻辑日志不满足（插入数据成功但插入索引失败，再次执行逻辑插入可能会导致不一致）</p>
+<ul>
+<li>操作可逆性：这是指执行某个操作后，是否可以通过逆向操作恢复到原来的状态。</li>
+</ul>
+<p>物理位置不满足，逻辑日志满足（数据偏移位置可能后续被更改）</p>
+<h3 id="日志选择">日志选择</h3>
+<p>逻辑日志不具有幂等性和失败可重做性，说明不能使用逻辑日志作为redo日志。</p>
+<p>物理日志不具有可逆性，无法处理数据的位置变化，不能回滚。</p>
+<p>则redo日志要用物理日志，则undo日志要用逻辑日志。</p>
+<h2 id="数据库恢复算法">数据库恢复算法</h2>
+<h3 id="影子拷贝方法（NO-STEAL-FORCE）">影子拷贝方法（NO-STEAL + FORCE）</h3>
+<p>当事务开始时，系统不会直接对原始数据进行修改，而是将需要修改的数据进行拷贝，创建一个“影子副本”。再对影子副本进行一个数据修改。当事务成功完成并准备提交时，系统将影子副本更新到实际的存储中。这样，修改操作才真正生效。</p>
+<p>缺点：效率低，难以支持事务并发，IO量大。</p>
+<h3 id="基于undo日志的恢复（STEAL-FORCE）">基于undo日志的恢复（STEAL + FORCE）</h3>
+<p>依靠undo日志完成回滚事务。</p>
+<p>需要完成：找到所有未完成的事务  -  回滚未完成的事务  -  写入该事务中止的日志</p>
+<p>执行流程：</p>
+<ul>
+<li>写入日志开始记录 &lt;T, start&gt;</li>
+<li>在修改数据项X之前，写入日志记录&lt;T, X, Vold&gt; （修改过的脏页允许刷盘）</li>
+<li>提交事务，将关联脏页写入磁盘，将脏页相关undo日志刷盘。(页面如果被淘汰，则要与对应日志一起刷盘)</li>
+<li>结束事务，如果是提交，则写入&lt;T, commit&gt; 如果是abort 则写入 &lt;T, abort&gt;</li>
+<li>回滚日志，反向扫描undo日志进行回滚，将回滚中更新的脏页刷盘，写入 <T abort></T></li>
+</ul>
+<p><img src="/2024/10/07/learn-database-note6/1.png" alt="1.png"></p>
+<p>缺点：</p>
+<p>每次事务提交都需要强制刷盘，造成随机页面读写多，性能差</p>
+<p>难以实现主备之间同步</p>
+<h3 id="基于redo日志的恢复（NO-STEAL-NO-FORCE）">基于redo日志的恢复（NO-STEAL + NO-FORCE）</h3>
+<p>依靠redo日志完成回滚事务。</p>
+<p>需要完成：找到所有已提交的事务  -  重做这些已完成的事务  -  写入该事务结束的日志</p>
+<p>执行流程：</p>
+<ul>
+<li>向日志中写入事务开始记录<T start></T></li>
+<li>在修改之前，向日志中写入redo日志记录&lt;T, X, Vnew&gt;（未提交事务修改过的脏页不允许刷盘）</li>
+<li>提交事务，写入事务提交记录<T commit>，并且将日志刷盘。事务T关联的脏页（且该脏页无相关未提交事务）允许刷盘。</T></li>
+<li>结束事务，如果是Abort，让缓冲区中的修改的页面失效</li>
+<li>回滚事务，废弃T相关的脏页，写入中止<T abort></T></li>
+</ul>
+<p><img src="/2024/10/07/learn-database-note6/2.png" alt="2.png"></p>
+<p>恢复流程：</p>
+<ul>
+<li>从数据库日志末尾向前扫描日志，其中的事务T</li>
+<li>如果已经出现<T commit>， 则该事务已被提交，需要重做，将数据项X置为Vnew，如果已经刷盘则不需要（通过checkpoint判断是否刷盘）</T></li>
+<li>如果出现<T abort> 或者没有 提交记录，那么就不需要处理相关日志记录。</T></li>
+<li>扫描结束后，对每个未完成的事务T，在日志中写入一个<T abort>记录并刷新日志</T></li>
+</ul>
+<p>缺点：</p>
+<p>事务执行期间不能刷盘，造成内存空间占用大；buffer缓冲池满时，由于不能淘汰未完成的事务，需要等待。</p>
+<p>事务并发受限：T1修改了A并提交，T2修改了A未提交，是否允许刷盘A</p>
+<h3 id="基于undo-redo日志的恢复">基于undo/redo日志的恢复</h3>
+<p>需要依靠undo日志处理事务回滚，需要依靠redo日志处理事务重做</p>
+<p>需要完成：找到所有需要重做以及需要回滚的事务  -  重做这些已完成的事务  -  回滚未结束的事务</p>
+<p>执行流程：</p>
+<ul>
+<li>向日志中写入事务开始记录<T start></T></li>
+<li>在修改之前，写入Undo日志和Redo日志记录&lt;T, X, Vold, Vnew&gt;(修改过的脏页允许刷盘)</li>
+<li>提交事务：写入事务提交记录<T commit>，并且将日志刷盘，页面可不刷盘</T></li>
+<li>Abort事务：写入事务中止记录<T abort>，并且将日志刷盘，页面可不刷盘</T></li>
+<li>回滚事务，反向扫描T相关的undo日志，执行回滚，写入该事务中止的记录<T abort>,并将日志刷盘</T></li>
+</ul>
+<p>恢复流程：</p>
+<ul>
+<li>分析阶段：系统从日志起始位置开始扫描整个日志，找出需要重做和需要回滚的事务</li>
+</ul>
+<p>在扫描过程中出现<T start>的日志记录而没有<T commit>或<T abort>，那么该事务在数据库崩溃的时刻是未结束的，需要被回滚。（标注回滚）</T></T></T></p>
+<p>– 在扫描过程中出现了<T commit>或<T abort>，那么事务是已经完成，需要被恢复子系统重做。（标注重做）</T></T></p>
+<ul>
+<li>重做阶段：系统按时间顺序正向扫描日志，如果出现了一条标注重做的日志记录，系统便重做它</li>
+</ul>
+<p>重做所有日志更新记录（重放历史）</p>
+<ul>
+<li>撤销阶段：从日志末尾反向扫描整个日志，如果出现了一条标注撤销的日志记录，那么系统会撤销它。</li>
+</ul>
+<p>一旦事务撤销完成（即扫描中遇到了<T start>），数据库会自动写入<T abort>，代表该事务已经回滚完成。</T></T></p>
+<p>由于undo日志是逻辑日志，不能多次执行一条undo日志，撤销过程中需要记录某条undo日志（补偿日志）是否被执行过。</p>
+<ul>
+<li>补偿日志：Undo日志的redo日志</li>
+</ul>
+<p>每次执行undo日志记录后，数据库需要向日志中写入一条补偿日志记录（compensation log record，CLR），记录撤销的动作</p>
+<p>CLR实现了undo日志的redo，记录已经undo的日志，保证undo不被重复执行</p>
+<h2 id="检查点CheckPoint机制">检查点CheckPoint机制</h2>
+<p>检查点的使用方法：</p>
+<ul>
+<li>在检查点之前完成（commit/abort）的事务不需要处理</li>
+<li>在检查点之后commit/abort的事务需要重做；</li>
+<li>所有未完成的事务（不含commit/abort）需要回滚。</li>
+</ul>
+<p>检查点的记录方法：</p>
+<ul>
+<li>停止接受新的事务或修改请求，确保没有新的脏数据产生。</li>
+<li>将当前所有未持久化的脏数据页写入磁盘，更新对应的数据文件。</li>
+<li>记录检查点位置。</li>
+<li>恢复接受新的事务或修改请求，继续正常的数据库操作</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/23/learn-database-note4/">数据库管理系统——数据库储存引擎</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/21/learn-database-note3/">数据库系统概论（绪论）</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/10/learn-algorithm-note20/">算法学习笔记20——网络流费用流</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/03/learn-algorithm-note19/">算法学习笔记19——Manacher算法</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.67px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/requests/" style="font-size: 11.67px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.67px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 15px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.67px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 16.67px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.67px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 13.33px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.33px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
