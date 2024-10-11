@@ -58,6 +58,28 @@
     
     <div class="post-item">
         <h2>
+            <a href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a>
+        </h2>
+    
+        <p>ARISE 优化策略
+基于undo/redo日志
+回顾undo/redo日志的恢复算法缺陷：
+
+部分redo日志无需重做：已经刷脏的日志不需要redo
+undo操作无需扫描全部日志
+undo日志...</p>
+    
+        <div class="post-meta">
+            <time class="date">2024.10.11</time>
+            
+            
+                <span class="tags"><a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a></span>
+            
+        </div>
+    </div>
+    
+    <div class="post-item">
+        <h2>
             <a href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a>
         </h2>
     
@@ -251,35 +273,10 @@ graph TD
         </div>
     </div>
     
-    <div class="post-item">
-        <h2>
-            <a href="/2024/07/29/learn-algorithm-note16/">算法学习笔记16——网络流最大流</a>
-        </h2>
-    
-        <p>算法学习笔记(16):网络流最大流
-网络
-是一种特殊的带权有向图， 有以下几个特殊概念：
-
-容量：边的权值，流在边上的最大量。
-源点：没有入度的点
-汇点：没有出度的点
-流：每一条边都有对应的流量...</p>
-    
-        <div class="post-meta">
-            <time class="date">2024.07.29</time>
-            
-                <span class="category"><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a></span>
-            
-            
-                <span class="tags"><a class="-none-link" href="/tags/%E5%9B%BE%E8%AE%BA/" rel="tag">图论</a>，<a class="-none-link" href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" rel="tag">最大流</a>，<a class="-none-link" href="/tags/%E7%AE%97%E6%B3%95/" rel="tag">算法</a>，<a class="-none-link" href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" rel="tag">网络流</a></span>
-            
-        </div>
-    </div>
-    
 </section>
 
         <section class="page-navigator">
-            <span class="page-number current">1</span><a class="page-number" href="/archives/2024/page/2/">2</a><a class="page-number" href="/archives/2024/page/3/">3</a><a class="page-number" href="/archives/2024/page/4/">4</a><a class="extend next" rel="next" href="/archives/2024/page/2/">»</a>
+            <span class="page-number current">1</span><a class="page-number" href="/archives/2024/page/2/">2</a><a class="page-number" href="/archives/2024/page/3/">3</a><span class="space">&hellip;</span><a class="page-number" href="/archives/2024/page/5/">5</a><a class="extend next" rel="next" href="/archives/2024/page/2/">»</a>
         </section>
     </div>
 </main>
@@ -293,7 +290,7 @@ graph TD
             <div class="row">
                 <div class="col-m-4">
                     <h3 class="title-recent">最新文章：</h3>
-                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/29/database-huadb/">数据库内核实验报告一</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/23/learn-database-note4/">数据库管理系统——数据库储存引擎</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/21/learn-database-note3/">数据库系统概论（绪论）</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/10/learn-algorithm-note20/">算法学习笔记20——网络流费用流</a></li></ul>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/29/database-huadb/">数据库内核实验报告一</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/23/learn-database-note4/">数据库管理系统——数据库储存引擎</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/21/learn-database-note3/">数据库系统概论（绪论）</a></li></ul>
                 </div>
                 <div class="col-m-4">
                     <h3 class="title-date">时光机：</h3>
@@ -318,5 +315,20 @@ graph TD
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
