@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>《图解机器学习算法》笔记——机器学习基础 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="《图解机器学习算法》笔记——机器学习基础"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>《图解机器学习算法》笔记——机器学习基础</h2>
+            <div class="post-meta">
+                <time class="date">2024.10.19</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>机器学习概要</h1>
+<p><strong>机器学习</strong>指的是计算机根据给定的问题、课题或环境进行学习，并利用学习结果解决问题或课题等的一整套机制。</p>
+<p>机器学习种类：</p>
+<ul>
+<li>有监督学习</li>
+<li>无监督学习</li>
+<li>强化学习</li>
+</ul>
+<h2 id="有监督学习">有监督学习</h2>
+<p>提供问题以及答案，使计算机进行学习并产生机器学习模型。</p>
+<p>概念：</p>
+<ul>
+<li>特征值（特征变量）：表示特征的数据。</li>
+<li>标签（目标变量）：作为答案的数据。</li>
+<li>分类问题：预测类别的问题叫作分类问题，例如给定一堆身高体重，预测男女一样，其中给定的数据（身高体重）会告诉对应的结果（性别）。</li>
+<li>二元分类：分类问题的结果是两个类别。</li>
+<li>多元分类：例如十个类别，答案变量是离散值例如预测成绩等级，ABCDEF。</li>
+<li>回归问题：答案变量是连续的值，例如预测一个值，不是固定的在几个类别中。</li>
+</ul>
+<h2 id="无监督学习">无监督学习</h2>
+<p>将特征值和目标变量（答案）作为一套数据进行学习的方法，而无监督学习的数 据中没有作为答案的目标变量。</p>
+<h3 id="聚类">聚类</h3>
+<p>聚类是一种将数据集分成多个组的技术，使得组内的数据点相似性高，而组间的数据点差异性大。聚类的常见算法包括：</p>
+<p><strong>K-means</strong>：将数据点分为预定义的 K 个簇，每个簇都有一个中心点。算法通过反复更新簇中心和重新分配数据点来最小化数据点到簇中心的距离。</p>
+<p>聚类的应用包括客户分群、图像分类等。</p>
+<h3 id="降维">降维</h3>
+<p>降维旨在减少数据集的维度（特征数量），以便更容易进行可视化或处理，同时尽量保持数据的关键信息。降维的常见方法包括：</p>
+<p><strong>PCA（主成分分析）</strong>：将原始特征转换为一组新的、线性不相关的特征（称为主成分），并保留尽可能多的方差信息。</p>
+<p>降维常用于数据可视化、特征提取以及减少噪声。</p>
+<h2 id="强化学习">强化学习</h2>
+<p>强化学习是以在某个环境下行动的智能体获得的奖励最大化为目标而进行学习的方法。</p>
+<p>是一种机器学习方法，通过与环境的交互学习如何采取最佳行动，以最大化长期累积的奖励。强化学习的核心思想是智能体（agent）通过试错学习和反馈不断改进决策策略。</p>
+<h1>机器学习的步骤</h1>
+<p>机器学习需要数据，本文使用 scikit-learn 包内置的数据。</p>
+<p>机器学习需要的是二维的表格形式的数据，例如学生表格</p>
+<table>
+<thead>
+<tr>
+<th>姓名</th>
+<th>身高</th>
+<th>体重</th>
+<th>出生日期</th>
+<th>性别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>165</td>
+<td>60</td>
+<td>1995.10.02</td>
+<td>男</td>
+</tr>
+<tr>
+<td>B</td>
+<td>150</td>
+<td>45</td>
+<td>1996.01.20</td>
+<td>女</td>
+</tr>
+<tr>
+<td>C</td>
+<td>170</td>
+<td>70</td>
+<td>1995.05.29</td>
+<td>男</td>
+</tr>
+<tr>
+<td>D</td>
+<td>160</td>
+<td>50</td>
+<td>1995.08.14</td>
+<td>女</td>
+</tr>
+</tbody>
+</table>
+<p>以体重身高预测性别为例，这是一个有监督学习的例子。</p>
+<p>我们以身高体重作为特征变量，性别作为目标变量。</p>
+<p>以下我们使用这个包内的鸢尾花（iris）数据作为例子。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>datasets <span class="token keyword">import</span> load_iris
+data <span class="token operator">=</span> load_iris<span class="token punctuation">(</span><span class="token punctuation">)</span>
+x <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>data<span class="token punctuation">.</span>data<span class="token punctuation">,</span> columns<span class="token operator">=</span>data<span class="token punctuation">.</span>feature_names<span class="token punctuation">)</span>
+y <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>data<span class="token punctuation">.</span>target<span class="token punctuation">,</span> columns<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">"Species"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+df <span class="token operator">=</span> pd<span class="token punctuation">.</span>concat<span class="token punctuation">(</span><span class="token punctuation">[</span>x<span class="token punctuation">,</span> y<span class="token punctuation">]</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">)</span>
+df<span class="token punctuation">.</span>head<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>sepal length (cm)</strong></th>
+<th><strong>sepal width (cm)</strong></th>
+<th><strong>petal length (cm)</strong></th>
+<th><strong>petal width (cm)</strong></th>
+<th><strong>Species</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0</strong></td>
+<td>5.1</td>
+<td>3.5</td>
+<td>1.4</td>
+<td>0.2</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>1</strong></td>
+<td>4.9</td>
+<td>3.0</td>
+<td>1.4</td>
+<td>0.2</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>4.7</td>
+<td>3.2</td>
+<td>1.3</td>
+<td>0.2</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>4.6</td>
+<td>3.1</td>
+<td>1.5</td>
+<td>0.2</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>5.0</td>
+<td>3.6</td>
+<td>1.4</td>
+<td>0.2</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>前面 4 列是表示特征的特征值，最后 1 列是目标变量。在这个数据集中，目标变量的值为 0、1、2 这 3 个值之一</p>
+<h2 id="有监督学习（分类）的例子">有监督学习（分类）的例子</h2>
+<p>这个例子是美国威斯康星州乳腺癌数据集，通过30个特征值判断肿瘤是良性或者恶性</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>mean radius</strong></th>
+<th><strong>mean texture</strong></th>
+<th><strong>mean perimeter</strong></th>
+<th><strong>mean area</strong></th>
+<th><strong>mean smoothness</strong></th>
+<th><strong>mean compactness</strong></th>
+<th><strong>mean concavity</strong></th>
+<th><strong>mean concave points</strong></th>
+<th><strong>mean symmetry</strong></th>
+<th><strong>mean fractal dimension</strong></th>
+<th><strong>…</strong></th>
+<th><strong>worst texture</strong></th>
+<th><strong>worst perimeter</strong></th>
+<th><strong>worst area</strong></th>
+<th><strong>worst smoothness</strong></th>
+<th><strong>worst compactness</strong></th>
+<th><strong>worst concavity</strong></th>
+<th><strong>worst concave points</strong></th>
+<th><strong>worst symmetry</strong></th>
+<th><strong>worst fractal dimension</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>17.99</td>
+<td>10.38</td>
+<td>122.80</td>
+<td>1001.0</td>
+<td>0.11840</td>
+<td>0.27760</td>
+<td>0.3001</td>
+<td>0.14710</td>
+<td>0.2419</td>
+<td>0.07871</td>
+<td>…</td>
+<td>17.33</td>
+<td>184.60</td>
+<td>2019.0</td>
+<td>0.1622</td>
+<td>0.6656</td>
+<td>0.7119</td>
+<td>0.2654</td>
+<td>0.4601</td>
+<td>0.11890</td>
+</tr>
+<tr>
+<td>1</td>
+<td>20.57</td>
+<td>17.77</td>
+<td>132.90</td>
+<td>1326.0</td>
+<td>0.08474</td>
+<td>0.07864</td>
+<td>0.0869</td>
+<td>0.07017</td>
+<td>0.1812</td>
+<td>0.05667</td>
+<td>…</td>
+<td>23.41</td>
+<td>158.80</td>
+<td>1956.0</td>
+<td>0.1238</td>
+<td>0.1866</td>
+<td>0.2416</td>
+<td>0.1860</td>
+<td>0.2750</td>
+<td>0.08902</td>
+</tr>
+<tr>
+<td>2</td>
+<td>19.69</td>
+<td>21.25</td>
+<td>130.00</td>
+<td>1203.0</td>
+<td>0.10960</td>
+<td>0.15990</td>
+<td>0.1974</td>
+<td>0.12790</td>
+<td>0.2069</td>
+<td>0.05999</td>
+<td>…</td>
+<td>25.53</td>
+<td>152.50</td>
+<td>1709.0</td>
+<td>0.1444</td>
+<td>0.4245</td>
+<td>0.4504</td>
+<td>0.2430</td>
+<td>0.3613</td>
+<td>0.08758</td>
+</tr>
+<tr>
+<td>3</td>
+<td>11.42</td>
+<td>20.38</td>
+<td>77.58</td>
+<td>386.1</td>
+<td>0.14250</td>
+<td>0.28390</td>
+<td>0.2414</td>
+<td>0.10520</td>
+<td>0.2597</td>
+<td>0.09744</td>
+<td>…</td>
+<td>26.50</td>
+<td>98.87</td>
+<td>567.7</td>
+<td>0.2098</td>
+<td>0.8663</td>
+<td>0.6869</td>
+<td>0.2575</td>
+<td>0.6638</td>
+<td>0.17300</td>
+</tr>
+<tr>
+<td>4</td>
+<td>20.29</td>
+<td>14.34</td>
+<td>135.10</td>
+<td>1297.0</td>
+<td>0.10030</td>
+<td>0.13280</td>
+<td>0.1980</td>
+<td>0.10430</td>
+<td>0.1809</td>
+<td>0.05883</td>
+<td>…</td>
+<td>16.67</td>
+<td>152.20</td>
+<td>1575.0</td>
+<td>0.1374</td>
+<td>0.2050</td>
+<td>0.4000</td>
+<td>0.1625</td>
+<td>0.2364</td>
+<td>0.07678</td>
+</tr>
+</tbody>
+</table>
+<p>其中我们可以发现，数据有30列，也就是一条记录有30多个数据。 看完了表格，我们提取特征值赋给x，目标值赋给y。</p>
+<p>其中30个特征值分为平均值，误差值，最差值三类，作为特征值提供，我我们只使用其中的平均值，只需要运行</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">x <span class="token operator">=</span> data<span class="token punctuation">.</span>data
+y <span class="token operator">=</span> data<span class="token punctuation">.</span>target
+x <span class="token operator">=</span> x<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token punctuation">:</span> <span class="token number">10</span><span class="token punctuation">]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这行操作使得平均值被记录给x，作为特征值只有10项。</p>
+<h3 id="实现">实现</h3>
+<p>使用逻辑回归算法进行分类，提供特征值和目标值</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>linear_model <span class="token keyword">import</span> LogisticRegression
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>metrics <span class="token keyword">import</span> accuracy_score
+model <span class="token operator">=</span> LogisticRegression<span class="token punctuation">(</span>max_iter<span class="token operator">=</span><span class="token number">200</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span>
+y_pred <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+
+accuracy_score<span class="token punctuation">(</span>y<span class="token punctuation">,</span> y_pred<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>输出 0.9121265377855887</p>
+<p>以上的代码使用输入的数据进行模型建立，model接收到数据进行学习，成为学习后的模型，将对原来的输入数据进行预测，将预测结果保存到<code>y_pred</code></p>
+<h3 id="评估方法">评估方法</h3>
+<p>使用 scikit-learn 的 accuracy_score 函数查看正确率是模型预测结果和给定数据的结果进行比较的正确率。</p>
+<p>过拟合：当模型在训练数据上表现良好，但在未见过的数据上预测性能差时，称为过拟合。模型的评估应使用未用于训练的数据，以确保其在未知数据上的预测能力。</p>
+<p>评估指标的局限性：仅依靠正确率来评估模型性能可能会误导，尤其是在数据类别不均衡的情况下。例如，在分类任务中，若数据中“恶性”样本较少，模型可能简单地将所有样本判断为“良性”，从而导致高正确率，但实际上模型的表现并不好。</p>
+<p>数据均衡性：在处理类别不均衡的数据时，正确率并不能全面反映模型的性能，需结合其他评估指标（如精确率、召回率、F1-score等）进行综合评估</p>
+<h1>无监督学习（聚类）的例子</h1>
+<p>我们采用 scikit-learn 包内置的与葡萄酒种类有关的数据集 先大致看一下数据集</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>alcohol</strong></th>
+<th><strong>malic_acid</strong></th>
+<th><strong>ash</strong></th>
+<th><strong>alcalinity_of_ash</strong></th>
+<th><strong>magnesium</strong></th>
+<th><strong>total_phenols</strong></th>
+<th><strong>flavanoids</strong></th>
+<th><strong>nonflavanoid_phenols</strong></th>
+<th><strong>proanthocyanins</strong></th>
+<th><strong>color_intensity</strong></th>
+<th><strong>hue</strong></th>
+<th><strong>od280/od315_of_diluted_wines</strong></th>
+<th><strong>proline</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>14.23</td>
+<td>1.71</td>
+<td>2.43</td>
+<td>15.6</td>
+<td>127.0</td>
+<td>2.80</td>
+<td>3.06</td>
+<td>0.28</td>
+<td>2.29</td>
+<td>5.64</td>
+<td>1.04</td>
+<td>3.92</td>
+<td>1065.0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>13.20</td>
+<td>1.78</td>
+<td>2.14</td>
+<td>11.2</td>
+<td>100.0</td>
+<td>2.65</td>
+<td>2.76</td>
+<td>0.26</td>
+<td>1.28</td>
+<td>4.38</td>
+<td>1.05</td>
+<td>3.40</td>
+<td>1050.0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>13.16</td>
+<td>2.36</td>
+<td>2.67</td>
+<td>18.6</td>
+<td>101.0</td>
+<td>2.80</td>
+<td>3.24</td>
+<td>0.30</td>
+<td>2.81</td>
+<td>5.68</td>
+<td>1.03</td>
+<td>3.17</td>
+<td>1185.0</td>
+</tr>
+<tr>
+<td>3</td>
+<td>14.37</td>
+<td>1.95</td>
+<td>2.50</td>
+<td>16.8</td>
+<td>113.0</td>
+<td>3.85</td>
+<td>3.49</td>
+<td>0.24</td>
+<td>2.18</td>
+<td>7.80</td>
+<td>0.86</td>
+<td>3.45</td>
+<td>1480.0</td>
+</tr>
+<tr>
+<td>4</td>
+<td>13.24</td>
+<td>2.59</td>
+<td>2.87</td>
+<td>21.0</td>
+<td>118.0</td>
+<td>2.80</td>
+<td>2.69</td>
+<td>0.39</td>
+<td>1.82</td>
+<td>4.32</td>
+<td>1.04</td>
+<td>2.93</td>
+<td>735.0</td>
+</tr>
+</tbody>
+</table>
+<p>简化数据集，使用十三个特征值中的酒精度和色泽作为特征值进行聚类算法，分割为三个簇</p>
+<p>以下是对数据集的简化，提取区中的酒精度和色泽作为特征值。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>cluster <span class="token keyword">import</span> KMeans
+n_clusters <span class="token operator">=</span> <span class="token number">3</span>
+model <span class="token operator">=</span> KMeans<span class="token punctuation">(</span>n_clusters<span class="token operator">=</span>n_clusters<span class="token punctuation">)</span>
+pred <span class="token operator">=</span> model<span class="token punctuation">.</span>fit_predict<span class="token punctuation">(</span>x<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>上面的代码导入了k-means聚类算法，设置3即为指示模型将数据集分成三个簇。传入x，再将预测结果返回赋值给pred。</p>
+<p>通过 KMeans 算法，原本以酒精度和色泽表示的葡萄酒数据，现在以“属于哪个簇”的形式直观展示。要了解各个簇的特征，只需查看重心值。例如，第 3 个簇的特点是“酒精度低、色泽淡”。KMeans 聚类是基于算法自动生成的规则，例如“将酒精度百分之多少以上的数据分到第 1 个簇”，这说明算法的通用性，适用于葡萄酒以外的数据。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag">机器学习</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/19/machine-learning-note1/">《图解机器学习算法》笔记——机器学习基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/29/database-huadb/">数据库内核实验报告一</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/23/learn-database-note4/">数据库管理系统——数据库储存引擎</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.67px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/requests/" style="font-size: 11.67px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.67px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 15px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.67px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 16.67px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 10px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 10px;">机器学习</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.67px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 13.33px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.33px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
