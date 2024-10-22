@@ -227,8 +227,8 @@
 <p>自脏页表中min(RecLSN)开始从前向后扫描，判断是否需要重做：</p>
 <ul>
 <li>如果日志记录的pageID不在脏页表中，不需要重做</li>
-<li>如果日志记录LSN &lt;= RecLSN，数据修改已在磁盘中生效，不需要重做</li>
-<li>如果日志记录LSN &gt; RecLSN,从磁盘读到缓冲区，如PageLSN&gt;LSN，不需要重做</li>
+<li>如果日志记录LSN &lt; RecLSN,数据修改已在磁盘中生效，不需要重做</li>
+<li>如果日志记录LSN &gt;= RecLSN,从磁盘读到缓冲区，如果LSN &lt;= PageLSN，不需要重做</li>
 <li>以上条件均不满足，重做日志记录</li>
 </ul>
 <p>根据日志更新记录修改缓冲区数据项，更新脏页表和活跃事务表。</p>
@@ -367,20 +367,5 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  <script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {
-            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-            processEscapes: true
-        }
-    });
-    MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax();
-        for (var i = 0; i < all.length; ++i)
-            all[i].SourceElement().parentNode.className += ' has-jax';
-    });
-</script>
-<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-</body>
+  </body>
 </html>
