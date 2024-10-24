@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库内核实验报告二 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库内核实验报告二"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库内核实验报告二</h2>
+            <div class="post-meta">
+                <time class="date">2024.10.25</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1><strong>基础实现思路和难度总结</strong></h1>
+<p>在存储实现的基础上添加事务管理，解决数据库崩溃后的恢复等情况。</p>
+<h2 id="数据类架构">数据类架构</h2>
+<p>对于table来说有Table 和 TablePage</p>
+<ul>
+<li>Table：是上层操作，负责调用TablePage处理页面内容，同时，增删改查操作的日志的管理也由Table完成。</li>
+<li>TablePage：是数据的底层操作，读入Page解析后，处理对Page内容，属性值的修改，对于本次实验，主要是给REDO和UNDO提供更接近底层的操作函数，可以不产生新的日志或者是减少需要的参数完成简单的功能。</li>
+</ul>
+<p>对于log来说有 log_manager, log_records</p>
+<ul>
+<li>log_manager：日志管理者，负责读取日志，维护日志，还要能调用日志完成REDO UNDO等操作，是日志的直接管理者。</li>
+<li>log_records：是一个父类，有delete_log, insert_log, new_page_log等等的子类，有抽象函数UNDO和REDO，提供接口给log_manager以完成重做和撤回。子类要根据自己的情况，实现完成不同的REDO和UNDO虚函数实现。</li>
+</ul>
+<h2 id="事务回滚"><strong>事务回滚</strong></h2>
+<p><strong>lab20/10-rollback.test</strong></p>
+<h3 id="日志追加"><strong>日志追加</strong></h3>
+<h3 id="InsertRecord">InsertRecord</h3>
+<p>对于日志而言，需要预写日志，即日志插入在数据写入之前。</p>
+<p>对于日志插入，如果创建了新的页面，则需要创建页面日志，在创建页面日志之后。预写插入日志，再完成插入。offset 的逻辑通过储存原理可以得出，也就是模拟找到了这个插入的各个数据，再进行插入。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">Rid <span class="token class-name">Table</span><span class="token double-colon punctuation">::</span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> record<span class="token punctuation">,</span> xid_t xid<span class="token punctuation">,</span> cid_t cid<span class="token punctuation">,</span> <span class="token keyword">bool</span> write_log<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> MAX_RECORD_SIZE<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"Record size too large: "</span> <span class="token operator">+</span> std<span class="token double-colon punctuation">::</span><span class="token function">to_string</span><span class="token punctuation">(</span>record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  pageid_t curPageID <span class="token operator">=</span> first_page_id_<span class="token punctuation">;</span>
+  <span class="token keyword">bool</span> hasInserted <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>TablePage<span class="token operator">></span> curPageHandle<span class="token punctuation">;</span>
+
+  slotid_t resSlotID <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  pageid_t resPageID <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>first_page_id_ <span class="token operator">==</span> NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> newPgae <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">NewPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>write_log<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      log_manager_<span class="token punctuation">.</span><span class="token function">AppendNewPageLog</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> NULL_PAGE_ID<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    first_page_id_ <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    curPageHandle <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>TablePage<span class="token operator">></span></span></span><span class="token punctuation">(</span>newPgae<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    hasInserted <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token operator">not</span> hasInserted<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> curPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>TablePage<span class="token operator">></span></span></span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>curPageHandle<span class="token operator">-></span><span class="token function">GetFreeSpaceSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      hasInserted <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+      resPageID <span class="token operator">=</span> curPageID<span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>curPageHandle<span class="token operator">-></span><span class="token function">GetNextPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      curPageID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">GetNextPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> hasInserted<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    pageid_t newPageID <span class="token operator">=</span> curPageID <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span><span class="token punctuation">(</span>write_log<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      log_manager_<span class="token punctuation">.</span><span class="token function">AppendNewPageLog</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> curPageID<span class="token punctuation">,</span> newPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>newPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> newPage <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">NewPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> newPageID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    curPageHandle <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>TablePage<span class="token operator">></span></span></span><span class="token punctuation">(</span>newPage<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curPageHandle<span class="token operator">-></span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>NULL_PAGE_ID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    hasInserted <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    resPageID <span class="token operator">=</span> newPageID<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  resSlotID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">GetRecordCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>write_log<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    db_size_t recordSize <span class="token operator">=</span> record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    db_size_t offset <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">GetUpper</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> recordSize<span class="token punctuation">;</span>
+
+    <span class="token keyword">char</span> <span class="token operator">*</span>buffer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token keyword">char</span><span class="token punctuation">[</span>record<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    db_size_t size <span class="token operator">=</span> record<span class="token operator">-></span><span class="token function">SerializeTo</span><span class="token punctuation">(</span>buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    lsn_t curLsn <span class="token operator">=</span> log_manager_<span class="token punctuation">.</span><span class="token function">AppendInsertLog</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> resPageID<span class="token punctuation">,</span> resSlotID<span class="token punctuation">,</span> offset<span class="token punctuation">,</span> recordSize<span class="token punctuation">,</span> buffer<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">delete</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> buffer<span class="token punctuation">;</span>
+
+    curPageHandle<span class="token operator">-></span><span class="token function">SetPageLSN</span><span class="token punctuation">(</span>curLsn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  resSlotID <span class="token operator">=</span> curPageHandle<span class="token operator">-></span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>record<span class="token punctuation">,</span> xid<span class="token punctuation">,</span> cid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">return</span> <span class="token punctuation">&#123;</span>resPageID<span class="token punctuation">,</span> resSlotID<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="DeleteRecord">DeleteRecord</h3>
+<p>对于删除操作而言会更加简单，只需要page_id_和slot_id_即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">Table</span><span class="token double-colon punctuation">::</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span><span class="token keyword">const</span> Rid <span class="token operator">&amp;</span>rid<span class="token punctuation">,</span> xid_t xid<span class="token punctuation">,</span> <span class="token keyword">bool</span> write_log<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool_<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid_<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> rid<span class="token punctuation">.</span>page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>write_log<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    lsn_t curLsn <span class="token operator">=</span> log_manager_<span class="token punctuation">.</span><span class="token function">AppendDeleteLog</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> rid<span class="token punctuation">.</span>page_id_<span class="token punctuation">,</span> rid<span class="token punctuation">.</span>slot_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    pageHandle<span class="token punctuation">.</span><span class="token function">SetPageLSN</span><span class="token punctuation">(</span>curLsn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span>rid<span class="token punctuation">.</span>slot_id_<span class="token punctuation">,</span> xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="Undo-日志读取"><strong>Undo 日志读取</strong></h3>
+<h3 id="Rollback-函数（log-log-manager）">Rollback 函数（log/log_manager）</h3>
+<p>这个函数的参数是事务ID，任务是回滚这一个事务，对于事务回滚我们可以知道，为了避免从后往前遍历找 事务ID = 某个值 的所有日志，不如让日志有链表一样的指针，对于任意一个日志，如果它属于事务A，则它会记录自己的上一条事务A的日志LSN。</p>
+<p>通过活跃事务表（时刻记录事务的最新日志LSN）找到最后一条日志，再通过前事务指针不断遍历，直到NULL_LSN。</p>
+<p>对于获取日志内容：</p>
+<p>通过判断 lsn 和 flushed_lsn_ 的大小关系，flushed_lsn_ 代表了最后一条没有写入磁盘的日志。也就是说：</p>
+<p>如果 lsn &lt;  flushed_lsn_ ：</p>
+<p>日志在磁盘，使用 disk_.ReadLog(lastLSN, MAX_LOG_SIZE, logData);</p>
+<p>如果 lsn ≥  flushed_lsn_ ：</p>
+<p>日志在缓存中，遍历log_buffer_找到日志。</p>
+<p>获取到日志后对日志进行UNDO操作，并更新活跃事务表。</p>
+<p>如果回滚完成，从活跃事务表中删除记录。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">LogManager</span><span class="token double-colon punctuation">::</span><span class="token function">Rollback</span><span class="token punctuation">(</span>xid_t xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  lsn_t lastLSN <span class="token operator">=</span> att_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">;</span>
+  lsn_t prevLSN <span class="token operator">=</span> NULL_LSN<span class="token punctuation">;</span>
+  <span class="token keyword">while</span><span class="token punctuation">(</span>lastLSN <span class="token operator">!=</span> NULL_LSN<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>LogRecord<span class="token operator">></span> logRec<span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>lastLSN <span class="token operator">&lt;</span> flushed_lsn_<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">char</span> logData<span class="token punctuation">[</span>MAX_LOG_SIZE<span class="token punctuation">]</span><span class="token punctuation">;</span>
+      disk_<span class="token punctuation">.</span><span class="token function">ReadLog</span><span class="token punctuation">(</span>lastLSN<span class="token punctuation">,</span> MAX_LOG_SIZE<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      logRec <span class="token operator">=</span> <span class="token class-name">LogRecord</span><span class="token double-colon punctuation">::</span><span class="token function">DeserializeFrom</span><span class="token punctuation">(</span>lastLSN<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> pLog<span class="token operator">:</span> log_buffer_<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>pLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> lastLSN<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+          logRec <span class="token operator">=</span> pLog<span class="token punctuation">;</span>
+          <span class="token keyword">break</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    prevLSN <span class="token operator">=</span> logRec<span class="token operator">-></span><span class="token function">GetPrevLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    logRec<span class="token operator">-></span><span class="token function">Undo</span><span class="token punctuation">(</span><span class="token operator">*</span>buffer_pool_<span class="token punctuation">,</span> <span class="token operator">*</span>catalog_<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token keyword">this</span><span class="token punctuation">,</span> prevLSN<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    lastLSN <span class="token operator">=</span> prevLSN<span class="token punctuation">;</span>
+    att_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span> <span class="token operator">=</span> lastLSN<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  att_<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="实现日志的-Undo-操作"><strong>实现日志的 Undo 操作</strong></h3>
+<h3 id="TablePage-UndoDeleteRecord">TablePage::UndoDeleteRecord</h3>
+<p>这个函数为了便于对应的回滚操作，对于UNDO 一个删除操作而言，和插入一个原来的记录不同，我们的DELETE操作并没有对数据进行真正的清空，而是在数据头上打了一个标记，这个标记说明了这个记录是否被删除。</p>
+<p>因此，对于重新插入一个数据而言，我们有更好的undo方法，就是去除这个删除标记，就变成撤销删除了。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">TablePage</span><span class="token double-colon punctuation">::</span><span class="token function">UndoDeleteRecord</span><span class="token punctuation">(</span>slotid_t slot_id<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  Record header<span class="token punctuation">;</span>
+  header<span class="token punctuation">.</span><span class="token function">DeserializeHeaderFrom</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  header<span class="token punctuation">.</span><span class="token function">SetDeleted</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  header<span class="token punctuation">.</span><span class="token function">SerializeHeaderTo</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  page_<span class="token operator">-></span><span class="token function">SetDirty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="InsertLog-Undo">InsertLog::Undo</h3>
+<p>撤销一个插入操作也就是将插入的记录再删除。pageHandle的函数并不会记录日志而产生新的日志，新的日志产生都是由Table类完成的。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">InsertLog</span><span class="token double-colon punctuation">::</span><span class="token function">Undo</span><span class="token punctuation">(</span>BufferPool <span class="token operator">&amp;</span>buffer_pool<span class="token punctuation">,</span> Catalog <span class="token operator">&amp;</span>catalog<span class="token punctuation">,</span> LogManager <span class="token operator">&amp;</span>log_manager<span class="token punctuation">,</span> lsn_t undo_next_lsn<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  oid_t db_oid <span class="token operator">=</span> catalog<span class="token punctuation">.</span><span class="token function">GetDatabaseOid</span><span class="token punctuation">(</span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span>slot_id_<span class="token punctuation">,</span> xid_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="DeleteLog-Undo">DeleteLog::Undo</h3>
+<p>非常简单，就是使用上面我们简化过的恢复删除函数即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">DeleteLog</span><span class="token double-colon punctuation">::</span><span class="token function">Undo</span><span class="token punctuation">(</span>BufferPool <span class="token operator">&amp;</span>buffer_pool<span class="token punctuation">,</span> Catalog <span class="token operator">&amp;</span>catalog<span class="token punctuation">,</span> LogManager <span class="token operator">&amp;</span>log_manager<span class="token punctuation">,</span> lsn_t undo_next_lsn<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  oid_t db_oid <span class="token operator">=</span> catalog<span class="token punctuation">.</span><span class="token function">GetDatabaseOid</span><span class="token punctuation">(</span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">UndoDeleteRecord</span><span class="token punctuation">(</span>slot_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="NewPageLog-Undo">NewPageLog::Undo</h3>
+<p>对于撤回一个新的页面，想不到很好的解决方法，就将该页清空，虽然可以让它的前一页的后置指针变成NULL指针，但是如果新建的是第一个page，就很难做到真正的删除，因此直接采用初始化，清空这个页面的所有内容。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">NewPageLog</span><span class="token double-colon punctuation">::</span><span class="token function">Undo</span><span class="token punctuation">(</span>BufferPool <span class="token operator">&amp;</span>buffer_pool<span class="token punctuation">,</span> Catalog <span class="token operator">&amp;</span>catalog<span class="token punctuation">,</span> LogManager <span class="token operator">&amp;</span>log_manager<span class="token punctuation">,</span> lsn_t undo_next_lsn<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  oid_t db_oid <span class="token operator">=</span> catalog<span class="token punctuation">.</span><span class="token function">GetDatabaseOid</span><span class="token punctuation">(</span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此我们完成了所有的事务回滚函数，通过测试样例：</p>
+<p><strong>lab2/10-rollback.test</strong></p>
+<h2 id="事务重做">事务重做</h2>
+<p><strong>lab2/20-recover.test</strong></p>
+<h3 id="Redo-日志读取"><strong>Redo 日志读取</strong></h3>
+<h3 id="LogManager-Redo">LogManager::Redo</h3>
+<p>对于最基础的事务重做，只需要从头将所有事务都重做一遍即可，因此采用从LSN = 0 开始，next_lsn_代表了下一个日志（未生成）的LSN，所以执行到未生成的LSN即可。</p>
+<p>需要注意的是，这里的LSN概念略有不同，这里的LSN并不是以1递增，此处的LSN恰好是日志在储存中的偏移量offset，它也是递增的，并且不需要维护123456，只需要offset还能更方便的访问，因此，遍历的时候，并不是curLSN ++：</p>
+<p>而是curLSN += logRec-&gt;GetSize();</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">LogManager</span><span class="token double-colon punctuation">::</span><span class="token function">Redo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  lsn_t curLSN <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  lsn_t end <span class="token operator">=</span> next_lsn_<span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>curLSN <span class="token operator">&lt;</span> end<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>LogRecord<span class="token operator">></span> logRec <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>curLSN <span class="token operator">&lt;=</span> flushed_lsn_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">char</span> logData<span class="token punctuation">[</span>MAX_LOG_SIZE <span class="token operator">+</span> <span class="token number">10</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        disk_<span class="token punctuation">.</span><span class="token function">ReadLog</span><span class="token punctuation">(</span>curLSN<span class="token punctuation">,</span> MAX_LOG_SIZE<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        logRec <span class="token operator">=</span> <span class="token class-name">LogRecord</span><span class="token double-colon punctuation">::</span><span class="token function">DeserializeFrom</span><span class="token punctuation">(</span>curLSN<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> pLog <span class="token operator">:</span> log_buffer_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>pLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> curLSN<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                logRec <span class="token operator">=</span> pLog<span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    logRec<span class="token operator">-></span><span class="token function">Redo</span><span class="token punctuation">(</span><span class="token operator">*</span>buffer_pool_<span class="token punctuation">,</span> <span class="token operator">*</span>catalog_<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curLSN <span class="token operator">+=</span> logRec<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="实现日志的-Redo-操作"><strong>实现日志的 Redo 操作</strong></h3>
+<h3 id="TablePage-RedoInsertRecord">TablePage::RedoInsertRecord</h3>
+<p>和另一个函数同理，是提供了更方便的插入方式，以不需要更多的数据。</p>
+<p>需要注意的是，这个redo和插入不同，插入会直接使用新的slot_id ，但重做日志不同，重做日志是不论这个位置是否有数据，都要进行覆写，因此，插入数据的时候需要维护好lower_ 和 upper_指针，关于这两者的信息，可以移步到关于数据库存储的博客里。</p>
+<p>由于是重做插入，因此给的slot_id就是最新的，也就可以直接指定lower_ 的值，又offset是日志的参数，因此直接给upper_。</p>
+<p>使用memcpy在对应位置写入数据即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">TablePage</span><span class="token double-colon punctuation">::</span><span class="token function">RedoInsertRecord</span><span class="token punctuation">(</span>slotid_t slot_id<span class="token punctuation">,</span> <span class="token keyword">char</span> <span class="token operator">*</span>raw_record<span class="token punctuation">,</span> db_size_t page_offset<span class="token punctuation">,</span> db_size_t record_size<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token operator">*</span>lower_ <span class="token operator">=</span> PAGE_HEADER_SIZE <span class="token operator">+</span> <span class="token punctuation">(</span>slot_id <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">*</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>Slot<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token operator">*</span>upper_ <span class="token operator">=</span> page_offset<span class="token punctuation">;</span>
+  slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>offset_ <span class="token operator">=</span> <span class="token operator">*</span>upper_<span class="token punctuation">;</span>
+  slots_<span class="token punctuation">[</span>slot_id<span class="token punctuation">]</span><span class="token punctuation">.</span>size_ <span class="token operator">=</span> record_size<span class="token punctuation">;</span>
+  <span class="token function">memcpy</span><span class="token punctuation">(</span>page_data_ <span class="token operator">+</span> page_offset<span class="token punctuation">,</span> raw_record<span class="token punctuation">,</span> record_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  page_<span class="token operator">-></span><span class="token function">SetDirty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="InsertLog-Redo">InsertLog::Redo</h3>
+<p>关于插入，有了我们上面刚实现的函数，直接找到对应的页面进行调用即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">InsertLog</span><span class="token double-colon punctuation">::</span><span class="token function">Redo</span><span class="token punctuation">(</span>BufferPool <span class="token operator">&amp;</span>buffer_pool<span class="token punctuation">,</span> Catalog <span class="token operator">&amp;</span>catalog<span class="token punctuation">,</span> LogManager <span class="token operator">&amp;</span>log_manager<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 如果 oid_ 不存在，表示该表已经被删除，无需 redo</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>catalog<span class="token punctuation">.</span><span class="token function">TableExists</span><span class="token punctuation">(</span>oid_<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  oid_t db_oid <span class="token operator">=</span> catalog<span class="token punctuation">.</span><span class="token function">GetDatabaseOid</span><span class="token punctuation">(</span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">RedoInsertRecord</span><span class="token punctuation">(</span>slot_id_<span class="token punctuation">,</span> record_<span class="token punctuation">,</span> page_offset_<span class="token punctuation">,</span> record_size_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="DeleteLog-Redo">DeleteLog::Redo</h3>
+<p>不过多赘述，就是调用删除日志的函数，重新删除一遍。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">DeleteLog</span><span class="token double-colon punctuation">::</span><span class="token function">Redo</span><span class="token punctuation">(</span>BufferPool <span class="token operator">&amp;</span>buffer_pool<span class="token punctuation">,</span> Catalog <span class="token operator">&amp;</span>catalog<span class="token punctuation">,</span> LogManager <span class="token operator">&amp;</span>log_manager<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 如果 oid_ 不存在，表示该表已经被删除，无需 redo</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>catalog<span class="token punctuation">.</span><span class="token function">TableExists</span><span class="token punctuation">(</span>oid_<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  oid_t db_oid <span class="token operator">=</span> catalog<span class="token punctuation">.</span><span class="token function">GetDatabaseOid</span><span class="token punctuation">(</span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>Page<span class="token operator">></span> page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span>slot_id_<span class="token punctuation">,</span> xid_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="NewPageLog-Redo">NewPageLog::Redo</h3>
+<p>对于重建新的页面，必须知道的是，页面是有编号连接的。类似于链表结构。因此，要重做新建页面，也就需要知道上一个页面，并设置NextPageId，然后对新页面进行初始化即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">NewPageLog</span><span class="token double-colon punctuation">::</span><span class="token function">Redo</span><span class="token punctuation">(</span>BufferPool <span class="token operator">&amp;</span>buffer_pool<span class="token punctuation">,</span> Catalog <span class="token operator">&amp;</span>catalog<span class="token punctuation">,</span> LogManager <span class="token operator">&amp;</span>log_manager<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 如果 oid_ 不存在，表示该表已经被删除，无需 redo</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>catalog<span class="token punctuation">.</span><span class="token function">TableExists</span><span class="token punctuation">(</span>oid_<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  oid_t db_oid <span class="token operator">=</span> catalog<span class="token punctuation">.</span><span class="token function">GetDatabaseOid</span><span class="token punctuation">(</span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>Page<span class="token operator">></span> page<span class="token punctuation">,</span> lastPage<span class="token punctuation">;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>page_id_ <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">NewPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    lastPage <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+    page <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">NewPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    lastPage <span class="token operator">=</span> buffer_pool<span class="token punctuation">.</span><span class="token function">GetPage</span><span class="token punctuation">(</span>db_oid<span class="token punctuation">,</span> oid_<span class="token punctuation">,</span> page_id_ <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>lastPage <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>lastPage<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    pageHandle<span class="token punctuation">.</span><span class="token function">SetNextPageId</span><span class="token punctuation">(</span>page_id_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  TablePage <span class="token function">pageHandle</span><span class="token punctuation">(</span>page<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  pageHandle<span class="token punctuation">.</span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此我们完成了所有的事务重做函数，通过测试样例：</p>
+<p><strong>lab2/20-recover.test</strong></p>
+<h2 id="ARIES-恢复算法"><strong>ARIES 恢复算法</strong></h2>
+<p><strong>lab2/30-aries.test</strong></p>
+<p>对于ARISE恢复算法，我们进行简单的复习：</p>
+<p>ARISE恢复算法分成三个步骤：</p>
+<ul>
+<li>分析：重建 脏页表 和 活跃事务表</li>
+<li>重做：使用 脏页表 决定重做的起点</li>
+<li>回滚：使用 活跃事务表 快速精准定位需要回滚的事务</li>
+</ul>
+<p>这样一下就疏通了，我们对以上三个函数进行实现：</p>
+<h3 id="分析：LogManager-Analyze">分析：LogManager::Analyze()</h3>
+<p>分析函数内先找到检查点，检查点机制缩短了了分析所需的时间。</p>
+<p>检查点之前的所有记录都是已经落实完毕的，也就不需要被恢复。</p>
+<p>现在来说明分析的行为步骤：</p>
+<p>分析找到一个起点(检查点)，开始一直往剩下的所有日志开始遍历。</p>
+<ol>
+<li>对于活跃事务表att_：</li>
+</ol>
+<p>活跃事务表记录了所有活跃的事务以及其最近的日志LSN</p>
+<ul>
+<li>如果当前日志对应事务已经在活跃事务表内：</li>
+</ul>
+<p>①是COMMIT日志，从活跃事务表中删除②否则更新活跃事务表当前日志LSN</p>
+<ul>
+<li>如果当前日志对应事务不在活跃事务表内：</li>
+</ul>
+<p>如果不是COMMIT日志，就加入活跃事务表，并以当前日志LSN作为对应值。</p>
+<p>活跃事务表att_依据以上行为构建。</p>
+<ol>
+<li>对于脏页表dpt_:</li>
+</ol>
+<p>脏页表记录了哪些页面被日志修改过，并记录这个页面最早的修改日志LSN</p>
+<ul>
+<li>如果当前日志对应页面在脏页表内：忽视</li>
+<li>如果当前日志对应页面不在脏页表内，且当前日志是增删改日志：增加到dpt_日志中，进行记录。</li>
+</ul>
+<p>脏页表dpt_依据以上行为构建。</p>
+<p>SetNextXid也是需要注意的，在分析的时候遍历了所有日志，对于刚回复的数据库对事务id的管理出现了混乱，不知道哪个才是下一个事务ID，因此对这些事务ID中找到最大的+1就是下一个事务ID</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">LogManager</span><span class="token double-colon punctuation">::</span><span class="token function">Analyze</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 恢复 Master Record 等元信息</span>
+  <span class="token comment">// 恢复故障时正在使用的数据库</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>disk_<span class="token punctuation">.</span><span class="token function">FileExists</span><span class="token punctuation">(</span>NEXT_LSN_NAME<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>ifstream <span class="token function">in</span><span class="token punctuation">(</span>NEXT_LSN_NAME<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    lsn_t next_lsn<span class="token punctuation">;</span>
+    in <span class="token operator">>></span> next_lsn<span class="token punctuation">;</span>
+    next_lsn_ <span class="token operator">=</span> next_lsn<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    next_lsn_ <span class="token operator">=</span> FIRST_LSN<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  flushed_lsn_ <span class="token operator">=</span> next_lsn_ <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span>
+  lsn_t checkpoint_lsn <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>disk_<span class="token punctuation">.</span><span class="token function">FileExists</span><span class="token punctuation">(</span>MASTER_RECORD_NAME<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>ifstream <span class="token function">in</span><span class="token punctuation">(</span>MASTER_RECORD_NAME<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    in <span class="token operator">>></span> checkpoint_lsn<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token comment">// 重建 事务表 和 脏页表</span>
+  xid_t max_xid <span class="token operator">=</span> transaction_manager_<span class="token punctuation">.</span><span class="token function">GetNextXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  lsn_t curLSN <span class="token operator">=</span> checkpoint_lsn<span class="token punctuation">;</span>
+  lsn_t end <span class="token operator">=</span> next_lsn_<span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>curLSN <span class="token operator">&lt;</span> end<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>LogRecord<span class="token operator">></span> logRec <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>curLSN <span class="token operator">&lt;=</span> flushed_lsn_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">char</span> logData<span class="token punctuation">[</span>MAX_LOG_SIZE <span class="token operator">+</span> <span class="token number">10</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        disk_<span class="token punctuation">.</span><span class="token function">ReadLog</span><span class="token punctuation">(</span>curLSN<span class="token punctuation">,</span> MAX_LOG_SIZE<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        logRec <span class="token operator">=</span> <span class="token class-name">LogRecord</span><span class="token double-colon punctuation">::</span><span class="token function">DeserializeFrom</span><span class="token punctuation">(</span>curLSN<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> pLog <span class="token operator">:</span> log_buffer_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>pLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> curLSN<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                logRec <span class="token operator">=</span> pLog<span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    xid_t xid <span class="token operator">=</span> logRec<span class="token operator">-></span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    max_xid <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">max</span><span class="token punctuation">(</span>xid <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">,</span> max_xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span><span class="token punctuation">(</span>att_<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>logRec<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> LogType<span class="token double-colon punctuation">::</span>COMMIT<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        att_<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+        att_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span> <span class="token operator">=</span> logRec<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>logRec<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> LogType<span class="token double-colon punctuation">::</span>COMMIT<span class="token punctuation">)</span>
+        att_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span> <span class="token operator">=</span> logRec<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">if</span><span class="token punctuation">(</span>logRec<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> LogType<span class="token double-colon punctuation">::</span>DELETE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>DeleteLog<span class="token operator">></span> curLog <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>DeleteLog<span class="token operator">></span></span></span><span class="token punctuation">(</span>logRec<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      TablePageid page_id <span class="token operator">=</span> <span class="token punctuation">&#123;</span>curLog<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> curLog<span class="token operator">-></span><span class="token function">GetPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> dpt_<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>page_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        dpt_<span class="token punctuation">[</span>page_id<span class="token punctuation">]</span> <span class="token operator">=</span> curLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>logRec<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> LogType<span class="token double-colon punctuation">::</span>INSERT<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>InsertLog<span class="token operator">></span> curLog <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>InsertLog<span class="token operator">></span></span></span><span class="token punctuation">(</span>logRec<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      TablePageid page_id <span class="token operator">=</span> <span class="token punctuation">&#123;</span>curLog<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> curLog<span class="token operator">-></span><span class="token function">GetPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> dpt_<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>page_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        dpt_<span class="token punctuation">[</span>page_id<span class="token punctuation">]</span> <span class="token operator">=</span> curLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>logRec<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> LogType<span class="token double-colon punctuation">::</span>NEW_PAGE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>NewPageLog<span class="token operator">></span> curLog <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>NewPageLog<span class="token operator">></span></span></span><span class="token punctuation">(</span>logRec<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      TablePageid page_id <span class="token operator">=</span> <span class="token punctuation">&#123;</span>curLog<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> curLog<span class="token operator">-></span><span class="token function">GetPageId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> dpt_<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>page_id<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        dpt_<span class="token punctuation">[</span>page_id<span class="token punctuation">]</span> <span class="token operator">=</span> curLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    curLSN <span class="token operator">+=</span> logRec<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  transaction_manager_<span class="token punctuation">.</span><span class="token function">SetNextXid</span><span class="token punctuation">(</span>max_xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="重做：LogManager-Redo">重做：LogManager::Redo()</h3>
+<p>重做函数利用了脏页表，但使用的方法也十分简单粗暴，它遍历脏页表中的所有页面，这些页面都是需要Redo的，因为他们是脏页，可能在数据库崩溃的时候丢失了这些脏页。所以对于重做，和原来的操作唯一的不同点就是起点不同，遍历所有脏页最早的修改LSN，找到这些LSN中最小的作为起点，开始全部往后遍历一遍。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">LogManager</span><span class="token double-colon punctuation">::</span><span class="token function">Redo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  lsn_t minRecLSN <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>dpt_<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    minRecLSN <span class="token operator">=</span> <span class="token function">Checkpoint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+    minRecLSN <span class="token operator">=</span> next_lsn_<span class="token punctuation">;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token punctuation">[</span>_<span class="token punctuation">,</span> lsn<span class="token punctuation">]</span><span class="token operator">:</span> dpt_<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      minRecLSN <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">min</span><span class="token punctuation">(</span>minRecLSN<span class="token punctuation">,</span> lsn<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  lsn_t curLSN <span class="token operator">=</span> minRecLSN<span class="token punctuation">;</span>
+  lsn_t end <span class="token operator">=</span> next_lsn_<span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>curLSN <span class="token operator">&lt;</span> end<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>huadb<span class="token double-colon punctuation">::</span>LogRecord<span class="token operator">></span> logRec <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>curLSN <span class="token operator">&lt;=</span> flushed_lsn_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">char</span> logData<span class="token punctuation">[</span>MAX_LOG_SIZE <span class="token operator">+</span> <span class="token number">10</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        disk_<span class="token punctuation">.</span><span class="token function">ReadLog</span><span class="token punctuation">(</span>curLSN<span class="token punctuation">,</span> MAX_LOG_SIZE<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        logRec <span class="token operator">=</span> <span class="token class-name">LogRecord</span><span class="token double-colon punctuation">::</span><span class="token function">DeserializeFrom</span><span class="token punctuation">(</span>curLSN<span class="token punctuation">,</span> logData<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> pLog <span class="token operator">:</span> log_buffer_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>pLog<span class="token operator">-></span><span class="token function">GetLSN</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> curLSN<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                logRec <span class="token operator">=</span> pLog<span class="token punctuation">;</span>
+                <span class="token keyword">break</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    logRec<span class="token operator">-></span><span class="token function">Redo</span><span class="token punctuation">(</span><span class="token operator">*</span>buffer_pool_<span class="token punctuation">,</span> <span class="token operator">*</span>catalog_<span class="token punctuation">,</span> <span class="token operator">*</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    curLSN <span class="token operator">+=</span> logRec<span class="token operator">-></span><span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="回滚LogManager-Undo">回滚LogManager::Undo()</h3>
+<p>相当的方便，我们有了所有要回滚的事务ID，以及最新的对应日志LSN，每个日志还能找到自己事务的上一个LSN，按照上面的RollBack函数逻辑，直接调用即可。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">LogManager</span><span class="token double-colon punctuation">::</span><span class="token function">Undo</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token punctuation">[</span>xid<span class="token punctuation">,</span>_<span class="token punctuation">]</span><span class="token operator">:</span> att_<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">Rollback</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此我们完成了<strong>ARIES 恢复算法</strong>，通过测试样例：</p>
+<p><strong>lab2/30-aries.test</strong></p>
+<h1><strong>难度和坑的总结</strong></h1>
+<p>被LSN卡了一会，没有意识到LSN并不是按照1递增，而是刚刚好依据日志大小也作为日志的偏移值，导致一开始使用++一直出现日志读取错误或者是下标错误。</p>
+<p>在创建新页面的Redo中，对上一个页面的处理有失误，导致找了很久的BUG</p>
+<p>建议：对于创建新页面的UNDO，第一个页面无法删除，进退两难</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/10/19/machine-learning-note1/">《图解机器学习算法》笔记——机器学习基础</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" rel="tag">数据库实验</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/25/database-huadb2/">数据库内核实验报告二</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/19/machine-learning-note1/">《图解机器学习算法》笔记——机器学习基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/29/database-huadb1/">数据库内核实验报告一</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/24/learn-database-note5/">数据库管理系统——事务处理</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.67px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/requests/" style="font-size: 11.67px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.67px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 15px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.67px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 16.67px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 11.67px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 10px;">机器学习</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.67px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 13.33px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.33px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
