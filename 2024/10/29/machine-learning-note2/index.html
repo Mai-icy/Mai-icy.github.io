@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>《图解机器学习算法》笔记——有监督学习1 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="《图解机器学习算法》笔记——有监督学习1"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>《图解机器学习算法》笔记——有监督学习1</h2>
+            <div class="post-meta">
+                <time class="date">2024.10.29</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>算法一：线性回归</h1>
+<h2 id="概述">概述</h2>
+<p>线性回归很常见，简单带过，就是把xy对应数据拟合成线性关系。</p>
+<p>对于直线方程，有 <img src="https://math.now.sh?inline=y%20%3D%20kx%20%2Bb" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，其中有两个参数也就是k和b分别是斜率和截距。</p>
+<ul>
+<li>学习参数：算法学得的参数例如斜率k和截距b。</li>
+<li>一元回归：指的是只有一个特征变量的情况，即模型只使用一个自变量去预测目标变量。</li>
+</ul>
+<h2 id="算法说明">算法说明</h2>
+<p>线性回归中，需要从不在一条直线上的点求出直线。为了判断学习参数的优劣性，使用均方误差进行判断。</p>
+<p>均方误差：每个目标变量与直线的差值平方和</p>
+<p><img src="https://math.now.sh?inline=%5Cfrac%7B1%7D%7Bn%7D%20%5Csum_%7Bi%3D1%7D%5E%7Bn%7D%20%5Cleft%5B%20y_i%20-%20%28b%20%2B%20k%20x_i%29%20%5Cright%5D%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>均方误差越小，越能更好的表示数据关联性。</p>
+<ul>
+<li>误差函数：能表明学习参数和误差之间的关系的函数，例如此处的均方误差。</li>
+</ul>
+<h2 id="线性回归代码演示">线性回归代码演示</h2>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>linear_model <span class="token keyword">import</span> LinearRegression
+<span class="token keyword">import</span> matplotlib<span class="token punctuation">.</span>pyplot <span class="token keyword">as</span> plt
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>model_selection <span class="token keyword">import</span> train_test_split
+X <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">10.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">8.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">13.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">9.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">11.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">14.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">6.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">4.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">12.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">7.0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">5.0</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+y <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token number">8.04</span><span class="token punctuation">,</span> <span class="token number">6.95</span><span class="token punctuation">,</span> <span class="token number">7.58</span><span class="token punctuation">,</span> <span class="token number">8.81</span><span class="token punctuation">,</span> <span class="token number">8.33</span><span class="token punctuation">,</span> <span class="token number">9.96</span><span class="token punctuation">,</span> <span class="token number">7.24</span><span class="token punctuation">,</span> <span class="token number">4.26</span><span class="token punctuation">,</span> <span class="token number">10.84</span><span class="token punctuation">,</span> <span class="token number">4.82</span><span class="token punctuation">,</span> <span class="token number">5.68</span><span class="token punctuation">]</span>
+<span class="token comment"># 划分训练集和测试集，test_size 指定测试集的比例</span>
+X_train<span class="token punctuation">,</span> X_test<span class="token punctuation">,</span> y_train<span class="token punctuation">,</span> y_test <span class="token operator">=</span> train_test_split<span class="token punctuation">(</span>X<span class="token punctuation">,</span> y<span class="token punctuation">,</span> test_size<span class="token operator">=</span><span class="token number">0.2</span><span class="token punctuation">,</span> random_state<span class="token operator">=</span><span class="token number">42</span><span class="token punctuation">)</span>
+model <span class="token operator">=</span> LinearRegression<span class="token punctuation">(</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>X_train<span class="token punctuation">,</span> y_train<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>model<span class="token punctuation">.</span>intercept_<span class="token punctuation">)</span> <span class="token comment"># 截距</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>model<span class="token punctuation">.</span>coef_<span class="token punctuation">)</span> <span class="token comment"># 斜率</span>
+y_pred <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>y_pred<span class="token punctuation">)</span> <span class="token comment"># 对x=0, x=1的预测结果</span>
+<span class="token comment"># 绘制数据集散点图</span>
+plt<span class="token punctuation">.</span>scatter<span class="token punctuation">(</span>X_train<span class="token punctuation">,</span> y_train<span class="token punctuation">,</span> color<span class="token operator">=</span><span class="token string">'blue'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Data'</span><span class="token punctuation">)</span>
+<span class="token comment"># 绘制回归线</span>
+y_pred <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>X_train<span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>plot<span class="token punctuation">(</span>X_train<span class="token punctuation">,</span> y_pred<span class="token punctuation">,</span> color<span class="token operator">=</span><span class="token string">'red'</span><span class="token punctuation">,</span> label<span class="token operator">=</span><span class="token string">'Linear Regression Model'</span><span class="token punctuation">)</span>
+plt<span class="token punctuation">.</span>show<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><img src="/2024/10/29/machine-learning-note2/1.png" alt="1.png"></p>
+<h2 id="详细说明">详细说明</h2>
+<h3 id="安斯库姆四重奏">安斯库姆四重奏</h3>
+<p><strong>安斯库姆四重奏</strong>（Anscombe’s Quartet）是一组由统计学家弗朗西斯·安斯库姆（Francis Anscombe）在 1973 年提出的数据集。它由四组不同的数据构成，尽管这些数据在许多统计属性上（如均值、方差、相关系数、线性回归直线等）非常相似，但它们的分布形态却大不相同。</p>
+<p><img src="/2024/10/29/machine-learning-note2/2.png" alt="2.png"></p>
+<p>以上的四组数据线性回归直线完全一致，但我们明显可以发现有部分的数据并不适合这样拟合。</p>
+<p>对原本不遵循线性分布的数据强行进行线性回归也得不到好的结果。拿到数据之后，首先应该进行可视化，再考虑是否进行线性回归。</p>
+<h3 id="最小化均方误差">最小化均方误差</h3>
+<p>均方误差可以使用学习参数的函数表示：</p>
+<p><img src="https://math.now.sh?inline=L%28w_0%2C%20w_1%29%20%3D%20%5Cfrac%7B1%7D%7Bn%7D%20%5Csum_%7Bi%3D1%7D%5E%7Bn%7D%20%5Cleft%5B%20y_i%20-%20(b%20%2B%20k%20x_i)%20%5Cright%5D%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>此时代入xi yi，这里使用以下值作为例子</p>
+<table>
+<thead>
+<tr>
+<th>i</th>
+<th>x</th>
+<th>y</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3</td>
+<td>5</td>
+</tr>
+<tr>
+<td>3</td>
+<td>6</td>
+<td>3</td>
+</tr>
+<tr>
+<td>4</td>
+<td>7</td>
+<td>7</td>
+</tr>
+</tbody>
+</table>
+<p>可以得到以下 <img src="https://math.now.sh?inline=L%28b%2C%20k%29%20%3D%20%5Cfrac%7B1%7D%7B4%7D%20%5Csum_%7Bi%3D1%7D%5E%7B4%7D%20%5Cleft%5B%20y_i%20-%20(b%20%2B%20k%20x_i)%20%5Cright%5D%5E2%20%3D%20b%5E2%20%2B%2024.5k%5E2%20%2B%209b%20k%20-%208b%20-%2042k%20%2B%2021" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 由此二次函数可得图像（w0=b，w1=k）：</p>
+<p><img src="/2024/10/29/machine-learning-note2/3.png" alt="3.png"></p>
+<p>可以发现a点是最佳学习参数</p>
+<h3 id="其它线性回归和非线性回归">其它线性回归和非线性回归</h3>
+<ul>
+<li>一元回归：指独立特征变量只有一个时的线性回归。</li>
+<li>多元回归：当特征变量有两个及以上时，称作多元回归。</li>
+<li>多项式回归：包含特征变量的多次方项的线性回归。</li>
+<li>非线性回归：例如e的kx次，学习参数和目标变量不是线性关系，被分为非线性回归。</li>
+</ul>
+<p>是否为线性回归不是从特征变量来看的。从学习参数的角度来看是线性的回归才称为线性回归，所以多项式回归也属于线性回归。</p>
+<h1>算法二：正则化</h1>
+<h2 id="概述-2">概述</h2>
+<p>正则化是防止过拟合的一种方法，与线性回归等算法配合使用。通过向损失函数增加惩罚项的方式对模型施加制约，有望提高模型的泛化能力。</p>
+<ul>
+<li>过拟合：模型在验证数据上的误差比训练数据的误差大得多的现象</li>
+<li>泛化程度：机器学习模型在新数据上的表现能力，具体来说是模型能否在训练集之外的数据上取得良好的性能。</li>
+</ul>
+<p>（其中的一个原因：模型复杂度过高）</p>
+<p>对于以下例子，数据是y = sin(2pi x)，使用多次进行线性回归。</p>
+<p><img src="/2024/10/29/machine-learning-note2/4.png" alt="4.png"></p>
+<table>
+<thead>
+<tr>
+<th>次数</th>
+<th>x</th>
+<th>y</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>0.412</td>
+<td>0.618</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0.176</td>
+<td>0.193</td>
+</tr>
+<tr>
+<td>3</td>
+<td>0.081</td>
+<td>0.492</td>
+</tr>
+<tr>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<td>6</td>
+<td>0.024</td>
+<td>3.472</td>
+</tr>
+</tbody>
+</table>
+<p>我们可以发现第六次线性回归的误差值是最小的，但是验证误差十分大，这就是一个过拟合的例子，六次线性回归的模型太过复杂，由于过拟合导致泛化程度低。</p>
+<p>应用正则化后就会抑制模型复杂度，防止后期的过拟合。</p>
+<h2 id="算法说明-2">算法说明</h2>
+<p>岭回归（Ridge Regression）是一种线性回归的改进方法，常用于解决多重共线性问题（即解释变量之间高度相关）和防止模型过拟合。</p>
+<p>之所以复杂模型会出现过拟合：学习参数值太大或太小。</p>
+<p>随着学习此处的增加，学习参数的绝对值会变大，但使用了正则化则会减少这种情况。</p>
+<h3 id="岭回归的误差函数">岭回归的误差函数</h3>
+<p>考虑对二次线性回归应用正则化的情况：</p>
+<p><img src="https://math.now.sh?inline=R%28w%29%20%3D%20%5Csum_%7Bi%3D1%7D%5E%7Bm%7D%20%5Cleft%5B%20y_i%20-%20(w_0%20%2B%20w_1%20x_i%20%2B%20w_2%20x_i%5E2)%20%5Cright%5D%5E2%20%2B%20%5Calpha%20(w_1%5E2%20%2B%20w_2%5E2)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>第1项 <img src="https://math.now.sh?inline=%5Csum_%7Bi%3D1%7D%5E%7Bm%7D%20%5Cleft%5B%20y_i%20-%20%28w_0%20%2B%20w_1%20x_i%20%2B%20w_2%20x_i%5E2%29%20%5Cright%5D%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 是线性回归的损失函数。</p>
+<p>第2项 <img src="https://math.now.sh?inline=%5Calpha%20%28w_1%5E2%20%2B%20w_2%5E2%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 被称为惩罚项（或者正则化项），是学习参数的平方和的形式。</p>
+<p>一般来说，惩罚项中不包含截距。</p>
+<p>α控制了正则化强度，α越大，对学习参数的抑制就越强。</p>
+<h3 id="损失函数最小化">损失函数最小化</h3>
+<p>岭回归的误差函数就是在后面加上了惩罚项，距我们之前所说，造成过拟合的原因是w值的绝对值过大，因此如果w值的绝对值过大，就增加惩罚项，从而避免过拟合。</p>
+<p>用于抑制学习参数。</p>
+<h3 id="示例代码">示例代码</h3>
+<p>对sin函数进行岭回归建模</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>preprocessing <span class="token keyword">import</span> PolynomialFeatures
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>linear_model <span class="token keyword">import</span> Ridge
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>metrics <span class="token keyword">import</span> mean_squared_error
+train_size <span class="token operator">=</span> <span class="token number">20</span>
+test_size <span class="token operator">=</span> <span class="token number">12</span>
+train_X <span class="token operator">=</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>uniform<span class="token punctuation">(</span>low<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> high<span class="token operator">=</span><span class="token number">1.2</span><span class="token punctuation">,</span> size<span class="token operator">=</span>train_size<span class="token punctuation">)</span>
+test_X <span class="token operator">=</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>uniform<span class="token punctuation">(</span>low<span class="token operator">=</span><span class="token number">0.1</span><span class="token punctuation">,</span> high<span class="token operator">=</span><span class="token number">1.3</span><span class="token punctuation">,</span> size<span class="token operator">=</span>test_size<span class="token punctuation">)</span>
+train_y <span class="token operator">=</span> np<span class="token punctuation">.</span>sin<span class="token punctuation">(</span>train_X <span class="token operator">*</span> <span class="token number">2</span> <span class="token operator">*</span> np<span class="token punctuation">.</span>pi<span class="token punctuation">)</span> <span class="token operator">+</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>normal<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0.2</span><span class="token punctuation">,</span> train_size<span class="token punctuation">)</span>
+test_y <span class="token operator">=</span> np<span class="token punctuation">.</span>sin<span class="token punctuation">(</span>test_X <span class="token operator">*</span> <span class="token number">2</span> <span class="token operator">*</span> np<span class="token punctuation">.</span>pi<span class="token punctuation">)</span> <span class="token operator">+</span> np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>normal<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0.2</span><span class="token punctuation">,</span> test_size<span class="token punctuation">)</span>
+poly <span class="token operator">=</span> PolynomialFeatures<span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span>  <span class="token comment"># 次数为6</span>
+train_poly_X <span class="token operator">=</span> poly<span class="token punctuation">.</span>fit_transform<span class="token punctuation">(</span>train_X<span class="token punctuation">.</span>reshape<span class="token punctuation">(</span>train_size<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+test_poly_X <span class="token operator">=</span> poly<span class="token punctuation">.</span>fit_transform<span class="token punctuation">(</span>test_X<span class="token punctuation">.</span>reshape<span class="token punctuation">(</span>test_size<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+model <span class="token operator">=</span> Ridge<span class="token punctuation">(</span>alpha<span class="token operator">=</span><span class="token number">1.0</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>train_poly_X<span class="token punctuation">,</span> train_y<span class="token punctuation">)</span>
+train_pred_y <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>train_poly_X<span class="token punctuation">)</span>
+test_pred_y <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>test_poly_X<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>mean_squared_error<span class="token punctuation">(</span>train_pred_y<span class="token punctuation">,</span> train_y<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>mean_squared_error<span class="token punctuation">(</span>test_pred_y<span class="token punctuation">,</span> test_y<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment"># 0.2525090370132518</span>
+<span class="token comment"># 0.34030978733484846</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明-2">详细说明</h2>
+<p>控制α来调整正则化强度，应一边验证误差一边对α进行调整，最终得到合适的α。</p>
+<h3 id="Lasso回归">Lasso回归</h3>
+<p><img src="https://math.now.sh?inline=R%28w%29%20%3D%20%5Csum_%7Bi%3D1%7D%5E%7Bn%7D%20%5Cleft%5B%20y_i%20-%20(w_0%20%2B%20w_1%20x_i%20%2B%20w_2%20x_i%5E2)%20%5Cright%5D%20%2B%20%5Calpha%20(%7Cw_1%7C%20%2B%20%7Cw_2%7C)" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>Lasso 回归的惩罚项是学习参数的绝对值之和，这一点与岭回归不同。</p>
+<p><img src="/2024/10/29/machine-learning-note2/5.png" alt="5.png"></p>
+<p>绿色是误差函数，蓝色是惩罚项。</p>
+<p>如Lasso 回归所示，具有学习参数容易变为0的特点。利用这个特点，我们可以使用学习参数不为0的特征来构建模型，从而达到利用Lasso回归选择特征的效果。这样不仅能提高模型的泛化能力，还能使模型的解释变容易。</p>
+<h1>算法三：逻辑回归</h1>
+<h2 id="概述-3">概述</h2>
+<p>逻辑回归是一种用于有监督学习的分类任务的简单算法。逻辑回归通过计算数据属于各类别的概率来进行分类。利用这个概率，可以对某个事件发生或不发生进行二元分类（也可以三元以上分类）</p>
+<p>这次的例子是，给定100天里，温度对应是否有积雪的情况，y轴为0时有积雪，为1无积雪。</p>
+<p>x轴是摄氏度气温，可以看到高温没积雪，低温有积雪。</p>
+<p><img src="/2024/10/29/machine-learning-note2/6.png" alt="6.png"></p>
+<p>上图是对数据的逻辑回归，在0度的时候是12%，1度50%，2度88%。</p>
+<h2 id="算法说明-3">算法说明</h2>
+<p>逻辑回归根据数据x和表示其所属类别的标签y进行学习，计算概率。</p>
+<p>如果标签是二元分类，则可以使用前面的y=0, 1这种二元数值表示。</p>
+<h3 id="与线性回归进行比较：">与线性回归进行比较：</h3>
+<p>相同点：基本思想，对数据x乘以权重向量w，再加上偏置w0，计算wT x+w0的值</p>
+<p>不同点：逻辑回归的输出范围限制在01之间，使用了Sigmoid函数：</p>
+<p>σ(z)=1/[1+exp(-z)]</p>
+<p>对输入数据x使用Sigmoid函数，p=σ(wT x+w0) 得到标签为y的概率p。（二元分类使用0.5作为阈值）</p>
+<p>误差函数使用逻辑损失。逻辑损失在分类失败时返回大值，在分类成功时为小值。</p>
+<p>与在误差回归中引入的均方误差不同的是，我们无法通过式子变形来计算逻辑损失的最小值，因此需要采用梯度下降法通过数值计算来求解。（机器学习中经常会通过数值计算来近似求解）</p>
+<h2 id="示例代码-2">示例代码</h2>
+<p>以下代码就是对之前温度和积雪预测的实例，最后输出了各种概率。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>linear_model <span class="token keyword">import</span> LogisticRegression
+X_train <span class="token operator">=</span> np<span class="token punctuation">.</span>r_<span class="token punctuation">[</span>np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>normal<span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> size<span class="token operator">=</span><span class="token number">50</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        np<span class="token punctuation">.</span>random<span class="token punctuation">.</span>normal<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> size<span class="token operator">=</span><span class="token number">50</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">.</span>reshape<span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+y_train <span class="token operator">=</span> np<span class="token punctuation">.</span>r_<span class="token punctuation">[</span>np<span class="token punctuation">.</span>ones<span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">)</span><span class="token punctuation">,</span> np<span class="token punctuation">.</span>zeros<span class="token punctuation">(</span><span class="token number">50</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+model <span class="token operator">=</span> LogisticRegression<span class="token punctuation">(</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>X_train<span class="token punctuation">,</span> y_train<span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>predict_proba<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">]</span>
+<span class="token comment">#  array([ 0.12082515,  0.50296844,  0.88167486])</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明-3">详细说明</h2>
+<ul>
+<li>决策边界：逻辑回归计算出来概率正好为50%的位置</li>
+</ul>
+<p>决策边界的形状因使用的算法不同而有很大的不同。在平面的情况下，逻辑回归的决策边界是直线。其它算法的决策边界会更复杂</p>
+<h3 id="特征">特征</h3>
+<p><strong>如何通过逻辑回归模型中的特征权重（系数）来理解每个特征对分类结果的影响</strong>。</p>
+<p>在逻辑回归中，每个特征（比如鸢尾花的花瓣长、花瓣宽等）都有一个权重值。权重的<strong>符号</strong>（正或负）和大小告诉我们该特征对分类结果的影响：</p>
+<ul>
+<li><strong>正的权重</strong>：如果这个特征值增加，模型认为该数据属于目标类别的概率（这里是杂色鸢尾）就越大。</li>
+<li><strong>负的权重</strong>：如果这个特征值增加，模型认为该数据属于目标类别的概率反而会降低。</li>
+</ul>
+<p>举个例子，这里用的是鸢尾花的数据，分类目标是预测一朵花是“杂色鸢尾”（versicolor）还是“山鸢尾”（setosa）。两个特征“花瓣长度”（petal length）和“萼片宽度”（sepal width）分别有正的和负的权重：</p>
+<ol>
+<li><strong>花瓣长度的权重是正的</strong>，表示如果花瓣长度越长，模型就越倾向于把这朵花分类为杂色鸢尾。</li>
+<li><strong>萼片宽度的权重是负的</strong>，表示如果萼片宽度越小，模型就越倾向于把这朵花分类为杂色鸢尾。</li>
+</ol>
+<p>这样，通过查看权重的符号和大小，我们能直观地理解每个特征对分类结果的影响方向和程度。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/10/25/database-huadb2/">数据库内核实验报告二</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag">机器学习</a><a class="-none-link" href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" rel="tag">正则化</a><a class="-none-link" href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" rel="tag">线性回归</a><a class="-none-link" href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" rel="tag">逻辑回归</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/10/29/machine-learning-note2/">《图解机器学习算法》笔记——有监督学习1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/25/database-huadb2/">数据库内核实验报告二</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/19/machine-learning-note1/">《图解机器学习算法》笔记——机器学习基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/07/learn-database-note6/">数据库管理系统——故障恢复1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/09/29/database-huadb1/">数据库内核实验报告一</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 12px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 10px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
