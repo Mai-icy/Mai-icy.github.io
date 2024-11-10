@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>《图解机器学习算法》笔记——有监督学习3 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="《图解机器学习算法》笔记——有监督学习3"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>《图解机器学习算法》笔记——有监督学习3</h2>
+            <div class="post-meta">
+                <time class="date">2024.11.11</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1><strong>算法七：随机森林</strong></h1>
+<h2 id="概述"><strong>概述</strong></h2>
+<p>随机森林通过多个决策树模型来共同解决问题的算法。单个决策树的性能不一定够高，由多个决策树多数表决得到的结果能有更高的预测精度。</p>
+<p><img src="/2024/11/11/machine-learning-note4/1.png" alt="1.png"></p>
+<p>如果每个决策树的结果相同，那么最后的表决结果也不会有变化，所以每个决策树要具备多样性，以下介绍。</p>
+<h2 id="算法说明"><strong>算法说明</strong></h2>
+<h3 id="决策树"><strong>决策树</strong></h3>
+<p>决策树是将训练数据进行划分的方法。</p>
+<p>决策树的输入通常是 特征矩阵 与 标签向量，相当于数据内容和分类结果。</p>
+<p>训练数据的杂乱程度称为不纯度。利用不纯度来比较分割方法的优劣。</p>
+<p>表示不纯度的具体指标有很多，如基尼系数。</p>
+<p>基尼系数 = <img src="https://math.now.sh?inline=1-%5Csum_%7Bi%3D1%7D%5Ec%20p_i%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">（c是标签数，pi是某标签的数量在总数的占比）</p>
+<p>所示为使用几种不同的分割方法计算得出的 加权平均基尼系数（区域内的基尼系数乘以区域在总数占比）</p>
+<p>左侧是分割前的状态。右侧是使基尼系数的平均值最小的分割方法的例子。</p>
+<p><img src="/2024/11/11/machine-learning-note4/2.png" alt="2.png"></p>
+<p>决策树便是通过反复分割来进行的。</p>
+<p>步骤：</p>
+<ul>
+<li>
+<p>计算某个区域的所有特征值和候选分割的不纯度.</p>
+</li>
+<li>
+<p>以分割时不纯度减小最多的分割方式分割区域。</p>
+</li>
+<li>
+<p>对于分割后的区域，重复步骤1和步骤2。</p>
+<p><img src="/2024/11/11/machine-learning-note4/3.png" alt="3.png"></p>
+</li>
+</ul>
+<h3 id="随机森林"><strong>随机森林</strong></h3>
+<p>随机森林如何使用多个决策树来提高正确率：</p>
+<ul>
+<li>假设每个决策树的正确率都是60%</li>
+<li>对于训练后决策树，每次的输入都会给定一个答案，n个决策树都给出正确率为60%的答案</li>
+<li>服从多数正确，最后的正确率会大于60%</li>
+</ul>
+<p>决策树如何在相同数据下独立：</p>
+<ul>
+<li>
+<p>Bootstrap方法：每个决策树获得的样本集是 n 次的 有放回的随机抽取 集合（也就是单个数据可能重复）。</p>
+</li>
+<li>
+<p>随机选取特征值：对于每个节点的分裂，不使用全部特征，而是随机选择一个特征子集来决定分裂。</p>
+<p><img src="/2024/11/11/machine-learning-note4/4.png" alt="4.png"></p>
+</li>
+</ul>
+<p>随机森林利用这种方式创建多棵数据集、训练多棵决策树、对预测结果进行多数表决，返回最终的分类结果。</p>
+<h2 id="示例代码"><strong>示例代码</strong></h2>
+<p>用随机森林基于3种葡萄酒的各种测量值数据，对葡萄酒进行分类。</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>datasets <span class="token keyword">import</span> load_wine
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>ensemble <span class="token keyword">import</span> RandomForestClassifier
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>model_selection <span class="token keyword">import</span> train_test_split
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>metrics <span class="token keyword">import</span> accuracy_score
+ <span class="token comment"># 读取数据</span>
+data <span class="token operator">=</span> load_wine<span class="token punctuation">(</span><span class="token punctuation">)</span>
+ X_train<span class="token punctuation">,</span> X_test<span class="token punctuation">,</span> y_train<span class="token punctuation">,</span> y_test <span class="token operator">=</span> train_test_split<span class="token punctuation">(</span>
+    data<span class="token punctuation">.</span>data<span class="token punctuation">,</span> data<span class="token punctuation">.</span>target<span class="token punctuation">,</span> test_size<span class="token operator">=</span><span class="token number">0.3</span><span class="token punctuation">)</span>
+model <span class="token operator">=</span> RandomForestClassifier<span class="token punctuation">(</span><span class="token punctuation">)</span>
+model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>X_train<span class="token punctuation">,</span> y_train<span class="token punctuation">)</span>  <span class="token comment"># 训练</span>
+y_pred <span class="token operator">=</span> model<span class="token punctuation">.</span>predict<span class="token punctuation">(</span>X_test<span class="token punctuation">)</span>
+accuracy_score<span class="token punctuation">(</span>y_pred<span class="token punctuation">,</span> y_test<span class="token punctuation">)</span>  <span class="token comment"># 评估</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明"><strong>详细说明</strong></h2>
+<h3 id="特征的重要度"><strong>特征的重要度</strong></h3>
+<p>随机森林可以让我们知道每个特征对预测结果的重要度（影响大小）。</p>
+<p>通过对随机森林的所有决策树求在以某个特征分割时的不纯度并取平均值，可以得到特征的重要度。</p>
+<p>将重要度高的特征用于分割，有望大幅度减小不纯度。反之，重要度低的特征即使被用于分割，也无法减小不纯度，所以可以说这样的特征是非必要的。基于特征的重要度，我们可以去除非必要的特征。</p>
+<p>下图为使用随机森林算出的葡萄酒分类中的特征重要度，重要度最高的特征color_intensity表示色泽对葡萄酒分类非常重要。</p>
+<p><img src="/2024/11/11/machine-learning-note4/5.png" alt="5.png"></p>
+<h1><strong>算法八 神经网络</strong></h1>
+<h2 id="概述-2"><strong>概述</strong></h2>
+<p>神经网络由输入层、中间层、输出层组成，常用于分类问题。其中中间层最为重要，能够学习复杂的决策边界。</p>
+<p><img src="/2024/11/11/machine-learning-note4/6.png" alt="6.png"></p>
+<p>如图为典型的神经网络的的网络结构。其中左侧输入层为三维数据，是输入数据本身，中间层为二维，右侧输出层为一维，取输入数据分类结果的概率。</p>
+<p><img src="/2024/11/11/machine-learning-note4/7.png" alt="7.png"></p>
+<p>如图为一个具体例子，对一个叫做MNIST的手写数字数据集进行分类，其中包含0到9十个手写数字的8*8的灰度图片。</p>
+<p>下图为MNIST的神经网络示意图（忽略了各节点连线）</p>
+<p><img src="/2024/11/11/machine-learning-note4/8.png" alt="8.png"></p>
+<p>对于8x8的图像，左侧输入层将各个点的像素值存储在长度为64的一维数组中，可视为64维。</p>
+<p>中间层使用Sigmoid 等非线性函数计算输入层传来的数据，设置为16维。</p>
+<p>输出层也使用非线性函数计算中间层传来的数据。</p>
+<p>输出图像是0~9这十个数字的概率。</p>
+<h2 id="算法说明-2"><strong>算法说明</strong></h2>
+<h3 id="简单感知机"><strong>简单感知机</strong></h3>
+<p>简单感知机由输入层和输出层构成，是将非线性函数应用于对特征值加权后的结果并进行识别的模型。它的工作原理基于加权求和和阶跃函数</p>
+<p>举例：某特征维度为2，输入特征值为<img src="https://math.now.sh?inline=%28x_1%2Cx_2%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，使用非线性函数 f 计算概率 y ：<br>
+<img src="https://math.now.sh?inline=y%3Df%28w_0%2Bw_1x_1%2Bw_2x_2%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<ul>
+<li>加权求和：特征值的系数w1和w2称为 权重，常数项w0称为偏置。</li>
+<li>激活函数：例如Sigmoid 可以将加权值转为一个概率值，通常激活函数后的输出通常是一个连续值，Sigmoid适合二值分类，如果要多分类，Softmax函数将更适合。</li>
+</ul>
+<p><img src="/2024/11/11/machine-learning-note4/9.png" alt="9.png"></p>
+<p>图中是简单感知机的示意图，右图为简化图。</p>
+<p>对于感知机的权值确定，感知机的权重在理想情况下在多次训练后会逐渐收敛到一个能够完美分割数据的解，前提是训练数据是线性可分的。如果数据是线性可分的，感知机算法保证最终会收敛。</p>
+<h3 id="神经网路"><strong>神经网路</strong></h3>
+<p>神经网络（Neural Network）可以看作是由多个感知机（Perceptron）通过分层构建而成的。</p>
+<p>简单感知机不能很好学习某些数据的决策边界，如下图，典型的数据不是线性可分。</p>
+<p><img src="/2024/11/11/machine-learning-note4/10.png" alt="10.png"></p>
+<p>于是我们需要借用多个感知机，并进行一些处理。进行一个分层：</p>
+<p>对这个例子 设置两个中间层</p>
+<ul>
+<li>区分右上角的点和其他点的层</li>
+<li>区分左下角的点和其他点的层</li>
+</ul>
+<p>然后，设置综合这两个输出结果，同样利用简单感知机生成最终决定的层。通过这种做法，我们就可以根据数据是否进入被两条直线夹住的地方来分类了。示意图如下。</p>
+<p><img src="/2024/11/11/machine-learning-note4/11.png" alt="11.png"></p>
+<p>通过调节中间层的数量及层的深度可以学习更复杂的边界。如图。</p>
+<p><img src="/2024/11/11/machine-learning-note4/12.png" alt="12.png"></p>
+<h3 id="示例代码-2"><strong>示例代码</strong></h3>
+<pre class="line-numbers language-none"><code class="language-none">from sklearn.datasets import load_digits
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+# 读取数据
+data &#x3D; load_digits()
+X &#x3D; data.images.reshape(len(data.images), -1)
+y &#x3D; data.target
+X_train, X_test, y_train, y_test &#x3D; train_test_split(X, y, test_size&#x3D;0.3)
+model &#x3D; model &#x3D; MLPClassifier(hidden_layer_sizes&#x3D;(16, ))
+model.fit(X_train, y_train)  # 训练
+y_pred &#x3D; model.predict(X_test)
+accuracy_score(y_pred, y_test)  # 评估<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明-2"><strong>详细说明</strong></h2>
+<p>模型复杂之后容易过拟合。Early Stopping这种方法可以防止过拟合。</p>
+<h3 id="Early-Stopping"><strong>Early Stopping</strong></h3>
+<p>早停法指进入过拟合之前停止训练来防止过拟合。</p>
+<p>它进一步划分训练数据，将其中一部分作为训练中的评估数据。在训练过程中据此以此记录损失等评估指标，以了解训练的进度。如果损失开始恶化，出现过拟合的趋势，则停止训练。</p>
+<p><img src="/2024/11/11/machine-learning-note4/13.png" alt="13.png"></p>
+<h1><strong>算法九：KNN</strong></h1>
+<h2 id="概述-3"><strong>概述</strong></h2>
+<p>KNN独特于它只是机械地记住所有数据。</p>
+<p>KNN不用进行训练和预测的复杂过程。或者说在训练过程无计算，在预测过程中计算。</p>
+<p>在分类未知数据时，KNN将计算未知数据与训练数据的距离，通过多数表决找到最邻近的<img src="https://math.now.sh?inline=k" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">个点，然后进行分类。</p>
+<p>其虽然简单，但能适用于具有复杂边界的数据，如图。</p>
+<p><img src="/2024/11/11/machine-learning-note4/14.png" alt="14.png"></p>
+<p>右图中，散点图中所有点被分为两个标签，分类结果表示为热图。</p>
+<p>最近邻点的数量k设置为5，给出一个预测数据，找到这个预测数据在输入数据中最近的5个点判断。</p>
+<p>图中每个坐标的颜色表示k个最近邻标签的占比。</p>
+<p>暗红色区域表示k个点的标签是橙色的，随着比例接近1：1，颜色会变浅，接近于蓝色。</p>
+<h2 id="算法说明-3"><strong>算法说明</strong></h2>
+<p>KNN算法步骤如下：</p>
+<ul>
+<li>
+<p>计算输入数据与训练数据之间的距离。</p>
+</li>
+<li>
+<p>得到距离输入数据最近的k个训练数据。</p>
+</li>
+<li>
+<p>对训练数据的标签进行多数表决，将结果作为分类结果。</p>
+<p><img src="/2024/11/11/machine-learning-note4/15.png" alt="15.png"></p>
+</li>
+</ul>
+<p>如图，图中 设置的最近邻点k的数量为3。最近邻点k的数量是一个超参数，在二元分类时，通常取为奇数，便于多数表决。</p>
+<h3 id="示例代码-3"><strong>示例代码</strong></h3>
+<p>样本数据呈曲线分布，最近邻点k的数量采用默认值5.</p>
+<pre class="line-numbers language-none"><code class="language-none">from sklearn.neighbors import KNeighborsClassifier
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+# 生成数据
+X, y &#x3D; make_moons(noise&#x3D;0.3)
+X_train, X_test, y_train, y_test &#x3D; train_test_split(X, y, test_size&#x3D;0.3)
+model &#x3D; KNeighborsClassifier()
+model.fit(X_train, y_train)  # 训练
+y_pred &#x3D; model.predict(X_test)
+accuracy_score(y_pred, y_test)  # 评估<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明-3"><strong>详细说明</strong></h2>
+<h3 id="决策边界因k值而异"><strong>决策边界因k值而异</strong></h3>
+<p>k 值低更容易导致 过拟合，而 k 值高则可能导致 欠拟合。</p>
+<p><img src="/2024/11/11/machine-learning-note4/16.png" alt="16.png"></p>
+<p>图中从左到右分别为 k=1、5、30。</p>
+<p>k=1时出现了像飞地一样的决策边界，说明发生了过拟合。过少的k值可能会使模型非常敏感于训练数据中的噪声和异常值。</p>
+<p>k=5时边界变得平滑，相比于 k=1明显好转。</p>
+<p>而k=30时，在橙色区域夹杂了许多蓝色的点，说明边界过于宽松导致 错误的判断。它会更多地依赖于全局模式而非局部数据。这样，模型可能无法捕捉到数据中的细节和复杂性</p>
+<p>以上说明k值十分重要，需要调优得到最佳的k值。</p>
+<h3 id="注意点"><strong>注意点</strong></h3>
+<p>数据量较小或维度较小时，KNN效果很好。但是一旦数据量较大或维度较大，KNN需要在大量训练数据进行近邻搜索以找到最近的点。需要大量存储容量来存储数据。因此不适合 KNN。</p>
+<p>对于高维数据，KNN也无法很好学习。KNN起作用的前提是“只要拥有的训练数据多，就能在未知数据的附近发现训练数据”这一假设。这个假设叫作渐近假设，但对于高维数据来说，这个假设不一定成立。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/11/01/machine-learning-note3/">《图解机器学习算法》笔记——有监督学习2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/KNN/" rel="tag">KNN</a><a class="-none-link" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag">机器学习</a><a class="-none-link" href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" rel="tag">神经网络</a><a class="-none-link" href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" rel="tag">随机森林</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/11/11/machine-learning-note4/">《图解机器学习算法》笔记——有监督学习3</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/01/machine-learning-note3/">《图解机器学习算法》笔记——有监督学习2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/29/machine-learning-note2/">《图解机器学习算法》笔记——有监督学习1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/25/database-huadb2/">数据库内核实验报告二</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/19/machine-learning-note1/">《图解机器学习算法》笔记——机器学习基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/11/learn-database-note7/">数据库管理系统——故障恢复2</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 12px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
