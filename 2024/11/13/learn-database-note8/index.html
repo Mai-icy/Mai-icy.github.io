@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库管理系统——并发控制1 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库管理系统——并发控制1"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库管理系统——并发控制1</h2>
+            <div class="post-meta">
+                <time class="date">2024.11.13</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>并发控制概览</h1>
+<p>进行一个控制级别的复习</p>
+<p>并发：在同一时间间隔内有多个事件或者活动发生。</p>
+<table>
+<thead>
+<tr>
+<th>隔离级别</th>
+<th>脏读</th>
+<th>不可重复读</th>
+<th>幻读</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>读未提交</td>
+<td>允许</td>
+<td>允许</td>
+<td>允许</td>
+</tr>
+<tr>
+<td>读已提交</td>
+<td>不允许</td>
+<td>允许</td>
+<td>允许</td>
+</tr>
+<tr>
+<td>可重复读</td>
+<td>不允许</td>
+<td>不允许</td>
+<td>允许</td>
+</tr>
+<tr>
+<td>可串行化</td>
+<td>不允许</td>
+<td>不允许</td>
+<td>不允许</td>
+</tr>
+</tbody>
+</table>
+<p>解决冲突的思想</p>
+<ul>
+<li>悲观并发控制技术：事前控制，避免冲突发生 两阶段锁 基于图的协议</li>
+<li>乐观并发控制技术：事后控制，冲突发生后再处理 时间戳排序协议 乐观并发控制协议</li>
+</ul>
+<h1>悲观并发控制技术</h1>
+<p>悲观并发控制技术</p>
+<h2 id="锁">锁</h2>
+<p>概念：数据的访问权限，只有持有锁才可访问数据项。</p>
+<h3 id="共享锁（shared-lock-S锁）">共享锁（shared lock S锁）</h3>
+<p>多个事务可以在一个数据项上加多个共享锁</p>
+<p>加锁事务只能读取不能修改</p>
+<h3 id="互斥锁（exclusive-lock-X锁）">互斥锁（exclusive lock X锁）</h3>
+<p>对于一个数据项，只有一个事务可以加互斥锁，其他事务共享锁盒互斥锁都不能加</p>
+<p>加锁事务事务可以修改可以读取</p>
+<h3 id="使用方式">使用方式</h3>
+<p>事务访问数据项前先加锁</p>
+<ul>
+<li>只读取：申请共享锁</li>
+<li>要读写：申请互斥锁</li>
+</ul>
+<p>授予锁的条件</p>
+<ul>
+<li>数据项没锁，允许加锁</li>
+<li>数据项被加锁，根据锁的相容性处理（相容可授，反之不行）</li>
+</ul>
+<p>释放锁的状态</p>
+<ul>
+<li>执行期间显式地释放锁</li>
+<li>在终止时释放锁，包括事务撤销和完成提交。</li>
+</ul>
+<h3 id="锁饿死现象">锁饿死现象</h3>
+<p>例子：一个事务想要互斥锁，但其他事务连续接力共享锁，则一直无法获得</p>
+<p>解决方法：同时考虑相容性和事务到来顺序，先来先得。</p>
+<h3 id="锁数据结构">锁数据结构</h3>
+<p>锁表：对应了数据项和若干个锁信息项（锁信息项用链表连在一起）</p>
+<p>锁信息项：锁的类型和请求的事务</p>
+<h3 id="普通锁不能解决可串行化调度问题">普通锁不能解决可串行化调度问题</h3>
+<p>可串行化调度要求事务的并发执行顺序能够等价于某一串行执行的顺序。</p>
+<p>但普通锁机制主要在于处理对于多个读写问题之间的合理调度，导致读写不会出现问题，但事务之间的顺序，并不能保证。</p>
+<p>对于事务A：R(A) W(A) R(B) W(B)</p>
+<p>在普通锁眼里，相当于两个事务，这不能保证事务的原子性。</p>
+<h2 id="两阶段锁">两阶段锁</h2>
+<p>两阶段锁指的是对于锁的获取和释放一共分为两阶段：扩展和收缩</p>
+<p>意思就是事务对锁的处理数量可以分成两块连续的部分，第一块部分是获取锁，第二块部分是释放锁。</p>
+<p>此时，这个事务就有一体的性质。</p>
+<h3 id="两阶段锁能解决可串行化调度问题">两阶段锁能解决可串行化调度问题</h3>
+<p>在非严格两阶段锁认为，收缩阶段可以提前释放锁。</p>
+<p>但可能不可恢复：（脏读）</p>
+<p>可恢复的调度：</p>
+<p>若事务T读取过事务T′修改后的数据，那么事务T只能在事务T′提交后再提交</p>
+<p>不可恢复调度产生的问题：</p>
+<p>级联回滚，一个事务的回滚引发若干关联事务的回滚</p>
+<p>由于一个事务的某个锁如果提前释放，其他事务使用了这个脏读数据项，并提交。此时第一个事务并没有完成，T1如果回滚，就会导致T2读取的数据项是无效的。这是不可恢复的。</p>
+<h3 id="避免不可恢复：">避免不可恢复：</h3>
+<p>为了避免这种不可恢复的情况，数据库系统通常采用严格两阶段锁协议（Strict 2PL）或强制两阶段锁协议（Rigorous 2PL）：</p>
+<ul>
+<li>在严格两阶段锁协议中，事务在提交或回滚之前不会释放排他锁，这样其他事务无法读取未提交的数据，保证了可恢复性。</li>
+<li>强制两阶段锁协议进一步要求，事务在提交或回滚之前不会释放任何类型的锁（不仅仅是排他锁，甚至共享锁也不能释放），从而提供更强的隔离性。</li>
+</ul>
+<p>S2PL相比SS2PL可以提前释放共享锁，得到更高的读并发效率</p>
+<p>数据库系统一般采用S2PL</p>
+<ul>
+<li>保证可串行化调度</li>
+<li>保证可恢复调度，无级联回滚</li>
+<li>提前释放共享锁，提升并发性能</li>
+</ul>
+<h3 id="隔离级别">隔离级别</h3>
+<ul>
+<li>给数据表加锁</li>
+</ul>
+<p>避免脏写、脏读、不可重复读、幻读问题，实现了可串行化调度，会使事务等待锁的时间很长，影响并发度</p>
+<ul>
+<li>给数据项（记录、属性值、索引key）加锁</li>
+</ul>
+<p>避免脏写、脏读、不可重复读问题，不能避免幻读 为了解决幻读问题，实现可串行化调度，可以使用多粒度锁和意向锁。基本思想是加谓词锁，即对查询的范围加锁，不允许其他并发事务在查询范围内添加、删除数据</p>
+<h2 id="死锁">死锁</h2>
+<p>事务彼此都持有锁又同时在等待对方释放所需要的锁，不能继续执行并因此陷入了持续的等待状态。</p>
+<h3 id="死锁预防">死锁预防</h3>
+<p>在协议设计上保证数据库不会进入死锁状态</p>
+<p>建立事务时间戳，保证我们能知道事务的先后顺序</p>
+<p>两种协议：</p>
+<ul>
+<li>Wait-Die 等待死亡（只能旧事务等待新事务）</li>
+<li>Wound-Wait 伤害等待（只能新事务等待旧事物）</li>
+</ul>
+<p>具体行为：</p>
+<p>有事务T1和事务T2，T2更新</p>
+<p>Wait-Die（等待-死亡）协议：</p>
+<ul>
+<li>若事务T2持有锁，T1申请加锁时，T1会等待。</li>
+<li>若事务T1持有锁，T2申请加锁时，T2会被撤销并重启。重启后，T2的时间戳保持为原始值。</li>
+</ul>
+<p>Wound-Wait：（反过来）</p>
+<ul>
+<li>若事务T1持有锁，T2申请加锁时，T2会等待。</li>
+<li>若事务T2持有锁，T1申请加锁时，T1会被撤销并重启。重启后，T1的时间戳保持为原始值。</li>
+</ul>
+<h3 id="死锁检测与恢复">死锁检测与恢复</h3>
+<p>允许死锁的发生，但能够及时地意识到死锁的发生并进行处理</p>
+<p>使用一个图（等待图 wait-for graph  WFG）</p>
+<p>当事务Ti等待Tj，则添加一条i 到 j的有向边。</p>
+<p>每隔一段时间去找环，如果有环则代表有死锁。</p>
+<p>处理方法：</p>
+<p>选择一个牺牲的事务，撤销一个</p>
+<p>选择依据：</p>
+<ul>
+<li>事务开始运行的时间戳</li>
+<li>事务已经执行的SQL语句数量</li>
+<li>事务已经加锁的数据项的数量</li>
+</ul>
+<p>注意回滚程度：全部回滚/部分回滚</p>
+<p>避免事务饿死。</p>
+<h3 id="锁超时重启">锁超时重启</h3>
+<p>设置事务最长等待时间</p>
+<ul>
+<li>如果申请加锁的事务在该时间结束时仍未获得锁，即事务超时，那么此时将该事务回滚并重启</li>
+<li>当事务之间确实存在死锁时，该方法会让死锁中的一个或者多个事务回滚并重启，而其他事务继续执行，解决了死锁问题</li>
+</ul>
+<p>适用场景</p>
+<ul>
+<li>事务执行时间都比较短</li>
+<li>事务长时间的等待大多都是死锁造成的</li>
+</ul>
+<p>问题：难以合理设置等待时间</p>
+<h2 id="基于图的锁协议">基于图的锁协议</h2>
+<p>要求：</p>
+<ul>
+<li>避免死锁</li>
+<li>冲突可串行化调度</li>
+<li>数据项按照某种偏序关系构成有向无环图</li>
+</ul>
+<p>偏序关系指：当A指向BC，必须要先到B再到C 或者 先到C再到B。</p>
+<h3 id="树形协议">树形协议</h3>
+<p>将数据项进行层级处理，处理成数据项树形图。</p>
+<ul>
+<li>Ti可以对任何数据项进行第一次加锁</li>
+<li>之后如果Ti要对数据项X加锁，需要拥有X父节点数据项的锁</li>
+<li>Ti可以释放任意持有的锁，释放后不能再加锁</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>冲突可串行化且不产生死锁</li>
+<li>较早释放锁，减少等待时间增加并发度</li>
+</ul>
+<p>缺点</p>
+<ul>
+<li>不能保证可恢复性、可能存在级联回滚 （事务结束前不允许释放互斥锁可解决）</li>
+<li>事务可能会给不需要访问的数据项也加上锁</li>
+<li>数据项的访问顺序难以事先知晓</li>
+<li>事先不知道需要加锁的数据项时，需对根节点加锁，降低并发度</li>
+</ul>
+<h2 id="锁的粒度">锁的粒度</h2>
+<p>数据项的粒度：</p>
+<p>属性，元组，页面，表，整个数据库</p>
+<p>锁的粒度：</p>
+<p>就像上面的层级关系，就是根据粒度进行上锁。</p>
+<p>粒度越大，数据项越小，管理锁的开销越小，冲突越大并发越低。</p>
+<p>粒度越小，开销越大，并发度越大。</p>
+<h3 id="多粒度锁">多粒度锁</h3>
+<p>多粒度锁是一种锁机制，用于在并发控制中提供更细粒度的锁定能力，以提高系统的并发性和效率</p>
+<ul>
+<li>数据库中的所有对象按照大小的不同构成了一棵多粒度树</li>
+<li>多粒度树中的每一个节点可以独立地加锁</li>
+<li>对某个节点加锁表示对该节点的后代节点加同类型的锁</li>
+</ul>
+<p>两种加锁状态</p>
+<ul>
+<li>显式锁：该数据项被直接加上的锁（直接检查）</li>
+<li>隐式锁：没有被直接加锁，由于祖先加锁变为加锁状态（检查祖先锁）</li>
+</ul>
+<h3 id="意向锁">意向锁</h3>
+<p>意向锁是一种锁机制，对多粒度树中任一节点加锁时，需要先对其所有祖先点加意向锁。</p>
+<p>意向锁的目的是在检测锁兼容的时候可以少一些判断：如果这个节点没有意向锁，那么它下面的数据都没有锁。</p>
+<p>行为：</p>
+<ul>
+<li>如果要对某个数据项加共享锁，就要对所有祖先节点加意向共享锁（IS锁）</li>
+<li>如果要对某个数据项加互斥锁，就要对所有祖先节点加意向互斥锁（IX锁）</li>
+<li>共享意向互斥锁，记为SIX锁，表示共享锁+IX锁。对某数据项加SIX锁，表示在对该数据项显式加共享锁的同时加IX锁。</li>
+</ul>
+<p>检查行为：</p>
+<ul>
+<li>检查自身数据项锁是否相容</li>
+<li>检查祖先节点锁是否相容</li>
+<li>不需要检查后代节点</li>
+</ul>
+<p>兼容关系：</p>
+<table>
+<thead>
+<tr>
+<th>锁类型</th>
+<th>共享锁</th>
+<th>互斥锁</th>
+<th>意向共享锁</th>
+<th>意向互斥锁</th>
+<th>共享意向互斥锁</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>共享锁</td>
+<td>相容</td>
+<td>不相容</td>
+<td>相容</td>
+<td>不相容</td>
+<td>不相容</td>
+</tr>
+<tr>
+<td>互斥锁</td>
+<td>不相容</td>
+<td>不相容</td>
+<td>不相容</td>
+<td>不相容</td>
+<td>不相容</td>
+</tr>
+<tr>
+<td>意向共享锁</td>
+<td>相容</td>
+<td>不相容</td>
+<td>相容</td>
+<td>相容</td>
+<td>相容</td>
+</tr>
+<tr>
+<td>意向互斥锁</td>
+<td>不相容</td>
+<td>不相容</td>
+<td>相容</td>
+<td>相容</td>
+<td>不相容</td>
+</tr>
+<tr>
+<td>共享意向互斥锁</td>
+<td>不相容</td>
+<td>不相容</td>
+<td>相容</td>
+<td>不相容</td>
+<td>不相容</td>
+</tr>
+</tbody>
+</table>
+<p>以上两种锁，在粒度低的时候可能会出现幻读。</p>
+<p>为了避免幻读，通常需要采用更高的事务隔离级别或者其他锁定机制：</p>
+<p>如谓词锁，索引区间锁。</p>
+<h3 id="谓词锁">谓词锁</h3>
+<p>谓词锁（Predicate Lock）是一种锁定机制，用于在数据库系统中锁定<strong>满足特定条件的所有对象</strong>，而不仅仅是某一具体的数据行或表。这种锁机制对于防止幻读尤其有效。例如Sage &gt; 17的谓词锁作用于所有满足该条件的元组。</p>
+<p>行为：</p>
+<ul>
+<li>如果事务 A 想读取满足某谓词的对象，必须获取相应的谓词锁。如果此时事务 B 持有满足该谓词的某对象的互斥锁，事务 A 需要等待事务 B 释放该锁才能继续查询。</li>
+<li>当事务 A 提交或回滚时，会释放所有持有的谓词锁。若事务 A 想插入、更新或删除对象，则需要检查这些对象的旧值和新值是否与现有的谓词锁匹配。如果匹配，事务 A 需等待这些谓词锁释放后才能继续执行。</li>
+</ul>
+<p>谓词锁导致较大的加锁和锁检查开销，影响系统性能。</p>
+<h3 id="索引区间锁">索引区间锁</h3>
+<ul>
+<li>如果谓词包含的属性上有索引，则给该索引加锁。</li>
+<li>本质是扩大谓词锁锁住的范围，减少锁的数量。</li>
+</ul>
+<p>例如：</p>
+<p>事务T根据谓词Sage &gt; 17 AND Sno &gt; 2021310722做范围查询。 Sno属性上有索引。可以使用索引区间锁锁住 Sno &gt; 2021310722的元组。</p>
+<p>性能分析：</p>
+<ul>
+<li>在执行插入、更新或删除操作时，事务需要更新索引，并检查索引区间锁，因此索引区间锁的检查与更新同步，开销较小。</li>
+<li>然而，索引区间锁会扩大锁的范围，导致更多的锁冲突和等待。</li>
+<li>这是一个折衷的方法。</li>
+</ul>
+<p>适用性：</p>
+<ul>
+<li>对于某些事务，如果谓词中的属性没有索引，则无法使用索引区间锁，此时可以对整个表进行锁定。</li>
+</ul>
+<h2 id="闩锁">闩锁</h2>
+<p>与并发控制的锁无关，和事不相关。</p>
+<p>在更底层，负责保证写入的时候，只有一个线程对同一内存数据块进行写操作。</p>
+<p>它使用CAS指令，这些指令都是原子操作，原子性由CPU保证。</p>
+<p>输入参数：</p>
+<ul>
+<li>内存中数据（V）：表示要操作的内存地址（或数据），即需要进行比较和更新的共享变量。</li>
+<li>已记录的旧值（E）：表示线程期望该内存地址的当前值。这个值通常是在执行操作之前读取的。</li>
+<li>新值（N）：表示当内存中的数据与旧值匹配时要写入的新值。</li>
+</ul>
+<h3 id="自旋锁">自旋锁</h3>
+<p>多线程环境中，获得共享资源的访问权限。</p>
+<p>未获得锁的线程将在保持CPU占用的状态下，一直循环等待，即通过自旋（自我循环，不释放CPU资源）的方式来获得锁。</p>
+<h2 id="悲观并发控制技术缺点">悲观并发控制技术缺点</h2>
+<ul>
+<li>锁的开销大</li>
+<li>有死锁情况，解决死锁</li>
+<li>回滚开销大</li>
+<li>很多场景高并发低竞争，浪费太多锁资源。</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/11/11/machine-learning-note4/">《图解机器学习算法》笔记——有监督学习3</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" rel="tag">并发控制</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/11/13/learn-database-note8/">数据库管理系统——并发控制1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/11/machine-learning-note4/">《图解机器学习算法》笔记——有监督学习3</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/01/machine-learning-note3/">《图解机器学习算法》笔记——有监督学习2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/29/machine-learning-note2/">《图解机器学习算法》笔记——有监督学习1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/25/database-huadb2/">数据库内核实验报告二</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/19/machine-learning-note1/">《图解机器学习算法》笔记——机器学习基础</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">并发控制</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 12px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
