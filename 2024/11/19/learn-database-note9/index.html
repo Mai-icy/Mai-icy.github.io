@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库管理系统——并发控制2 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库管理系统——并发控制2"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库管理系统——并发控制2</h2>
+            <div class="post-meta">
+                <time class="date">2024.11.19</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>乐观并发控制技术</h1>
+<h2 id="时间戳">时间戳</h2>
+<p>由数据库创建的用于标识事务串行化顺序的标识符，用TS(T)表示事务T的时间戳。</p>
+<p>可以使用物理时钟和逻辑时钟（计数器类似于LSN）</p>
+<p>事务和数据项都有时间戳</p>
+<h2 id="时间戳排序协议">时间戳排序协议</h2>
+<p>是一种并发控制协议，主要用于数据库系统中的事务管理。其核心思想是通过给每个事务分配一个时间戳，并根据时间戳的顺序来决定事务操作的执行顺序，从而确保事务的正确性和一致性。</p>
+<p>对于任意事务(按照所在事务的时间戳排序执行)：</p>
+<ul>
+<li>只能读 之前事务 写的数据</li>
+<li>只能写 之前事务 读写的数据</li>
+<li>时间戳排序协议可以产生冲突可串行化调度</li>
+</ul>
+<p>每当一个事务对某个数据项进行写操作时，这个数据项的时间戳会被更新为该事务的时间戳。即，数据项的时间戳始终反映最后修改该数据项的事务的时间顺序。</p>
+<ul>
+<li>W_TS(X)：对 X 成功执行写操作的所有事务的最大时间戳</li>
+<li>R_TS (X)：对 X 成功执行读操作的所有事务的最大时间戳</li>
+</ul>
+<h3 id="具体行为">具体行为</h3>
+<p>读操作，当事务T开始读取</p>
+<ul>
+<li>若TS(T) &lt; W_TS(X)：即事务T要读取的X值被 未来事务 修改（被新值覆盖）。避免脏读，回滚事务T。</li>
+<li>若TS(T) ≥ W_TS(X)：即事务T要读取的X值没有被覆盖过，可读取，并更新R_TS(X)数据项的时间戳，R_TS(X) = max(R_TS(X), TS(T))</li>
+</ul>
+<p>写操作，当事务T开始写入</p>
+<ul>
+<li>若TS(T) &lt; R_TS(X)：则数据项X的当前值已经被其他 未来事务 读取过，会导致 不可重复读，回滚</li>
+<li>若TS(T) ≥ R_TS(X)
+<ul>
+<li>若TS(T) &lt; W_TS(X)：当前数据项X是 被其他 未来事务 修改过，写入会导致 旧值覆盖新，回滚。</li>
+<li>若TS(T) ≥ W_TS(X)：当前数据项X可以写入，更新W_TS(X) 更新为 TS(T)</li>
+</ul>
+</li>
+</ul>
+<p>回滚操作，回滚事务T（需要记录修改之前的时间戳和值）</p>
+<ul>
+<li>T读的数据项X（满足TS(T) = R_TS(X) 的数据项X）：恢复读之前的R_TS(X)。</li>
+<li>T写的数据项X（满足TS(T) = W_TS(X) 的数据项X）：恢复写之前的R_TS(X)，恢复X值。</li>
+</ul>
+<h3 id="缺陷">缺陷</h3>
+<p>时间戳排序协议中因无效写操作而产生的不必要回滚问题。</p>
+<p>盲写： 是指一个事务在没有读取数据项当前值的情况下直接对其进行写操作。</p>
+<p>盲写在时间戳协议中也是会被回滚的，然而实际上是没有必要的。因此引入托马斯写规则。</p>
+<h3 id="托马斯写规则">托马斯写规则</h3>
+<p>托马斯写规则通过允许忽略那些无效的写操作（即时间戳较小的写操作覆盖了已被后续事务修改的数据项），从而避免了不必要的回滚。</p>
+<p>写规则行为</p>
+<p>写操作，当事务T开始写入</p>
+<ul>
+<li>若TS(T) &lt; R_TS(X)：则数据项X的当前值已经被其他 未来事务 读取过，会导致 不可重复读，回滚</li>
+<li>若TS(T) ≥ R_TS(X)
+<ul>
+<li>若TS(T) &lt; W_TS(X)：当前数据项X是 被其他 未来事务 修改过，直接忽略这次写操作</li>
+<li>若TS(T) ≥ W_TS(X)：当前数据项X可以写入，更新W_TS(X) 更新为 TS(T)</li>
+</ul>
+</li>
+</ul>
+<p>满足视图可串行化，证明：</p>
+<p>托马斯写规则规定，如果一个事务T1尝试对数据项X进行写操作，而T1的时间戳小于当前已经发生的写操作的时间戳，那么T1的写操作会被丢弃。只有当T1的时间戳大于当前最新的写操作的时间戳时，T1的写操作才会生效。</p>
+<p>为什么丢弃的写操作不会影响读操作：</p>
+<p>丢弃的写操作意味着该事务T1的写操作在当前时间点并没有产生任何实际的数据库状态改变。这是因为按照时间戳顺序，后续有事务T2已经对X进行了有效的写操作，因此T1的写操作“被视为无效”或“不会影响数据库状态”。</p>
+<p>当事务T2进行读操作时，T2会读取数据库中数据项X的最新值，而这个最新值是按照时间戳顺序计算的。即使T1的写操作被丢弃，只要T1的写操作的时间戳小于T2的时间戳（即它是被丢弃的），T2会读取到一个由T2或更早的事务所写入的值。</p>
+<h3 id="隔离级别">隔离级别</h3>
+<p>通过时间戳来支持不同的隔离级别，包括读已提交、可重复读和可串行化：</p>
+<ul>
+<li>支持可重复读：缓存第一次读取的数据，避免不可重复读</li>
+<li>解决幻读问题：修改时间戳，避免读取新插入和新删除的数据（即忽略时间戳大于事务时间戳的数据项。</li>
+</ul>
+<h3 id="问题">问题</h3>
+<p>产生不可恢复调度和级联回滚问题：</p>
+<p><strong>不可恢复调度</strong>是指当一个事务已经提交，而它依赖的数据却由另一个还未提交的事务所产生时，这会导致数据不一致的风险。</p>
+<ul>
+<li><strong>原因</strong>：在时间戳排序协议中，事务的读操作可以基于时间戳直接访问数据项，而不考虑其他事务是否已经完成。例如，事务T2可能读取了事务T1写入的数据项，但如果T1最终因为冲突而被中止或回滚，T2读取的数据就变成了无效数据（脏读）。</li>
+<li><strong>举例</strong>：假设T1写入了数据项X，然后T2读取了X的值。随后T1由于某种原因回滚了，但T2却已经提交了，这样T2的结果基于一个不存在的或已撤销的数据版本，从而导致不一致的状态。</li>
+</ul>
+<p><strong>级联回滚</strong>指的是一个事务的回滚可能导致多个依赖该事务的其他事务也必须回滚，从而引发一连串的回滚操作。</p>
+<ul>
+<li><strong>原因</strong>：时间戳排序协议允许事务立即读取数据项的最新版本，而不等待写入操作的提交，这就导致了潜在的依赖关系。例如，如果事务T1写入数据项X后被回滚，而事务T2和T3都读取了T1写入的X，那么T1的回滚将迫使T2和T3也要回滚，因为它们读取了无效的数据。</li>
+<li><strong>举例</strong>：假设T1写入了数据项X，然后T2、T3相继读取了X的值。如果T1因为冲突而回滚，那么T2和T3的数据基于已撤销的X，也必须回滚。这样，T1的回滚会引发T2和T3的回滚，造成级联回滚。</li>
+</ul>
+<p>解决：</p>
+<p>为了保证可恢复调度和无级联回滚，可以修改时间戳排序协议：</p>
+<ul>
+<li>支持可恢复调度：如果事务T读取了其他事务所写的数据项，那么只有在T依赖的其他写事务提交之后，事务T才能提交。这样可以保证可恢复调度，但不是保证无级联回滚</li>
+<li>支持无级联回滚：如果事务T要读取其他未提交事务所写的数据项，那么T必须阻塞，必须等待写该数据项的事务提交后才能读取。这样可以保证可恢复调度和无级联回滚，需要锁机制才能阻塞T，因此要结合其他技术</li>
+</ul>
+<h3 id="严格时间戳排序协议">严格时间戳排序协议</h3>
+<p>是一种基于时间戳的并发控制协议，它对事务操作顺序进行了更为严格的控制，以保证数据库系统的一致性和事务的隔离性。</p>
+<p>与普通时间戳排序协议不同，严格时间戳排序协议要求所有事务的操作（读和写）都必须遵循时间戳顺序，严格禁止事务发生“过早的读”或“过晚的写”现象。</p>
+<p>具体行为</p>
+<p>读操作，当事务 T 开始读取数据项 X 时：</p>
+<ul>
+<li>若 TS(T) &lt; W_TS(X)：即事务 T 要读取的数据项 X 的值被未来事务修改，可能会导致脏读。事务 T 被回滚。</li>
+<li>若 TS(T) ≥ W_TS(X)：即事务 T 要读取的数据项 X 的值未被未来事务修改，可以读取数据，并更新 R_TS(X) 数据项的时间戳为 max(R_TS(X), TS(T))，表示此读操作的时间戳。</li>
+</ul>
+<p>写操作，当事务 T 开始写入数据项 X 时：</p>
+<ul>
+<li>若 TS(T) &lt; R_TS(X)：即数据项 X 的当前值已经被其他未来事务读取过，写操作可能会导致不可重复读。事务 T 被回滚。</li>
+<li>若 TS(T) ≥ R_TS(X)：
+<ul>
+<li>若 TS(T) &lt; W_TS(X)：即当前数据项 X 已被其他未来事务修改，写操作会覆盖新值，导致冲突，事务 T 被回滚。</li>
+<li>若 TS(T) ≥ W_TS(X)：即当前数据项 X 可以进行写操作，更新 W_TS(X) 为 TS(T)，表示此事务已经成功写入数据项 X。</li>
+</ul>
+</li>
+</ul>
+<p>回滚操作，回滚事务 T 时：</p>
+<ul>
+<li>对于事务 T 读的数据项 X（满足 TS(T) = R_TS(X) 的数据项 X）：恢复读操作之前的 R_TS(X)。</li>
+<li>对于事务 T 写的数据项 X（满足 TS(T) = W_TS(X) 的数据项 X）：恢复写操作之前的 W_TS(X)，并恢复 X 的值。</li>
+</ul>
+<p>严格时间戳排序协议的特性</p>
+<ul>
+<li>严格时间戳排序协议通过对事务操作的严格顺序控制，确保了数据库的冲突可串行化。</li>
+<li>通过比较事务的时间戳，确保了所有的事务都按照时间顺序进行操作，禁止了任何可能导致不一致的读写行为。</li>
+<li>相比普通时间戳排序协议，严格时间戳排序协议对事务的控制更加严格，以避免出现更多可能导致事务冲突的情况。</li>
+</ul>
+<p>事务提交与回滚</p>
+<ol>
+<li>事务 T 提交：
+<ul>
+<li>对于事务 T 提交的所有数据项 X，更新 isCommit(X) 为真，表示这些数据项已提交。</li>
+<li>通知等待该数据项 X 的其他事务继续进行。</li>
+</ul>
+</li>
+<li>事务 T 回滚：
+<ul>
+<li>对于事务 T 回滚的所有数据项 X，设置 isCommit(X) 为假，表示这些数据项未提交。</li>
+<li>根据回滚后的事务状态，通知等待该数据项 X 的其他事务继续执行。</li>
+</ul>
+</li>
+</ol>
+<p>存在的问题：</p>
+<p>饿死：短事务与某个较早但执行时间长事务冲突，长事务不断重启导致饿死。</p>
+<p>如果某个事物反复重启就暂停冲突的其他事务，先让这个事务完成。</p>
+<h2 id="乐观并发控制协议">乐观并发控制协议</h2>
+<p>验证阶段保证调度可串行化</p>
+<p>单独的工作区保证调度是可恢复的</p>
+<p>适用于事务冲突较少，执行时间较短。</p>
+<p>一共将事务分成三个阶段：</p>
+<ul>
+<li>读阶段：这个阶段，当数据需要读取数据时，将数据库中的数据进行拷贝到自己隔离的事务工作区，在自己的副本上进行修改和读取。</li>
+<li>验证阶段：看自己的工作区副本修改是否与数据库当前满足所需的隔离级别关系，如果不满足，则事务重做，否则进入写阶段</li>
+<li>写阶段：将私有工作区中的副本更新到数据库中（私有工作区保证调度是可恢复的、无级联回滚的）</li>
+</ul>
+<p>乐观并发控制协议通过让事务“拷贝”数据进行修改，再通过验证冲突的方式来避免并发冲突，从而减少了传统锁机制带来的开销。</p>
+<h3 id="验证阶段">验证阶段</h3>
+<p>以下详解验证阶段：</p>
+<ul>
+<li>反向验证：验证当前事务与已提交的事务是否存在冲突</li>
+<li>正向验证：验证当前事务是否与未提交的事务之间存在冲突</li>
+</ul>
+<p>验证方法：</p>
+<p>每个事务有5个时间戳，两个区间：</p>
+<ul>
+<li>StartTime(T)：事务开始执行的时间。</li>
+<li>ReadTime(T)：读阶段开始的时间，即事务开始读取数据的时刻。</li>
+<li>ValidationTime(T)：验证阶段开始的时间。在此时，系统检查事务是否与其他事务发生冲突，并决定事务是否可以提交。</li>
+<li>WriteTime(T)：写阶段开始的时间，即事务开始将修改后的数据写入数据库的时刻。</li>
+<li>CommitTime(T)：事务结束并提交的时间，即写阶段结束并将事务数据提交到数据库的时刻。</li>
+<li>WriteSet(T)：写阶段的数据项集合</li>
+<li>ReadSet(T)：读阶段的数据项集合</li>
+</ul>
+<p>事务的时间戳通常取为验证阶段开始的时间。TS(T) = ValidationTime(T) （因为事务可能会在验证阶段发生重启，因此真正决定事务执行的先后顺序通常是根据验证阶段的开始时间来确定的。）</p>
+<p>读操作验证：验证事务读取值 = 当前数据库值</p>
+<p>写操作验证：当前事务T是否与已经提交的事务T‘存在读写（T’先写T后读）、写读（T’先读T后写）、写写冲突见下方。</p>
+<h3 id="有效性验证方法对写操作的验证：">有效性验证方法对写操作的验证：</h3>
+<p>四条规则，满足一条则没有写写冲突</p>
+<ol>
+<li>事务 T’ 提交时间小于事务 T 读阶段的开始时间
+<ul>
+<li>CommitTime(T’) &lt; ReadTime(T)</li>
+<li>意义：如果事务 T’ 已经提交，并且它的提交时间早于事务 T 开始读取数据的时间，说明事务 T’ 对数据的修改早于事务 T 读取数据。因此，不会发生写写冲突，事务 T’ 对数据的修改已经被“消化”，事务 T 不会读取到未提交的修改，验证通过。</li>
+</ul>
+</li>
+<li>T’所写的数据项不会被T读取且T’在T开始写入阶段前已完成写入
+<ul>
+<li>WriteSet(T’) ∩ ReadSet(T) = ∅ and CommitTime(T’) &lt; WriteTime(T)</li>
+<li>意义：第一个条件保证不存在 T 读取 T′ 写入数据的情况，第二个条件保证不存在 T′ 读取 T 写入数据的情况。</li>
+</ul>
+</li>
+<li>T’所写的数据项不会被T读取也不会被T写入，且T’在T完成读阶段前完成读阶段
+<ul>
+<li>WriteSet(T’) ∩ ReadSet(T) = ∅ and WriteSet(T’) ∩ WriteSet(T) = ∅ and ValidationTime(T’) &lt; ValidationTime(T)</li>
+<li>意义：T’和T没有读写和写写冲突（条件1）没有写读冲突（条件2）</li>
+</ul>
+</li>
+<li>T′ 所写的数据项和 T 读写的数据项没有交集且 T 所写的数据项和 T′ 读写的数据项没有交集
+<ul>
+<li>WriteSet(T’) ∩ ReadSet(T) = ∅ and WriteSet(T’) ∩ WriteSet(T) = ∅ and ReadSet(T’) ∩ WriteSet(T) = ∅</li>
+<li>意义：两者没有读写，写写，写读冲突。</li>
+</ul>
+</li>
+</ol>
+<h3 id="乐观并发协议控制对比">乐观并发协议控制对比</h3>
+<ul>
+<li>时间排序协议：事务每做一个操作，就会根据协议规则进行一次判断，使事务回滚或者继续运行，不可恢复的。</li>
+<li>乐观控制并发协议：一个事务执行完所有操作后，再根据规则判断事务提交或回滚，减少判断此时，减少开销，导致一些完整执行的事务被回滚，开销大，适合事务短，冲突少。</li>
+<li>两者都会事务饿死（频繁重启）</li>
+</ul>
+<h1>多版本机制</h1>
+<h3 id="概述">概述</h3>
+<p>多版本并发控制：对一个数据项保存多个物理版本，供不同的事务使用</p>
+<ul>
+<li>事务对数据项进行写操作时，产生该数据项的一个新版本</li>
+<li>事务对数据项进行读操作时，读取事务开始时该数据项的最新版本</li>
+</ul>
+<h3 id="不同点">不同点</h3>
+<ul>
+<li>乐观并发控制技术使用时间复用并发控制</li>
+<li>多版本机制通过空间复用实现高并发控制</li>
+</ul>
+<h3 id="优点">优点</h3>
+<ul>
+<li>事务的读操作无需等待其他事务的写操作</li>
+<li>事务的写操作无需等待其他事务的读操作</li>
+</ul>
+<h2 id="多版本时间戳排序协议">多版本时间戳排序协议</h2>
+<p>每个事务在开始执行前有唯一的时间戳TS(Ti)</p>
+<p>每个数据有多个物理版本，X0, X1, X2 … Xm。每个版本有三个数据：</p>
+<ul>
+<li>版本值</li>
+<li>W_TS(Xi)：产生该版本的事务时间戳</li>
+<li>R_TS(Xi)：成功读取该版本的事务的最大时间戳</li>
+</ul>
+<h3 id="具体行为-2">具体行为</h3>
+<ul>
+<li>当事务T对X进行成功写操作：数据库产生该数据项的新版本Xm+1，记录新值，初始化其W_TS和R_TS为事务T的时间戳</li>
+<li>当事务T成功读取Xm，且R_TS(Xm) &lt; TS(T)，则更新R_TS为T的时间戳。</li>
+<li>每个事务T对于数据项X，不超过T时间戳的最大X创建时间为最新版本。</li>
+</ul>
+<h3 id="协议规则">协议规则</h3>
+<p>以下定义X为对于事务T的最新数据项版本：</p>
+<p>如果事务T读X数据项：返回最新版本的值</p>
+<p>如果事务T写X数据项：</p>
+<ul>
+<li>TS(T) &lt; R_TS(X) ，事务T回滚</li>
+<li>TS(T) = W_TS(X)，允许覆盖X的值</li>
+<li>TS(T) &gt; R_TS(X)，产生新版本X‘，并初始化版本三字段。</li>
+</ul>
+<p>说明：</p>
+<ul>
+<li>如果时间戳大的事务已经读取过该版本X了，如果事务T对X进行修改，会造成时间戳小的事务在时间戳大的事务之后修改数据项，会违反可串行化调度。如果时间戳大的事务再次读取该数据项X会造成不可重复读。</li>
+<li>X数据项版本就是由T产生的</li>
+<li>检查在W_TS(X)和TS(T)，中是否有其他事务修改X。没有则写成功，否则回滚。</li>
+</ul>
+<h3 id="优势">优势</h3>
+<ul>
+<li>读操作无需等待，必定成功</li>
+<li>写操作新建版本，不堵塞其他事务读取，提高并发</li>
+</ul>
+<h3 id="劣势">劣势</h3>
+<ul>
+<li>读会更新R_TS，两次磁盘读写</li>
+<li>冲突通过回滚解决，开销大</li>
+<li>同时间戳排序，不保证可恢复性</li>
+</ul>
+<h2 id="多版本两阶段锁协议">多版本两阶段锁协议</h2>
+<p>集合多版本思想和两阶段锁机制思想：多版本提高读的并发，锁解决写写冲突。</p>
+<h3 id="数据定义">数据定义</h3>
+<p>版本有两个值：</p>
+<ul>
+<li>版本值</li>
+<li>产生版本时间戳</li>
+</ul>
+<p>事务包含时间戳，分两类：</p>
+<ul>
+<li>只读事务：只有读操作</li>
+<li>更新事务：有写操作</li>
+</ul>
+<h3 id="协议规则-2">协议规则</h3>
+<p>对于只读事务，根据时间戳读取事务开始的最新版本，不需要锁机制。</p>
+<p>对于更新事务，介绍两种方法。</p>
+<h3 id="更新事务协议一">更新事务协议一</h3>
+<p>读操作不加锁，写操作加严格两阶段锁。对事务T和数据项X，设X为时间戳不超过T时间戳的最大版本。</p>
+<ul>
+<li>如果事务T对数据项X只进行读操作，则数据库返回数据项X的值</li>
+<li>如果事务T对数据项X进行写操作，为X创建一个新版本，并对其加互斥锁，即同时只能创建一个新版本。如果事务T成功提交，则将该新版本时间戳设置为TS(T)；如果事务回滚，删除该新版本。</li>
+</ul>
+<p>不满足可串行化，隔离级别为快照隔离。快照一旦建立不会修改，起隔离作用。</p>
+<h3 id="更新事务协议二">更新事务协议二</h3>
+<p>读写操作都加严格两阶段锁。为了解决方法一不满足可串行化的问题，对读操作加共享锁，对写操作加互斥锁，从而实现可串行化。</p>
+<ul>
+<li>快照读：根据时间戳找到小于事务时间戳的最新版本，快照读一般用于只读事务，对读写无影响的事务。</li>
+<li>当前读：读取最新版本并加锁来实现并发读写。有共享锁和互斥锁。</li>
+<li>如果根据读写操作简单的加共享锁和互斥锁就退化成了基于两阶段锁的并发控制协议。为了解决这一问题，一些数据库通过添加两类SQL语法来对select操作指定共享锁还是互斥锁。这需要SQL开发者了解数据访问需要加共享锁还是互斥锁，选用合适的select语法，从而提升事务处理的性能</li>
+</ul>
+<p>select for share：指定共享锁</p>
+<p>select for update：指定互斥锁</p>
+<p>select：快照读，不加锁</p>
+<h2 id="多版本乐观并发控制协议">多版本乐观并发控制协议</h2>
+<p>结合了多版本思想和乐观并发控制机制</p>
+<p>事务：</p>
+<ul>
+<li>BeginTS：开始执行得到的时间戳</li>
+<li>CommitTS：提交时得到的时间戳</li>
+</ul>
+<p>数据项：</p>
+<ul>
+<li>begin-ts：起始时间戳</li>
+<li>end-ts：终止时间戳</li>
+</ul>
+<h3 id="读阶段">读阶段</h3>
+<ul>
+<li>记录事务读取的数据项（读集）、写入的数据项（写集）和多次进行的扫描（扫描集）</li>
+<li>完成事务中的数据操作，获得一个结束时间戳</li>
+</ul>
+<h3 id="验证阶段-2">验证阶段</h3>
+<ul>
+<li>在结束时间戳时刻，验证读集中数据项的版本是否仍然可见，避免脏读、不可重复读问题</li>
+<li>重新执行扫描集，检查结果是否相同，避免幻读问题</li>
+<li>验证通过后，获得CommitTS进行下一阶段，否则撤销并重启</li>
+</ul>
+<h3 id="写阶段">写阶段</h3>
+<ul>
+<li>创建写集中数据项的新版本，该版本的begin-ts为该事务的CommitTS，将新版本写回数据库</li>
+<li>删除写集中数据项的有效的旧版本，即使旧版本的end-ts为该事务的CommitTS</li>
+<li>写写冲突：如果多个事务在同一数据项上进行更新操作，那么第一个获得写入权限的事务进行更新，其他事务被撤销并重启</li>
+</ul>
+<h2 id="版本存储">版本存储</h2>
+<p>每个逻辑行拥有版本链表，存储若干个版本</p>
+<h3 id="仅追加存储">仅追加存储</h3>
+<p>所有版本存储在一个表空间中，一个数据项拥有一个链表，所有的数据项版本在一个表，同一个数据项通过链表指针连接在一起。</p>
+<p>组织版本链表的两种顺序：</p>
+<ul>
+<li>从旧到新：记录最早版本，每次从头结点找到目标版本。</li>
+<li>从新到旧：一边插入一边更新索引指针。</li>
+</ul>
+<p>缺点：多版本信息被存储，一直增长，老版本数据淘汰时要遍历数据。</p>
+<h3 id="回滚段存储">回滚段存储</h3>
+<p>老版本移动到一个单独的空间存储，新版本存储在原数据空间。</p>
+<p>索引指向逻辑行地址。每个逻辑行有一个指针指向回滚段表空间，其存储若干个旧版本。</p>
+<p>产生新版本时，将旧版本复制到回滚段段表空间，同时将最新版本存储在当前空间中。</p>
+<h3 id="差异存储">差异存储</h3>
+<p>一条记录可能包含多个属性，一次数据更新可能只修改一小部分属性。上述两种策略需要将所有属性的数据存在老版本中，造成了空间浪费</p>
+<p>差异存储在产生新版本时，将数据项修改的部分内容存储到差异存储表中，同时更新主表</p>
+<p>减少写操作时的数据复制量，提高系统的写性能</p>
+<p>读旧版本数据时，通过差异内容得到，降低读性能</p>
+<h2 id="版本删除">版本删除</h2>
+<h3 id="物理删除">物理删除</h3>
+<p>释放占用的物理空间</p>
+<ul>
+<li>对于数据项X的两个版本X1和X2，其创建时间W_TS(X1) &lt; W_TS(X2) ，且都小于当前系统中最老的事务时间戳，可删除X1</li>
+<li>删除已撤销的事务产生的版本</li>
+</ul>
+<h3 id="逻辑删除">逻辑删除</h3>
+<p>标记已删除的数据项</p>
+<ul>
+<li>删除标识：用标识表示数据项被逻辑删除，该标识存放于行的头部或单独的一列中</li>
+<li>墓碑数据：产生一个空的版本来表示数据项被逻辑删除。实际中，在版本链表的指针中用一个特殊的比特位来表示墓碑数据以节省空间</li>
+</ul>
+<h3 id="行级别回收">行级别回收</h3>
+<p>针对行直接进行垃圾回收</p>
+<ul>
+<li>后台回收：后台定期查找可回收的版本，适用于所有版本存储策略</li>
+<li>合作回收：在遍历版本链表时找过期的版本数据并删除，只可用于从就到新的版本存储策略。</li>
+</ul>
+<h3 id="事务级别回收">事务级别回收</h3>
+<p>每个事务记录其读取和写入的数据版本。数据库系统判定已完成事务产生的版本何时不再有效，并进行回收</p>
+<h2 id="多版本机制中的索引管理">多版本机制中的索引管理</h2>
+<ul>
+<li>逻辑指针：为每行设置一个识别标识，存储该行对应的主键信息。通过此标识获取主键索引。主键索引保存了指向版本链表的物理指针，因此间接得到该行对应的版本。</li>
+<li>物理指针：直接存储指向版本链表的物理指针</li>
+</ul>
+<p><img src="/2024/11/19/learn-database-note9/1.png" alt="1.png"></p>
+<h2 id="多版本机制的实际应用">多版本机制的实际应用</h2>
+<table>
+<thead>
+<tr>
+<th>数据库</th>
+<th>并发控制协议</th>
+<th>版本存储</th>
+<th>垃圾回收</th>
+<th>索引</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Oracle</td>
+<td>MV2PL</td>
+<td>回滚段, 差异存储</td>
+<td>后台回收</td>
+<td>逻辑索引</td>
+</tr>
+<tr>
+<td>Postgres</td>
+<td>MV2PL/MVTO</td>
+<td>追加存储</td>
+<td>后台回收</td>
+<td>物理索引</td>
+</tr>
+<tr>
+<td>MySQL-InnoDB</td>
+<td>MV2PL</td>
+<td>回滚段, 差异存储</td>
+<td>后台回收</td>
+<td>逻辑索引</td>
+</tr>
+<tr>
+<td>Hekaton</td>
+<td>MVOCC</td>
+<td>仅追加存储</td>
+<td>合作回收</td>
+<td>物理索引</td>
+</tr>
+<tr>
+<td>MemSQL</td>
+<td>MVOCC</td>
+<td>仅追加存储</td>
+<td>后台回收</td>
+<td>物理索引</td>
+</tr>
+<tr>
+<td>SAP HANA</td>
+<td>MV2PL</td>
+<td>回滚段存储</td>
+<td>混合</td>
+<td>逻辑索引</td>
+</tr>
+<tr>
+<td>NuoDB</td>
+<td>MV2PL</td>
+<td>仅追加存储</td>
+<td>后台回收</td>
+<td>逻辑索引</td>
+</tr>
+<tr>
+<td>HyPer</td>
+<td>MVOCC</td>
+<td>差异存储</td>
+<td>事务级别回收</td>
+<td>逻辑索引</td>
+</tr>
+<tr>
+<td>GaussDB</td>
+<td>MV2PL</td>
+<td>回滚段存储</td>
+<td>混合</td>
+<td>逻辑索引</td>
+</tr>
+</tbody>
+</table>
+<h1>并发控制协议比较</h1>
+<p><img src="/2024/11/19/learn-database-note9/2.png" alt="2.png"></p>
+<ul>
+<li>基于悲观锁的协议：当事务冲突时，通过锁等待读写的资源，可以实现各种隔离级别，不会饿死长事务，但可能存在死锁问题。其中2PL调度不可恢复，而S2PL和SS2PL调度可恢复，因此数据库一般采用S2PL。该协议适合事务冲突较多的场景。</li>
+<li>基于时间戳的协议：当事务冲突时，通过回滚事务解决冲突，可以实现各种隔离级别。由于频繁回滚会饿死长事务，不会存在死锁问题。存在不可恢复、级联回滚问题。</li>
+<li>基于乐观锁的协议：当事务冲突时，通过重启事务解决冲突，可以实现各种隔离级别。由于频繁回滚会饿死长事务，不会存在死锁问题。该协议适合事务冲突较少的场景。</li>
+<li>基于多版本的协议：通过空间复用的多版本信息缓解读写冲突，再结合上述三种协议可以提升事务并发处理效率。</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/11/13/learn-database-note8/">数据库管理系统——并发控制1</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" rel="tag">并发控制</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/11/19/learn-database-note9/">数据库管理系统——并发控制2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/13/learn-database-note8/">数据库管理系统——并发控制1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/11/machine-learning-note4/">《图解机器学习算法》笔记——有监督学习3</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/01/machine-learning-note3/">《图解机器学习算法》笔记——有监督学习2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/29/machine-learning-note2/">《图解机器学习算法》笔记——有监督学习1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/25/database-huadb2/">数据库内核实验报告二</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 12px;">并发控制</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 12px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
