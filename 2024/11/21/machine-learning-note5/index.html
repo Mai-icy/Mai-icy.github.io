@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>《图解机器学习算法》笔记——无监督学习1 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="《图解机器学习算法》笔记——无监督学习1"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>《图解机器学习算法》笔记——无监督学习1</h2>
+            <div class="post-meta">
+                <time class="date">2024.11.21</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>算法一：PCA</h1>
+<h2 id="概述">概述</h2>
+<p>是一种降维算法，可以将相关的多变量数据以主成分简洁地表现出来。</p>
+<p>它对变量之间存在相关性的数据很有效。</p>
+<p>对减少数据的方法：</p>
+<ul>
+<li>只选择重要变量，舍弃其余变量</li>
+<li>基于原变量构造新变量（PCA使用）</li>
+</ul>
+<h3 id="概念：">概念：</h3>
+<ul>
+<li>降维：指在保留数据特征的前提下，以少量的变量表示有许多变量的数据，这有助于降低多变量数据分析的复杂度。</li>
+<li>主成分：低维变量表示高维空间中的数据后，低维的轴叫作主成分</li>
+<li>方向：对散点图使用PCA得到两个正交的向量，线的方向表示数据的方向</li>
+<li>重要度：两个正交的向量，线的长度表示重要度（如下图）</li>
+<li>主成分得分：图3-1b 是以这两条线为新轴对原始数据进行变换后得到的图形，变换后的数据称为主成分得分</li>
+<li>第一（二）主成分：主成分轴的重要度的值从高到低排序。第一主成分包含了更多原始数据的特点。</li>
+</ul>
+<p><img src="/2024/11/21/machine-learning-note5/1.png" alt="1.png"></p>
+<h2 id="算法说明：">算法说明：</h2>
+<h3 id="特征值问题">特征值问题</h3>
+<p>是在线性代数中分析矩阵性质的重要问题，涉及找到矩阵的特征值和对应的特征向量</p>
+<p>给定一个 <img src="https://math.now.sh?inline=%28%20n%20%5Ctimes%20n%20%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 的方阵 ，特征值问题的目标是找到一个标量 λ 和一个非零向量 v，使得： <img src="https://math.now.sh?inline=A%20%5Cmathbf%7Bv%7D%20%3D%20%5Clambda%20%5Cmathbf%7Bv%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>其中：</p>
+<ul>
+<li>λ 是矩阵 A 的特征值。</li>
+<li>v 是矩阵 A 的对应特征向量。</li>
+</ul>
+<p>这表示矩阵 A 对特征向量 v 的作用只是将其放缩，而不改变其方向。特征值问题可以转换为以下形式： <img src="https://math.now.sh?inline=%28A%20-%20%5Clambda%20I%29%20%5Cmathbf%7Bv%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>其中 I 是单位矩阵。要使这个方程有非零解 v，需要矩阵 <img src="https://math.now.sh?inline=%28A%20-%20%5Clambda%20I%29" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 是奇异的，即它的行列式为零。因此，特征值 λ 满足以下特征方程： <img src="https://math.now.sh?inline=%5Cdet%28A%20-%20%5Clambda%20I%29%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>解这个方程可以得到所有的特征值 λ，然后将这些值代入 <img src="https://math.now.sh?inline=%28A%20-%20%5Clambda%20I%29%20%5Cmathbf%7Bv%7D%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 可以得到对应的特征向量 v。</p>
+<p><strong>特征向量</strong>是指经过矩阵变换后不改变方向的向量，而<strong>特征值</strong>表示在这种变换下该向量的缩放比例。</p>
+<h3 id="步骤：">步骤：</h3>
+<ul>
+<li>计算协方差矩阵</li>
+<li>对协方差矩阵求解特征值问题，求解特征向量和特征值</li>
+<li>以数据表示各主成分方向</li>
+</ul>
+<p><img src="/2024/11/21/machine-learning-note5/2.png" alt="2.png"></p>
+<h3 id="什么是协方差矩阵">什么是协方差矩阵</h3>
+<p>协方差矩阵表示了多维数据集中每对变量之间的协方差。协方差衡量两个变量的关系——如果两个变量的协方差为正，说明它们通常同向变化（一个增加时另一个也增加）；如果为负，说明它们反向变化；协方差为零表示两个变量之间没有线性关系。</p>
+<p>假设有 n 个变量 <img src="https://math.now.sh?inline=X_1%2C%20X_2%2C%20%5Cdots%2C%20X_n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，它们组成一个随机向量 <img src="https://math.now.sh?inline=%5Cmathbf%7BX%7D%20%3D%20%5BX_1%2C%20X_2%2C%20%5Cdots%2C%20X_n%5D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。协方差矩阵 Σ 的每个元素 <img src="https://math.now.sh?inline=%5CSigma_%7Bij%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 是变量 <img src="https://math.now.sh?inline=X_i" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 和 <img src="https://math.now.sh?inline=X_j" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 的协方差：</p>
+<p><img src="https://math.now.sh?inline=%5CSigma_%7Bij%7D%20%3D%20%5Ctext%7BCov%7D%28X_i%2C%20X_j%29%20%3D%20%5Cmathbb%7BE%7D%5B(X_i%20-%20%5Cmathbb%7BE%7D%5BX_i%5D)(X_j%20-%20%5Cmathbb%7BE%7D%5BX_j%5D)%5D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>协方差矩阵的大小是 <img src="https://math.now.sh?inline=n%20%5Ctimes%20n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，其中 n 是变量的数量。</p>
+<h3 id="如何计算协方差矩阵">如何计算协方差矩阵</h3>
+<p>设我们有一个数据集，包含 m 个样本，每个样本有 n 个特征，可以用矩阵 X 表示该数据集，其中 X 的维度为 <img src="https://math.now.sh?inline=m%20%5Ctimes%20n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">（行表示样本，列表示特征）。</p>
+<ol>
+<li><strong>计算每个变量的均值</strong>：首先对每个变量（列）计算均值向量 <img src="https://math.now.sh?inline=%5Cmathbf%7B%5Cmu%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，其大小为 <img src="https://math.now.sh?inline=1%20%5Ctimes%20n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。 <img src="https://math.now.sh?inline=%5Cmathbf%7B%5Cmu%7Dj%20%3D%20%5Cfrac%7B1%7D%7Bm%7D%20%5Csum%7Bi%3D1%7D%5E%7Bm%7D%20X_%7Bij%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></li>
+<li><strong>去中心化数据</strong>：将每个样本减去对应变量的均值。生成一个新的矩阵 X’，其中 <img src="https://math.now.sh?inline=X'%7Bij%7D%20%3D%20X%7Bij%7D%20-%20%5Cmathbf%7B%5Cmu%7D_j" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。</li>
+<li><strong>计算协方差矩阵</strong>：协方差矩阵 Σ 通过以下公式计算： <img src="https://math.now.sh?inline=%5CSigma%20%3D%20%5Cfrac%7B1%7D%7Bm%20-%201%7D%20%28X'%29%5ET%20X'" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 这里 <img src="https://math.now.sh?inline=%28X'%29%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 是去中心化数据的转置，乘积 <img src="https://math.now.sh?inline=%28X'%29%5ET%20X'" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 计算了每对变量之间的协方差。</li>
+</ol>
+<p>这样得到的协方差矩阵 Σ 是一个 <img src="https://math.now.sh?inline=n%20%5Ctimes%20n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> 对称矩阵。</p>
+<p>在主成分分析（PCA）中，协方差矩阵 A 的特征值和特征向量用于提取数据的主要方向和重要性。</p>
+<ul>
+<li><strong>协方差矩阵</strong>：在 PCA 中，数据的协方差矩阵 AAA 描述了各个特征之间的相关性。这一矩阵的特征值和特征向量揭示了数据在各个方向上的变动程度。</li>
+<li><strong>特征值和特征向量</strong>：对协方差矩阵求解特征值问题，得到了一组特征值和对应的特征向量。排序后，每个特征向量按特征值大小表示一个<strong>主成分</strong>，即数据的主要变化方向。第一个特征向量对应于数据的最大变化方向（第一主成分），第二个特征向量对应次大的变化方向（第二主成分），以此类推。</li>
+<li><strong>贡献率</strong>：特征值的大小反映了每个主成分对数据的解释能力。通过计算每个特征值与特征值总和的比值（即贡献率），可以用百分比表示每个主成分的重要性，反映其对数据变异的解释能力。</li>
+<li><strong>累计贡献率</strong>：按主成分的重要性顺序将贡献率累加，可以得到累计贡献率。一般在 PCA 中选择累计贡献率达到某个阈值（如 90% 或 95%）的主成分数量，以确保在降低维度的同时尽可能多地保留数据的信息。</li>
+</ul>
+<h3 id="示例代码">示例代码</h3>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>decomposition <span class="token keyword">import</span> PCA
+<span class="token keyword">from</span> sklearn<span class="token punctuation">.</span>datasets <span class="token keyword">import</span> load_iris
+data <span class="token operator">=</span> load_iris<span class="token punctuation">(</span><span class="token punctuation">)</span>
+n_components <span class="token operator">=</span> <span class="token number">2</span>  <span class="token comment">#  将减少后的维度设置为2</span>
+model <span class="token operator">=</span> PCA<span class="token punctuation">(</span>n_components<span class="token operator">=</span>n_components<span class="token punctuation">)</span>
+model <span class="token operator">=</span> model<span class="token punctuation">.</span>fit<span class="token punctuation">(</span>data<span class="token punctuation">.</span>data<span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>model<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>data<span class="token punctuation">.</span>data<span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># 变换后的数据</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明">详细说明</h2>
+<h3 id="主成分的选择方法">主成分的选择方法</h3>
+<p>对于主成分，先设定一个基准值，当前几累积主成分的贡献值达到基准值，就可以决定要选择主成分的数量。</p>
+<p>对于下图，纵轴是累计主成分，横轴是主成分数据数量。</p>
+<p>A数据的数据相关性较强，出现曲线机制。</p>
+<p>B数据的数据相关性较弱，多个主成分的贡献值一致，不适合使用PCA进行降维。</p>
+<p><img src="/2024/11/21/machine-learning-note5/3.png" alt="3.png"></p>
+<h1>算法二：<strong>LSA</strong></h1>
+<h2 id="概述-2"><strong>概述</strong></h2>
+<p>LSA（Latent Semantic Analysis，潜在语义分析）是一种自然语言处理技术，常用于信息搜索领域。</p>
+<p>作为一种降维算法，它能够从大量文本数据中找出单词之间的潜在关联性。</p>
+<h3 id="基于关键词匹配的传统信息检索方法">基于关键词匹配的传统信息检索方法</h3>
+<ul>
+<li>将文本数据中的所有单词提取出来，建立一个索引结构。索引类似于目录，每个单词对应一个列表，记录了该单词在不同文本（例如在文本1 3出现）中的出现位置。</li>
+<li>用户输入搜索关键词后，系统在索引中查找与该关键词完全相同的单词。返回对应的列表作为搜索结果。</li>
+</ul>
+<p>不足：</p>
+<p>无法判断同义词。例如，“深度学习”和“机器学习”在语义上相关，但它们的关键词不同，无法匹配到相同的结果。</p>
+<h3 id="LSA信息检索和语义空间">LSA信息检索和语义空间</h3>
+<p>LSA可以根据文本计算单词之间的相似度，以及单词和文本的相似度。</p>
+<p>通过LSA对文本和单词的矩阵进行降维，将其变换为潜在语义空间。这种变换使用矩阵分解进行。（矩阵分解是指将某个矩阵表示为多个矩阵的乘积的形式。）</p>
+<ul>
+<li>左图：单词空间，车和汽车相关度为0，两者正交不相干</li>
+<li>右图：语义空间，两者向量非常接近，内积值接近1，表明它们语义高度相关。</li>
+</ul>
+<p>!<img src="/2024/11/21/machine-learning-note5/4.png" alt="4.png"></p>
+<h2 id="算法说明"><strong>算法说明</strong></h2>
+<p>以下结合具体例子</p>
+<p>首先将以下文本变换为矩阵<img src="https://math.now.sh?inline=X" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。矩阵<img src="https://math.now.sh?inline=X" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的各元素是文本中出现的单词的个数。</p>
+<ul>
+<li>文本1：坐汽车去公司</li>
+<li>文本2：坐车去的</li>
+<li>文本3：在餐厅吃汉堡牛肉饼</li>
+<li>文本4：在餐厅吃意大利面</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>文本1</th>
+<th>文本2</th>
+<th>文本3</th>
+<th>文本4</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>汽车</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>公司</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>去</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>车</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>餐厅</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>汉堡牛肉饼</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>吃</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>意大利面</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>上图为矩阵X，对矩阵X分解后得：</p>
+<p><img src="https://math.now.sh?inline=X%20%3D%20UDV%5E%7BT%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=X%20%3D%20%5Cbegin%7Bbmatrix%7D%200.00%20%26%20-0.45%20%26%20-0.45%20%26%200.00%20%5C%5C%200.00%20%26%20-0.45%20%26%20-0.45%20%26%200.00%20%5C%5C%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%26%20%5Cvdots%20%5C%5C%20-0.32%20%26%200.00%20%26%200.00%20%26%20-0.71%20%5Cend%7Bbmatrix%7D%20%5Ctimes%20%5Cbegin%7Bbmatrix%7D%202.24%20%26%200%20%26%200%20%26%200%20%5C%5C%200%20%26%201.90%20%26%200%20%26%200%20%5C%5C%200%20%26%200%20%26%201.18%20%26%200%20%5C%5C%200%20%26%200%20%26%200%20%26%201.00%20%5Cend%7Bbmatrix%7D%20%5Ctimes%20%5Cbegin%7Bbmatrix%7D%200.00%20%26%200.00%20%26%20-0.71%20%26%20-0.71%20%5C%5C%20-0.85%20%26%20-0.53%20%26%200.00%20%26%200.00%20%5C%5C%20-0.53%20%26%200.85%20%26%200.00%20%26%200.00%20%5C%5C%200.00%20%26%200.00%20%26%200.71%20%26%20-0.71%20%5Cend%7Bbmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>矩阵解释：</p>
+<ul>
+<li><img src="https://math.now.sh?inline=U" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是包含单词和归纳的特征的变换信息的矩阵</li>
+<li><img src="https://math.now.sh?inline=D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是包含信息的重要度的矩阵，是一个对角矩阵，其对角元素按信息的重要度从大到小排列。</li>
+<li><img src="https://math.now.sh?inline=V" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是包含归纳的特征和文本的变换信息的矩阵</li>
+</ul>
+<h3 id="降维">降维</h3>
+<p>原始数据有4个特征，但我们希望将其降维到2个特征。</p>
+<p>从<img src="https://math.now.sh?inline=D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的4个值中选出最重要的2个：建立一个2行2列的对角矩阵。</p>
+<p>为了匹配这个<img src="https://math.now.sh?inline=D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，我们相应地删去<img src="https://math.now.sh?inline=U" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的第3列和第4列，以及<img src="https://math.now.sh?inline=V%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的第3列和第4列，将它们分别变形为8行2列和2行4列的矩阵。</p>
+<p><img src="https://math.now.sh?inline=%5Chat%7BX%7D%20%3D%20%5Chat%7BU%7D%20%5Chat%7BD%7D%20%5Chat%7BV%7D%5E%7BT%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=%5Chat%7BX%7D%20%3D%20%5Cbegin%7Bbmatrix%7D%200.00%20%26%20-0.45%20%5C%5C%200.00%20%26%20-0.45%20%5C%5C%20%5Cvdots%20%26%20%5Cvdots%20%5C%5C%20-0.32%20%26%200.00%20%5Cend%7Bbmatrix%7D%20%5Ctimes%20%5Cbegin%7Bbmatrix%7D%202.25%20%26%200%20%5C%5C%200%20%26%201.90%20%5Cend%7Bbmatrix%7D%20%5Ctimes%20%5Cbegin%7Bbmatrix%7D%200.00%20%26%200.00%20%26%20-0.71%20%26%20-0.71%20%5C%5C%20-0.85%20%26%20-0.53%20%26%200.00%20%26%200.00%20%5Cend%7Bbmatrix%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>该矩阵乘积是原矩阵的近似，即使只用了一半的值，还是在一定程度上保留了原来的信息。</p>
+<p>当作为降维算法使用时，我们要用到的是在变换为原始特征的形式之前（在乘以<img src="https://math.now.sh?inline=%5Cwidehat%7BV%7D%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">之前）的<img src="https://math.now.sh?inline=%5Cwidehat%7BU%7D%5Cwidehat%20%7BD%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。<img src="https://math.now.sh?inline=%5Cwidehat%7BU%7D%5Cwidehat%20%7BD%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是一个8行2列的矩阵，我们可以将其解释为从归纳的特征中选择的2个重要度高的特征。</p>
+<p><img src="/2024/11/21/machine-learning-note5/5.png" alt="5.png"></p>
+<p>以下是关于<img src="https://math.now.sh?inline=%5Cwidehat%7BU%7D%5Cwidehat%20%7BD%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的具体数值，将两个特征设为A和B。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>A</th>
+<th>B</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>汽车</td>
+<td>0.00</td>
+<td>0.85</td>
+</tr>
+<tr>
+<td>公司</td>
+<td>0.00</td>
+<td>0.85</td>
+</tr>
+<tr>
+<td>去</td>
+<td>0.00</td>
+<td>1.38</td>
+</tr>
+<tr>
+<td>车</td>
+<td>0.00</td>
+<td>0.53</td>
+</tr>
+<tr>
+<td>餐厅</td>
+<td>1.41</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>汉堡牛肉饼</td>
+<td>0.71</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>吃</td>
+<td>1.41</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>意大利面</td>
+<td>0.71</td>
+<td>0.00</td>
+</tr>
+</tbody>
+</table>
+<p>“汽车”和“车”拥有变量B的值，“汉堡牛肉饼”和“意大利面”拥有变量A的值。A和B的特征值显示了各个单词之间的关联性。</p>
+<h2 id="示例代码-2"><strong>示例代码</strong></h2>
+<p>假设一个使用8个变量（=单词的个数）表示的数据集，现用2个潜在变量去表示它。</p>
+<pre class="line-numbers language-none"><code class="language-none">from sklearn.decomposition import TruncatedSVD
+data &#x3D; [[1, 0, 0, 0],
+        [1, 0, 0, 0],
+        [1, 1, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 1],
+        [0, 0, 1, 0],
+        [0, 0, 1, 1],
+        [0, 0, 0, 1]]
+n_components &#x3D; 2  # 潜在变量的个数
+model &#x3D; TruncatedSVD(n_components&#x3D;n_components)
+model.fit(data)
+print(model.transform(data))  # 变换后的数据
+print(model.explained_variance_ratio_)  # 贡献率
+print(sum(model.explained_variance_ratio_))  # 累计贡献率<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>另外，与PCA一样，我们也可以检查LSA变换后的矩阵中包含多少原始信息。使用了scikit-learn的上述代码输出的累计贡献率约为0.67，表明这2个变量包含了约67%的原始数据的信息。</p>
+<h2 id="详细说明-2"><strong>详细说明</strong></h2>
+<h3 id="使用LSA时的注意事项"><strong>使用LSA时的注意事项</strong></h3>
+<p>本矩阵分解是奇异值分解。</p>
+<p>它具有以新的空间表示文本等优点。但有以下问题：</p>
+<ul>
+<li>变换后的矩阵难以解释。在通过奇异值分解降维时，各个维度可能是正交的，矩阵中的元素也可能是负值。</li>
+<li>LSA的计算成本有时很高。单词个数与维度相关，可能会有非常大的矩阵。</li>
+<li>更新难度大，随着新词加入，原有矩阵需重建。</li>
+</ul>
+<h1>算法三：<strong>NMF</strong></h1>
+<h2 id="概述-3"><strong>概述</strong></h2>
+<p>NMF(Non-negative Martix Factorization,非负矩阵分解)是一种降维算法也是一种矩阵分解方法。</p>
+<p>NMF有以下特点：</p>
+<ul>
+<li>原始矩阵的元素和分解后矩阵的元素是非负数</li>
+<li>没有“潜在语义空间的每一个维度都是正交的”这一约束条件</li>
+</ul>
+<p>以下分别为对二维数据应用NMF和PCA的结果。</p>
+<p><img src="/2024/11/21/machine-learning-note5/6.png" alt="6.png"></p>
+<p>可以看出NMF的潜在空间的每个轴会靠近密集的点，使得轴上有重复信息。这一特性使得我们可以捕捉到多个数据块的特征。</p>
+<p>而PCA等算法则由于其潜在空间的维度是正交的，所以无法找到所有数据块的特征。</p>
+<h2 id="算法说明-2"><strong>算法说明</strong></h2>
+<h3 id="实例">实例</h3>
+<p>假设我们有以下三篇文档：</p>
+<ul>
+<li>文档1：谈论人工智能和机器学习。</li>
+<li>文档2：讨论深度学习和神经网络。</li>
+<li>文档3：介绍数据分析和统计学。</li>
+</ul>
+<p>通过 NMF，可以将文档表示为某些“主题”的线性组合。例如：</p>
+<ul>
+<li>主题A：与“人工智能、机器学习”相关。</li>
+<li>主题B：与“统计学、数据分析”相关。</li>
+<li>主题C：与“深度学习、神经网络”相关。</li>
+</ul>
+<p><strong>NMF 的结果</strong>可能如下：</p>
+<ul>
+<li>文档1 ≈ 0.6 × 主题A + 0.3 × 主题C</li>
+<li>文档2 ≈ 0.8 × 主题C + 0.1 × 主题A</li>
+<li>文档3 ≈ 0.7 × 主题B + 0.2 × 主题A</li>
+</ul>
+<p>这个表示让我们可以用<strong>主题分布</strong>来描述每篇文档，比如：</p>
+<ul>
+<li>文档1的“主题A贡献”为0.6，“主题C贡献”为0.3。</li>
+</ul>
+<h3 id="抽象化">抽象化</h3>
+<p>设原始数据为<img src="https://math.now.sh?inline=n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">行<img src="https://math.now.sh?inline=d" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">列的矩阵<img src="https://math.now.sh?inline=V" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。将其表示为两个矩阵<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">和<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的乘积。</p>
+<ul>
+<li><img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是<img src="https://math.now.sh?inline=n" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">行<img src="https://math.now.sh?inline=r" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">列的矩阵，是一个 文档 - 主题 矩阵每一行表示一个文档在不同主题上的权重。</li>
+<li><img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是<img src="https://math.now.sh?inline=r" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">行<img src="https://math.now.sh?inline=d" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">列的矩阵，每一列表示一个主题在各个词汇上的权重。</li>
+<li><img src="https://math.now.sh?inline=WH" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">是原始矩阵<img src="https://math.now.sh?inline=V" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的近似，选择比<img src="https://math.now.sh?inline=d" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">小的<img src="https://math.now.sh?inline=r" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">就可以进行降维。</li>
+</ul>
+<p><img src="/2024/11/21/machine-learning-note5/7.png" alt="7.png"></p>
+<p>在求<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">和<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的过程中，NMF在<img src="https://math.now.sh?inline=W%20%E2%89%A5%200%E3%80%81H%20%E2%89%A5%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">的条件下，使<img src="https://math.now.sh?inline=WH" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">接近<img src="https://math.now.sh?inline=V" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。</p>
+<p>NMF采取“将<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">视为常数，更新<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">”“ 将<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">视为常数，更新<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">”的方式交替更新<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">和<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">.</p>
+<p>以下对NMF过程进行可视化。</p>
+<p>灰色的点为原始矩阵<img src="https://math.now.sh?inline=V" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">，绿色的点为近似矩阵<img src="https://math.now.sh?inline=WH" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。随着计算的进行，我们可以看到近似矩阵越来越接近原始矩阵。此外，红线和蓝线是潜在空间的轴，所有近似矩阵的图形都能在潜在空间（二维空间）的轴上表示出来</p>
+<ul>
+<li>
+<p>将<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">和<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">初始化为正值。</p>
+</li>
+<li>
+<p>将<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">视为常数，更新<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。</p>
+</li>
+<li>
+<p>将<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">视为常数，更新<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">。</p>
+</li>
+<li>
+<p>当<img src="https://math.now.sh?inline=W" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">和<img src="https://math.now.sh?inline=H" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">收敛时，停止计算。</p>
+<p><img src="/2024/11/21/machine-learning-note5/8.png" alt="8.png"></p>
+</li>
+</ul>
+<h2 id="示例代码-3"><strong>示例代码</strong></h2>
+<pre class="line-numbers language-none"><code class="language-none">from sklearn.decomposition import NMF
+from sklearn.datasets.samples_generator import make_blobs
+centers &#x3D; [[5, 10, 5], [10, 4, 10], [6, 8, 8]]
+V, _ &#x3D; make_blobs(centers&#x3D;centers)  # 以centers为中心生成数据
+n_components &#x3D; 2  # 潜在变量的个数
+model &#x3D; NMF(n_components&#x3D;n_components)
+model.fit(V)
+W &#x3D; model.transform(V) # 分解后的矩阵
+H &#x3D; model.components_
+print(W)
+print(H)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="详细说明-3"><strong>详细说明</strong></h2>
+<h3 id="NMF与PCA的比较"><strong>NMF与PCA的比较</strong></h3>
+<p>将NMF和PCA应用到一个人脸数据集上（19像素×19像素，2429张），降维后由49个变量表示数据。即将361个特征变换为49个潜在变量。</p>
+<p>将49个潜在变量可视化</p>
+<p><img src="/2024/11/21/machine-learning-note5/9.png" alt="9.png"></p>
+<p>左图为PCA结果，每张图像表示了人的整个面部，负值暗，正值亮。PCA通过将不同的脸加在一起恢复原始图像。</p>
+<p>右图为NMF的结果，暗区较多，但这些区域的值为0.。每个潜在变量代表了人脸的一部分特征。NMF通过组合具有人脸部分特征的图像来回复原始图像，NMF的潜在变量含义可解释性更强，能够清晰地反映数据的实际意义和结构。</p>
+<h1><strong>算法四：LDA</strong></h1>
+<h2 id="概述-4"><strong>概述</strong></h2>
+<p>LDA（Latent Dirichlet Allocation）是一种降维的用于文本建模的算法。可根据文本中的单词找出潜在的主题并分类。</p>
+<p>举个例子</p>
+<ul>
+<li>We go to school on weekdays.</li>
+<li>I like playing sports.</li>
+<li>They enjoyed playing sports in school.</li>
+<li>Did she go there after school?</li>
+<li>He read the sports columns yesterday</li>
+</ul>
+<p>假设这些例句主题数为2，将其应用于LDA算法。</p>
+<p>以下为主题A和主题B单词的概率分布</p>
+<p><img src="/2024/11/21/machine-learning-note5/10.png" alt="10.png"></p>
+<p>school是主题A的代表性单词，sports是主题B的代表性单词</p>
+<p>具体做法如下：</p>
+<ul>
+<li>基于文本的主题分布为单词分配主题</li>
+<li>基于分配的主题的单词分布确定单词</li>
+<li>对所有文本中包含的单词执行步骤1和步骤2的操作</li>
+</ul>
+<h2 id="算法说明-3"><strong>算法说明</strong></h2>
+<p>LDA通过以下步骤计算主题分布和单词分布。</p>
+<ol>
+<li>为各文本的单词随机分配主题。</li>
+<li>基于为单词分配的主题，计算每个文本的主题概率。</li>
+<li>基于为单词分配的主题，计算每个主题的单词概率。</li>
+<li>计算步骤2和步骤 3中的概率的乘积，基于得到的概率，再次为各文本的单词分配主题。</li>
+<li>重复步骤2 ~ 步骤4的计算，直到收敛。</li>
+</ol>
+<h2 id="示例代码-4"><strong>示例代码</strong></h2>
+<pre class="line-numbers language-none"><code class="language-none">from sklearn.datasets import fetch_20newsgroups
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+# 使用remove去除正文以外的信息
+data &#x3D; fetch_20newsgroups(remove&#x3D;(&#39;headers&#39;, &#39;footers&#39;, &#39;quotes&#39;))
+max_features &#x3D; 1000
+# 将文本数据变换为向量
+tf_vectorizer &#x3D; CountVectorizer(max_features&#x3D;max_features,
+stop_words&#x3D;&#39;english&#39;)
+tf &#x3D; tf_vectorizer.fit_transform(data.data)
+n_topics &#x3D; 20
+model &#x3D; LatentDirichletAllocation(n_components&#x3D;n_topics)
+model.fit(tf)
+print(model.components_)  # 各主题包含的单词的分布
+print(model.transform(tf))  # 使用主题描述的文本<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用scikit-learn实现基于LDA的主题模型的创建。使用了一个名为20 Newsgroups的 数据集，这个数据集是20个主题的新闻组文本的集合，每个文本属于一个主题。</p>
+<h2 id="详细说明-4"><strong>详细说明</strong></h2>
+<h3 id="使用主题描述文本"><strong>使用主题描述文本</strong></h3>
+<p>一些主题能直观地通过包含的单词来概述文本，比如 game team year games season play hockey players league win teams 是关于体育的。</p>
+<p>一些只包含数值或概括性不强的单词的主题则通过停用词（为了提高精度而排除在外的单词）来进行改进。</p>
+<p><img src="/2024/11/21/machine-learning-note5/11.png" alt="11.png"></p>
+<p>以上是文本的主题分布图，可以明显直观地看出是主题18的文本。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/11/19/learn-database-note9/">数据库管理系统——并发控制2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/LDA/" rel="tag">LDA</a><a class="-none-link" href="/tags/LSA/" rel="tag">LSA</a><a class="-none-link" href="/tags/NMF/" rel="tag">NMF</a><a class="-none-link" href="/tags/PCA/" rel="tag">PCA</a><a class="-none-link" href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" rel="tag">机器学习</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/11/21/machine-learning-note5/">《图解机器学习算法》笔记——无监督学习1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/19/learn-database-note9/">数据库管理系统——并发控制2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/13/learn-database-note8/">数据库管理系统——并发控制1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/11/machine-learning-note4/">《图解机器学习算法》笔记——有监督学习3</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/01/machine-learning-note3/">《图解机器学习算法》笔记——有监督学习2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/10/29/machine-learning-note2/">《图解机器学习算法》笔记——有监督学习1</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 12px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/python/" style="font-size: 16px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 12px;">requests</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 12px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 16px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 16px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 12px;">并发控制</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 12px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 12px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 12px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 16px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 12px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 14px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
