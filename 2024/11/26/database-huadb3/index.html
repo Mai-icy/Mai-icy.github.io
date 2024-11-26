@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库内核实验报告三 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库内核实验报告三"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库内核实验报告三</h2>
+            <div class="post-meta">
+                <time class="date">2024.11.26</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>基础实现思路和难度总结</h1>
+<p>先解决万圣节问题，后需要完成数据库并发的三种控制级别：读已提交，可重复读，可串行化。</p>
+<p>本次实验使用MVCC多版本控制实现读已提交和可重复读，使用SS2PL严格两阶段锁来实现可串行化。</p>
+<h2 id="实验内容概述">实验内容概述</h2>
+<p>本次实验的MVCC主要通过给数据记录（行）添加maxXid，minXid，cid。修改原来的tablePage添加数据方式以记录这三个值。</p>
+<p>为了满足读已提交和可重复读，采用在seqScan扫描时添加可见性判断，参考以上三个值以判断事务是否可见。注意两者采用不同的活跃事务集，在两者条件下，使用不同的活跃事务集和不同的判断条件来判断可见性。</p>
+<p>在实现两阶段锁时，先完成锁管理器，正确判断锁的升级，相斥条件。然后再在各个操作添加相应的锁，有表集锁和行级锁。SELECT有 for update和 for share。如果SELECT什么都不加，那就只给表级加意向锁，行级不加。</p>
+<h2 id="解决万圣节问题">解决万圣节问题</h2>
+<p>10-halloween.test</p>
+<h3 id="添加记录头信息">添加记录头信息</h3>
+<p>对于版本控制MVCC，对于每个记录，本次的实验通过添加三个新的值，原本的deleted_（删除标签）将会被弃用，对于并行来说，不同事务看到不同的数据记录是不一样的，可能A可以访问，而B看到的就是已删除。</p>
+<p>首先我们回顾xid代表了事务的id，以下是新的属性：</p>
+<ul>
+<li>xmin_：代表插入该记录的事务id</li>
+<li>xmax_：代表删除该记录的事务id</li>
+<li>cid_：对于每个事务来说，一个事务有多个操作，比如有多次SELECT，多次UPDATE，或者是多种操作结合，因此对于每个操作，我们依旧进行隔离，使用一个cid代表commandID，代表事务内的操作id，同时，不同事务的操作id是独立的，没有比较的价值。</li>
+</ul>
+<p>通过修改原来的table_page.cpp来完成，此处只展示修改后的代码。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">//插入  InsertRecord函数</span>
+record<span class="token operator">-></span><span class="token function">SetCid</span><span class="token punctuation">(</span>cid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+record<span class="token operator">-></span><span class="token function">SetXmin</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+record<span class="token operator">-></span><span class="token function">SetXmax</span><span class="token punctuation">(</span>NULL_XID<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 删除  DeleteRecord函数</span>
+<span class="token comment">// header.SetDeleted(true); // 原来的，已删除</span>
+header<span class="token punctuation">.</span><span class="token function">SetXmax</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 撤销删除  UndoDeleteRecord函数</span>
+<span class="token comment">// header.SetDeleted(false); // 原来的，已删除</span>
+header<span class="token punctuation">.</span><span class="token function">SetXmax</span><span class="token punctuation">(</span>NULL_XID<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="回顾万圣节问题">回顾万圣节问题</h3>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">UPDATE</span> test <span class="token keyword">SET</span> id <span class="token operator">=</span> id <span class="token operator">+</span> <span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>对于本次实验来说，所谓的更新操作有以下步骤：</p>
+<ul>
+<li>扫描所有数据，扫描到数据项</li>
+<li>删除原记录</li>
+<li>插入更新后的新记录，回到第一步继续扫描</li>
+</ul>
+<p>万圣节问题也就是在最后一步插入后，第一步又读取到新插入的数据，也就是自己更新过的数据由于被新插入，以为自己没更新，进行无限循环次更新。</p>
+<h3 id="解决万圣节问题-2">解决万圣节问题</h3>
+<p>导致问题的主要原因就是：这句操作A扫描了操作A插入的数据</p>
+<p>解决方法：操作A看不到操作A更新后的数据（不可见）</p>
+<p>对于原本的扫描，我们通过判断deleted_标记来判断是否可见，如果已删除，就是不可见，如果未删除，就是可见。</p>
+<p>现在的扫描，我们判断Xmax_，如果是NULL_XID，就是未删除，否则就是已删除。</p>
+<p>此时再多考虑一句，如果当前记录是本事务创建的，并且也是由本操作创建的，那么不可见。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span><span class="token punctuation">)</span><span class="token operator">></span> isVisable <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> rec<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">if</span><span class="token punctuation">(</span>record<span class="token operator">-></span>Xmin_ <span class="token operator">==</span> xid <span class="token operator">and</span> record<span class="token operator">-></span>cid_ <span class="token operator">==</span> cid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+		<span class="token keyword">if</span><span class="token punctuation">(</span>record<span class="token operator">-></span>Xmax_ <span class="token operator">==</span> NULL_XID<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+			<span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+		<span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>通过设计这个判断是否可见函数，替代原来的判断是否删除的位置即可。</p>
+<p>通过测试样例 10-halloween.test</p>
+<h2 id="通过MVCC完成并发控制可重复读隔离">通过MVCC完成并发控制可重复读隔离</h2>
+<p>20-mvcc_insert.test 21-mvcc_delete.test 22-mvcc_update.test 23-write_skew.test 30-repeatable_read.test</p>
+<h3 id="可重复读隔离">可重复读隔离</h3>
+<p>对于一个事务，从开始到完成的整个期间，它只能访问 在自己提交之前 已经commit的事务修改后的记录。</p>
+<h3 id="设置活跃事务集合">设置活跃事务集合</h3>
+<p>活跃事务集合也是本次要考虑的参考数据。对于可重复读隔离，用于判断的活跃事务集合为事务开始时依旧活跃（没有提交没有回滚）的事务id集合。</p>
+<p>这个活跃事务集合是冻结的，一旦获取之后不会改变。对于这个活跃事务集合，通常是快照。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">SeqScanExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  std<span class="token double-colon punctuation">::</span>unordered_set<span class="token operator">&lt;</span>xid_t<span class="token operator">></span> active_xids<span class="token punctuation">;</span>
+  <span class="token comment">// 根据隔离级别，获取活跃事务的 xid（通过 context_ 获取需要的信息）</span>
+  xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  cid_t cid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TransactionManager <span class="token operator">&amp;</span>manager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetTransactionManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  IsolationLevel level <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetIsolationLevel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  
+  <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>REPEATABLE_READ<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    active_xids <span class="token operator">=</span> manager<span class="token punctuation">.</span><span class="token function">GetSnapshot</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> record <span class="token operator">=</span> scan_<span class="token operator">-></span><span class="token function">GetNextRecord</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> level<span class="token punctuation">,</span> cid<span class="token punctuation">,</span> active_xids<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> record<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="数据记录可见性判断">数据记录可见性判断</h3>
+<p>按照隔离级别要求，我们修改可见性判断函数，函数不再是简单的直接判断是否删除，代码如下：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span><span class="token punctuation">)</span><span class="token operator">></span> isVisable <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> rec<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+
+  xid_t del_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmax</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">==</span> xid <span class="token operator">&amp;&amp;</span> rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>del_xid<span class="token punctuation">)</span> <span class="token operator">and</span> del_xid <span class="token operator">&lt;</span> xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  xid_t insert_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">></span> xid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">==</span> xid <span class="token operator">&amp;&amp;</span> rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">>=</span> cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>insert_xid<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>对于可见性判断，我们将判断拆成两个步骤：检查是否插入，检查是否删除。</p>
+<h3 id="是否删除">是否删除</h3>
+<ul>
+<li>XmaxID == NULL_XID：没有被删除，记录可见 END</li>
+<li>XmaxID == xid：等于当前的id，代表是当前事务，比较cid
+<ul>
+<li>记录cid ≥ 当前cid：还未删除，记录可见 END</li>
+<li>记录cid &lt; 当前cid：已删除，记录不可见 END</li>
+</ul>
+</li>
+<li>XmaxID in active_xids：当前删除还未提交，故记录可见 END</li>
+<li>XmaxID not in active_xids：不在活跃事务列表，要么已commit，要么是之后的新事务。
+<ul>
+<li>XmaxID ≥ xid：是新事务，新事务的删除不可见，故记录可见 END</li>
+<li>XmaxID &lt; xid：是已提交事务，事务的删除可见，故记录不可见 END</li>
+</ul>
+</li>
+</ul>
+<h3 id="是否插入">是否插入</h3>
+<ul>
+<li>XminID == NULL_XID：该记录未插入，不可见 END</li>
+<li>XminID == xid：等于当前的id，代表是当前事务，比较cid
+<ul>
+<li>记录cid &gt; 当前cid：还未插入，不可见 END</li>
+<li>记录cid == 当前cid：万圣节问题，不可见 END</li>
+<li>记录cid &lt; 当前cid：已经插入，可见 END</li>
+</ul>
+</li>
+<li>XminID in active_xids：当前删除还未提交，插入未生效，不可见</li>
+<li>XminID not in active_xids：不在活跃事务列表，要么已commit，要么是之后的新事务。
+<ul>
+<li>XminID ≥ xid：是新事务，新事务的插入不可见，故记录不可见 END</li>
+<li>XminID &lt; xid：是已提交事务，事务的插入可见，故记录可见 END</li>
+</ul>
+</li>
+</ul>
+<p>通过以上的两次检查，如果两次检查都说明可见，则可见，若一者不可见，则不可见。</p>
+<p>通过测试样例 20 - 30</p>
+<h2 id="实现读已提交隔离">实现读已提交隔离</h2>
+<p>40-read_committed.test</p>
+<h3 id="读已提交隔离">读已提交隔离</h3>
+<p>对于读已提交隔离，使用的活跃事务集合更加宽松，为实时的活跃事务集合。并且判断可见性和可重复读相似度很高。</p>
+<h3 id="设置活跃事务集合-2">设置活跃事务集合</h3>
+<p>读已提交隔离的活跃事务集合是实时的活跃事务集合，和读已提交是不一样的。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">SeqScanExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  std<span class="token double-colon punctuation">::</span>unordered_set<span class="token operator">&lt;</span>xid_t<span class="token operator">></span> active_xids<span class="token punctuation">;</span>
+  <span class="token comment">// 根据隔离级别，获取活跃事务的 xid（通过 context_ 获取需要的信息）</span>
+  xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  cid_t cid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TransactionManager <span class="token operator">&amp;</span>manager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetTransactionManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  IsolationLevel level <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetIsolationLevel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  
+  <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>REPEATABLE_READ<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    active_xids <span class="token operator">=</span> manager<span class="token punctuation">.</span><span class="token function">GetSnapshot</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>READ_COMMITTED<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    active_xids <span class="token operator">=</span> manager<span class="token punctuation">.</span><span class="token function">GetActiveTransactions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> record <span class="token operator">=</span> scan_<span class="token operator">-></span><span class="token function">GetNextRecord</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> level<span class="token punctuation">,</span> cid<span class="token punctuation">,</span> active_xids<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> record<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="记录可见性判断">记录可见性判断</h3>
+<p>相比可重复读来说，不需要判断xid &gt; 当前xid，因为都会被活跃事务集合记录。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span><span class="token punctuation">)</span><span class="token operator">></span> isVisable <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> rec<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>isolation_level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>READ_COMMITTED<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    xid_t del_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmax</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">==</span> xid <span class="token operator">&amp;&amp;</span> rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>del_xid<span class="token punctuation">)</span> <span class="token operator">and</span> del_xid <span class="token operator">!=</span> xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    xid_t insert_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">==</span> xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">>=</span> cid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+          <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+          <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+      
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>insert_xid<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span> <span class="token comment">// if(isolation_level == IsolationLevel::REPEATABLE_READ)</span>
+	<span class="token comment">// 同上文，略</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="是否删除-2">是否删除</h3>
+<ul>
+<li>XmaxID == NULL_XID：没有被删除，记录可见 END</li>
+<li>XmaxID == xid：等于当前的id，代表是当前事务，比较cid
+<ul>
+<li>记录cid ≥ 当前cid：还未删除，记录可见 END</li>
+<li>记录cid &lt; 当前cid：已删除，记录不可见 END</li>
+</ul>
+</li>
+<li>XmaxID in active_xids：当前删除还未提交，故记录可见 END</li>
+<li>XmaxID not in active_xids：不在活跃事务列表，是已提交事务，事务的删除可见，故记录不可见 END。（不同点）</li>
+</ul>
+<h3 id="是否插入-2">是否插入</h3>
+<ul>
+<li>XminID == NULL_XID：该记录未插入，不可见 END</li>
+<li>XminID == xid：等于当前的id，代表是当前事务，比较cid
+<ul>
+<li>记录cid &gt; 当前cid：还未插入，不可见 END</li>
+<li>记录cid == 当前cid：万圣节问题，不可见 END</li>
+<li>记录cid &lt; 当前cid：已经插入，可见 END</li>
+</ul>
+</li>
+<li>XminID in active_xids：当前删除还未提交，插入未生效，不可见</li>
+<li>XminID not in active_xids：不在活跃事务列表，是已提交事务，事务的插入可见，故记录可见 END（不同点）</li>
+</ul>
+<p>通过以上的两次检查，如果两次检查都说明可见，则可见，若一者不可见，则不可见。</p>
+<p>通过样例 40-read_committed.test</p>
+<h2 id="实现锁管理器">实现锁管理器</h2>
+<p>MVCC只能支持到可重复读，对于可串行化隔离，需要两阶段锁的帮助。</p>
+<p>在完成这件事之前，我们要先完成锁的管理。</p>
+<p>对于锁，有5种不同的锁，共享锁，互斥锁，意向共享锁，意向互斥锁，共享意向互斥锁</p>
+<p>我们先完成锁的相斥性判断和升级判断</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">enum</span> <span class="token keyword">class</span> <span class="token class-name">LockType</span> <span class="token punctuation">&#123;</span>
+  S <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">,</span>    <span class="token comment">// 共享锁</span>
+  X <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span>    <span class="token comment">// 互斥锁</span>
+  IS <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span>   <span class="token comment">// 意向共享锁</span>
+  IX <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">,</span>   <span class="token comment">// 意向互斥锁</span>
+  SIX <span class="token operator">=</span> <span class="token number">4</span><span class="token punctuation">,</span>  <span class="token comment">// 共享意向互斥锁</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">bool</span> <span class="token class-name">LockManager</span><span class="token double-colon punctuation">::</span><span class="token function">Compatible</span><span class="token punctuation">(</span>LockType type_a<span class="token punctuation">,</span> LockType type_b<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 判断锁是否相容</span>
+  <span class="token comment">// LAB 3 DONE</span>
+  <span class="token keyword">const</span> <span class="token keyword">bool</span> compatibility<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// SHARED_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// EXCLUSIVE_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// INTENTION_SHARED_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// INTENTION_EXCLUSIVE_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">&#125;</span>   <span class="token comment">// SHARED_INTENTION_EXCLUSIVE_LOCK</span>
+  <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> compatibility<span class="token punctuation">[</span><span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>type_a<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>type_b<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+LockType <span class="token class-name">LockManager</span><span class="token double-colon punctuation">::</span><span class="token function">Upgrade</span><span class="token punctuation">(</span>LockType self<span class="token punctuation">,</span> LockType other<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 升级锁类型</span>
+  <span class="token comment">// LAB 3 DONE</span>
+  <span class="token keyword">const</span> <span class="token keyword">int</span> upgrade<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// SHARED_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// EXCLUSIVE_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// INTENTION_SHARED_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span>  <span class="token comment">// INTENTION_EXCLUSIVE_LOCK</span>
+    <span class="token punctuation">&#123;</span><span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">&#125;</span>   <span class="token comment">// SHARED_INTENTION_EXCLUSIVE_LOCK</span>
+  <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>LockType<span class="token operator">></span></span></span><span class="token punctuation">(</span>upgrade<span class="token punctuation">[</span><span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>other<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>此处的升级指的是同一个事务不同操作之间结合的升级。</p>
+<p>例如操作1是SELECT，但操作2是UPDATE，故两者结合即是互斥锁。</p>
+<p>结合规律条件已经很具体的写在上面了。</p>
+<h3 id="锁的数据结构管理">锁的数据结构管理</h3>
+<p>本次实验的粒度设置了两个锁记录，一个是 表锁，一个是 行锁。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">Lock</span> <span class="token punctuation">&#123;</span>
+  xid_t xid<span class="token punctuation">;</span>
+  LockType lock_type<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token comment">// 新增的成员变量</span>
+std<span class="token double-colon punctuation">::</span>map<span class="token operator">&lt;</span>oid_t<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>Lock<span class="token operator">>></span> lock_table_<span class="token punctuation">;</span>
+std<span class="token double-colon punctuation">::</span>map<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>pair<span class="token operator">&lt;</span>oid_t<span class="token punctuation">,</span> Rid<span class="token operator">></span><span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>Lock<span class="token operator">>></span> row_lock_table_<span class="token punctuation">;</span>
+std<span class="token double-colon punctuation">::</span>map<span class="token operator">&lt;</span>xid_t<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>oid_t<span class="token operator">>></span> xid_table_lock_<span class="token punctuation">;</span>
+std<span class="token double-colon punctuation">::</span>map<span class="token operator">&lt;</span>xid_t<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>pair<span class="token operator">&lt;</span>oid_t<span class="token punctuation">,</span> Rid<span class="token operator">>></span><span class="token operator">></span> xid_row_lock_<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>先用一个map对应oid和vector<Lock>代表 表锁，每一个表oid对于一个锁数组，记录了所有锁。同理，用pair将两个值作为key，就可以代表 行锁。</Lock></p>
+<p>为了便于之后可以将某个xid的锁全部解锁，可以使用另外的两个表，分别代表xid在哪些表或者行上上了锁。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">bool</span> <span class="token class-name">LockManager</span><span class="token double-colon punctuation">::</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid_t xid<span class="token punctuation">,</span> LockType lock_type<span class="token punctuation">,</span> oid_t oid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 对数据表加锁，成功加锁返回 true，如果数据表已被其他事务加锁，且锁的类型不相容，返回 false</span>
+  <span class="token comment">// 如果本事务已经持有该数据表的锁，根据需要升级锁的类型</span>
+  <span class="token comment">// LAB 3 DONE</span>
+  std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>Lock<span class="token operator">></span> <span class="token operator">&amp;</span>locks <span class="token operator">=</span> lock_table_<span class="token punctuation">[</span>oid<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+  Lock <span class="token operator">*</span>oriLock <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>lock<span class="token operator">:</span> locks<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>xid <span class="token operator">==</span> xid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      oriLock <span class="token operator">=</span> <span class="token operator">&amp;</span>lock<span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>oriLock <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    LockType upgraded_lock <span class="token operator">=</span> <span class="token function">Upgrade</span><span class="token punctuation">(</span>oriLock<span class="token operator">-></span>lock_type<span class="token punctuation">,</span> lock_type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>lock<span class="token operator">:</span> locks<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>xid <span class="token operator">!=</span> xid <span class="token operator">and</span> <span class="token operator">not</span> <span class="token function">Compatible</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>lock_type<span class="token punctuation">,</span> upgraded_lock<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    oriLock<span class="token operator">-></span>lock_type <span class="token operator">=</span> upgraded_lock<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>lock<span class="token operator">:</span> locks<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> <span class="token function">Compatible</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>lock_type<span class="token punctuation">,</span> lock_type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    locks<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span><span class="token punctuation">&#123;</span>xid<span class="token punctuation">,</span> lock_type<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    xid_table_lock_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>oid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">bool</span> <span class="token class-name">LockManager</span><span class="token double-colon punctuation">::</span><span class="token function">LockRow</span><span class="token punctuation">(</span>xid_t xid<span class="token punctuation">,</span> LockType lock_type<span class="token punctuation">,</span> oid_t oid<span class="token punctuation">,</span> Rid rid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 对数据行加锁，成功加锁返回 true，如果数据行已被其他事务加锁，且锁的类型不相容，返回 false</span>
+  <span class="token comment">// 如果本事务已经持有该数据行的锁，根据需要升级锁的类型</span>
+  <span class="token comment">// LAB 3 DONE</span>
+  std<span class="token double-colon punctuation">::</span>pair<span class="token operator">&lt;</span>oid_t<span class="token punctuation">,</span> Rid<span class="token operator">></span> row <span class="token operator">=</span> <span class="token punctuation">&#123;</span>oid<span class="token punctuation">,</span> rid<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+  std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>Lock<span class="token operator">></span> <span class="token operator">&amp;</span>locks <span class="token operator">=</span> row_lock_table_<span class="token punctuation">[</span>row<span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+  Lock <span class="token operator">*</span>oriLock <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>lock<span class="token operator">:</span> locks<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>xid <span class="token operator">==</span> xid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      oriLock <span class="token operator">=</span> <span class="token operator">&amp;</span>lock<span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>oriLock <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    LockType upgraded_lock <span class="token operator">=</span> <span class="token function">Upgrade</span><span class="token punctuation">(</span>oriLock<span class="token operator">-></span>lock_type<span class="token punctuation">,</span> lock_type<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>lock<span class="token operator">:</span> locks<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>xid <span class="token operator">!=</span> xid <span class="token operator">and</span> <span class="token operator">not</span> <span class="token function">Compatible</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>lock_type<span class="token punctuation">,</span> upgraded_lock<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    oriLock<span class="token operator">-></span>lock_type <span class="token operator">=</span> upgraded_lock<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>lock<span class="token operator">:</span> locks<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> <span class="token function">Compatible</span><span class="token punctuation">(</span>lock<span class="token punctuation">.</span>lock_type<span class="token punctuation">,</span> lock_type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    locks<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span><span class="token punctuation">&#123;</span>xid<span class="token punctuation">,</span> lock_type<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    xid_row_lock_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>row<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">void</span> <span class="token class-name">LockManager</span><span class="token double-colon punctuation">::</span><span class="token function">ReleaseLocks</span><span class="token punctuation">(</span>xid_t xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 释放事务 xid 持有的所有锁</span>
+  <span class="token comment">// LAB 3 DONE</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>xid_table_lock_<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span> <span class="token operator">!=</span> xid_table_lock_<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>oid_t oid <span class="token operator">:</span> xid_table_lock_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">auto</span><span class="token operator">&amp;</span> locks <span class="token operator">=</span> lock_table_<span class="token punctuation">[</span>oid<span class="token punctuation">]</span><span class="token punctuation">;</span>
+      locks<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">remove_if</span><span class="token punctuation">(</span>locks<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> locks<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                 <span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> Lock<span class="token operator">&amp;</span> lock<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> lock<span class="token punctuation">.</span>xid <span class="token operator">==</span> xid<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                  locks<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    xid_table_lock_<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>xid_row_lock_<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span> <span class="token operator">!=</span> xid_row_lock_<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span><span class="token operator">&amp;</span> row <span class="token operator">:</span> xid_row_lock_<span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">auto</span><span class="token operator">&amp;</span> locks <span class="token operator">=</span> row_lock_table_<span class="token punctuation">[</span>row<span class="token punctuation">]</span><span class="token punctuation">;</span>
+      locks<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">remove_if</span><span class="token punctuation">(</span>locks<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> locks<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                                 <span class="token punctuation">[</span>xid<span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token keyword">const</span> Lock<span class="token operator">&amp;</span> lock<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> lock<span class="token punctuation">.</span>xid <span class="token operator">==</span> xid<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                  locks<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    xid_row_lock_<span class="token punctuation">.</span><span class="token function">erase</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>按照上面定义的数据结构，简单定义函数即可。</p>
+<p>完成了锁的管理，接下来可以实现可串行化了</p>
+<h2 id="使用MVCC-SS2PL实现可串行化隔离">使用MVCC+SS2PL实现可串行化隔离</h2>
+<p>50-lock.test</p>
+<p>60-mv2pl.test</p>
+<p>MVCC作为基础，将两阶段锁添加上去，就可以实现可串行化，我们已经定义了所有锁的数据结构和锁的操作，接下来只要实施上即可。</p>
+<h3 id="SELECT加锁">SELECT加锁</h3>
+<p>对于可串行化隔离，SELECT有不同的加锁情况：</p>
+<ul>
+<li>SELECT FOR SHARE：为表加上意向共享锁，数据行加上共享锁</li>
+<li>SELECT FOR UPDATE：为表加上意向互斥锁，数据行加上互斥锁</li>
+<li>SELECT：为表加上意向共享锁，不加行锁</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">SeqScanExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  std<span class="token double-colon punctuation">::</span>unordered_set<span class="token operator">&lt;</span>xid_t<span class="token operator">></span> active_xids<span class="token punctuation">;</span>
+  <span class="token comment">// 根据隔离级别，获取活跃事务的 xid（通过 context_ 获取需要的信息）</span>
+  <span class="token comment">// 通过 context_ 获取正确的锁，加锁失败时抛出异常</span>
+  <span class="token comment">// LAB 3 BEGIN</span>
+
+  xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  cid_t cid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  TransactionManager <span class="token operator">&amp;</span>manager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetTransactionManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  IsolationLevel level <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetIsolationLevel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>REPEATABLE_READ<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    active_xids <span class="token operator">=</span> manager<span class="token punctuation">.</span><span class="token function">GetSnapshot</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>READ_COMMITTED<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    active_xids <span class="token operator">=</span> manager<span class="token punctuation">.</span><span class="token function">GetActiveTransactions</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>SERIALIZABLE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    active_xids <span class="token operator">=</span> manager<span class="token punctuation">.</span><span class="token function">GetSnapshot</span><span class="token punctuation">(</span>xid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> record <span class="token operator">=</span> scan_<span class="token operator">-></span><span class="token function">GetNextRecord</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> level<span class="token punctuation">,</span> cid<span class="token punctuation">,</span> active_xids<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>record<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span> <span class="token comment">// 扫描结束</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>SERIALIZABLE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+
+    LockManager <span class="token operator">&amp;</span>lockManager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetLockManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">bool</span> success<span class="token punctuation">;</span>
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>IS<span class="token punctuation">,</span> scan_<span class="token operator">-></span>table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">return</span> record<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以上是最终的扫描函数，以下还有FOR SHARE 和 FOR UPDATE：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">LockRowsExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">auto</span> record <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>record <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  LockManager <span class="token operator">&amp;</span>lockManager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetLockManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token comment">// 根据 plan_ 的 lock type 获取正确的锁，加锁失败时抛出异常</span>
+  <span class="token comment">// LAB3 DONE</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>plan_<span class="token operator">-></span><span class="token function">GetLockType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> SelectLockType<span class="token double-colon punctuation">::</span>SHARE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">bool</span> success<span class="token punctuation">;</span>
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>IS<span class="token punctuation">,</span> plan_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockRow</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>S<span class="token punctuation">,</span> plan_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> record<span class="token operator">-></span><span class="token function">GetRid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>plan_<span class="token operator">-></span><span class="token function">GetLockType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> SelectLockType<span class="token double-colon punctuation">::</span>UPDATE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">bool</span> success<span class="token punctuation">;</span>
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>IX<span class="token punctuation">,</span> plan_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockRow</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>X<span class="token punctuation">,</span> plan_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> record<span class="token operator">-></span><span class="token function">GetRid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>plan_<span class="token operator">-></span><span class="token function">GetLockType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> SelectLockType<span class="token double-colon punctuation">::</span>NOLOCK<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+		<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> record<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="INSERT-加锁">INSERT 加锁</h3>
+<p>对于可串行化隔离，INSERT有：</p>
+<ul>
+<li>对表级加意向互斥锁，对数据行加互斥锁</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">InsertExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>finished_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">uint32_t</span> count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token keyword">auto</span> record <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>Value<span class="token operator">></span> <span class="token function">values</span><span class="token punctuation">(</span>column_list_<span class="token punctuation">.</span><span class="token function">Length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">const</span> <span class="token keyword">auto</span> <span class="token operator">&amp;</span>insert_columns <span class="token operator">=</span> plan_<span class="token operator">-></span><span class="token function">GetInsertColumns</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">GetColumns</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span>size_t i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> insert_columns<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">auto</span> column_index <span class="token operator">=</span> column_list_<span class="token punctuation">.</span><span class="token function">GetColumnIndex</span><span class="token punctuation">(</span>insert_columns<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">GetName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      values<span class="token punctuation">[</span>column_index<span class="token punctuation">]</span> <span class="token operator">=</span> record<span class="token operator">-></span><span class="token function">GetValue</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">auto</span> table_record <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>Record<span class="token operator">></span></span></span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>values<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 通过 context_ 获取正确的锁，加锁失败时抛出异常</span>
+    <span class="token comment">// LAB 3 BEGIN</span>
+    LockManager <span class="token operator">&amp;</span>lockManager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetLockManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">bool</span> success<span class="token punctuation">;</span>
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>IX<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">auto</span> rid <span class="token operator">=</span> table_<span class="token operator">-></span><span class="token function">InsertRecord</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>table_record<span class="token punctuation">)</span><span class="token punctuation">,</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> context_<span class="token punctuation">.</span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    count<span class="token operator">++</span><span class="token punctuation">;</span>
+
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockRow</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>X<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> rid<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  finished_ <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>Record<span class="token operator">></span></span></span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token punctuation">&#123;</span><span class="token function">Value</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="DELETE-加锁">DELETE 加锁</h3>
+<p>对于可串行化隔离，DELETE有：</p>
+<ul>
+<li>对表级加意向互斥锁，对数据行加互斥锁</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">DeleteExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>finished_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">uint32_t</span> count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token keyword">auto</span> record <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 通过 context_ 获取正确的锁，加锁失败时抛出异常</span>
+    
+    LockManager <span class="token operator">&amp;</span>lockManager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetLockManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">bool</span> success<span class="token punctuation">;</span>
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>IX<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockRow</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>X<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> record<span class="token operator">-></span><span class="token function">GetRid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    table_<span class="token operator">-></span><span class="token function">DeleteRecord</span><span class="token punctuation">(</span>record<span class="token operator">-></span><span class="token function">GetRid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    count<span class="token operator">++</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  finished_ <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>Record<span class="token operator">></span></span></span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token punctuation">&#123;</span><span class="token function">Value</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="UPDATE-加锁">UPDATE 加锁</h3>
+<p>对于可串行化隔离，UPDATE有：</p>
+<ul>
+<li>对表级加意向互斥锁，对数据行加互斥锁</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> <span class="token class-name">UpdateExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>finished_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">uint32_t</span> count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token keyword">auto</span> record <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>Value<span class="token operator">></span> values<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">auto</span> <span class="token operator">&amp;</span>expr <span class="token operator">:</span> plan_<span class="token operator">-></span>update_exprs_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      values<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>expr<span class="token operator">-></span><span class="token function">Evaluate</span><span class="token punctuation">(</span>record<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">auto</span> new_record <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>Record<span class="token operator">></span></span></span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>values<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 通过 context_ 获取正确的锁，加锁失败时抛出异常</span>
+    <span class="token comment">// LAB 3 BEGIN</span>
+
+    LockManager <span class="token operator">&amp;</span>lockManager <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetLockManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    xid_t xid <span class="token operator">=</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    
+    <span class="token keyword">bool</span> success<span class="token punctuation">;</span>
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockTable</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>IX<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    success <span class="token operator">=</span> lockManager<span class="token punctuation">.</span><span class="token function">LockRow</span><span class="token punctuation">(</span>xid<span class="token punctuation">,</span> LockType<span class="token double-colon punctuation">::</span>X<span class="token punctuation">,</span> table_<span class="token operator">-></span><span class="token function">GetOid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> record<span class="token operator">-></span><span class="token function">GetRid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> success<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"cannot add lock"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token keyword">auto</span> rid <span class="token operator">=</span> table_<span class="token operator">-></span><span class="token function">UpdateRecord</span><span class="token punctuation">(</span>record<span class="token operator">-></span><span class="token function">GetRid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> context_<span class="token punctuation">.</span><span class="token function">GetXid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> context_<span class="token punctuation">.</span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> new_record<span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    count<span class="token operator">++</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  finished_ <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>Record<span class="token operator">></span></span></span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>vector<span class="token punctuation">&#123;</span><span class="token function">Value</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="修改可见性函数">修改可见性函数</h3>
+<p>以下是最后的可见性函数</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span><span class="token punctuation">)</span><span class="token operator">></span> isVisable <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Record<span class="token operator">></span> rec<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>isolation_level <span class="token operator">==</span> IsolationLevel<span class="token double-colon punctuation">::</span>READ_COMMITTED<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    xid_t del_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmax</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">==</span> xid <span class="token operator">&amp;&amp;</span> rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>del_xid<span class="token punctuation">)</span> <span class="token operator">and</span> del_xid <span class="token operator">!=</span> xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    xid_t insert_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">==</span> xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">>=</span> cid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+          <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+          <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+      
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>insert_xid<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span> <span class="token comment">// if(isolation_level == IsolationLevel::REPEATABLE_READ)</span>
+    xid_t del_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmax</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>del_xid <span class="token operator">==</span> xid <span class="token operator">&amp;&amp;</span> rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;=</span> cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>del_xid<span class="token punctuation">)</span> <span class="token operator">and</span> del_xid <span class="token operator">&lt;</span> xid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    xid_t insert_xid <span class="token operator">=</span> rec<span class="token operator">-></span><span class="token function">GetXmin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">!=</span> NULL_XID<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">></span> xid<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>insert_xid <span class="token operator">==</span> xid <span class="token operator">&amp;&amp;</span> rec<span class="token operator">-></span><span class="token function">GetCid</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">>=</span> cid<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>active_xids<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>insert_xid<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>通过样例50-lock.test 60-mv2pl.test</p>
+<p>本次实验完成</p>
+<h1><strong>难度和坑的总结</strong></h1>
+<p>这个实验花费了很长时间，主要集中在部分问题上</p>
+<ol>
+<li>在可重复读隔离级别，xid如果大于当前id，就和活跃事务相当。感觉可以把可重复读和读已提交两个实验任务的顺序对调，会好很多。</li>
+<li>设置了新的数据项max min xid后，需要再调整之前的有个初始化定义点，在日志中插入的记录也要包含设置好的max min。</li>
+<li>对于锁的升级尝试有所问题，最后在测试样例中不断debug，调整成功</li>
+<li>可串行化的SELECT不带FOR是只给表加锁，不给数据行加锁。</li>
+</ol>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2024/11/25/machine-learning-note6/">《图解机器学习算法》笔记——无监督学习2</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" rel="tag">数据库实验</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/11/26/database-huadb3/">数据库内核实验报告三</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/25/machine-learning-note6/">《图解机器学习算法》笔记——无监督学习2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/21/machine-learning-note5/">《图解机器学习算法》笔记——无监督学习1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/19/learn-database-note9/">数据库管理系统——并发控制2</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/13/learn-database-note8/">数据库管理系统——并发控制1</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/11/machine-learning-note4/">《图解机器学习算法》笔记——有监督学习3</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.67px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.67px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.67px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 15px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 11.67px;">并发控制</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.67px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 11.67px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 13.33px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 16.67px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.67px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 13.33px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.33px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2024 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
