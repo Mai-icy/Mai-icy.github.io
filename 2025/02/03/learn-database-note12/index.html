@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库管理系统——查询优化 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库管理系统——查询优化"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库管理系统——查询优化</h2>
+            <div class="post-meta">
+                <time class="date">2025.02.03</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>逻辑优化(查询重写)</h1>
+<ul>
+<li>查询重写：按照等价规则对关系代数表达式进行等价转换，提高效率</li>
+<li>等价：对于两个关系代数表达式，等价替换后总能得到相同结果，则等价</li>
+</ul>
+<h2 id="查询重写规则">查询重写规则</h2>
+<p>笛卡尔积，并，交，连接，都符合交换律和结合律</p>
+<h2 id="查询重写策略">查询重写策略</h2>
+<ul>
+<li>
+<p>①分解复合选择谓词。例如：𝜎 p1⋀p2 ® = 𝜎p1( 𝜎p2® )  可以提前略去一些，减少判断</p>
+</li>
+<li>
+<p>添加推理谓词。例如：A=B，A&gt;5 → B &gt; 5  确保优化周到</p>
+</li>
+<li>
+<p>②下推选择运算。例如：𝜎p(R1⋈ R2) = 𝜎p(R1) ⋈ R2  可以对中间关系的大小进行缩减，减少运算次数</p>
+</li>
+<li>
+<p>③笛卡尔积转为连接运算。例如：𝜎p(R1 × R2) = R1 ⋈p R2</p>
+</li>
+<li>
+<p>④引入并下推投影。例如：ΠS1 (ΠS2 ®) = ΠS1 ®，S1 ⊆ S2，减少中间结果列的数量，降低中间结果的数据规模</p>
+<p><img src="/2025/02/03/learn-database-note12/1.png" alt="img.png"></p>
+</li>
+</ul>
+<h2 id="其他重写策略：子查询转为连接">其他重写策略：子查询转为连接</h2>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> Sno<span class="token punctuation">,</span> Sname<span class="token punctuation">,</span> Sdept
+	 <span class="token keyword">FROM</span> Student
+	 <span class="token keyword">WHERE</span> Sno <span class="token operator">IN</span>
+		 <span class="token punctuation">(</span><span class="token keyword">SELECT</span> Sno
+			<span class="token keyword">FROM</span> SC
+			<span class="token keyword">WHERE</span> Cno<span class="token operator">=</span><span class="token string">"1"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>优化为</p>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> Student<span class="token punctuation">.</span>Sno<span class="token punctuation">,</span>Sname<span class="token punctuation">,</span>Sdept
+<span class="token keyword">FROM</span> Student<span class="token punctuation">,</span> SC
+<span class="token keyword">WHERE</span> Student<span class="token punctuation">.</span>Sno<span class="token operator">=</span>SC<span class="token punctuation">.</span>Sno <span class="token operator">AND</span> Cno<span class="token operator">=</span><span class="token string">"1"</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="其他重写策略：常数传播">其他重写策略：常数传播</h2>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> SC<span class="token punctuation">.</span>Sno<span class="token punctuation">,</span> Student<span class="token punctuation">.</span>Sname<span class="token punctuation">,</span> SC<span class="token punctuation">.</span>Grade
+<span class="token keyword">FROM</span> Student<span class="token punctuation">,</span> SC
+<span class="token keyword">WHERE</span> Student<span class="token punctuation">.</span>Sno<span class="token operator">=</span>SC<span class="token punctuation">.</span>Sno <span class="token operator">AND</span> Student<span class="token punctuation">.</span>Sno<span class="token operator">&lt;</span><span class="token number">100</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>优化为</p>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> SC<span class="token punctuation">.</span>Sno<span class="token punctuation">,</span> Student<span class="token punctuation">.</span>Sname<span class="token punctuation">,</span> SC<span class="token punctuation">.</span>Grade
+<span class="token keyword">FROM</span> Student<span class="token punctuation">,</span> SC
+<span class="token keyword">WHERE</span> Student<span class="token punctuation">.</span>Sno<span class="token operator">=</span>SC<span class="token punctuation">.</span>Sno <span class="token operator">AND</span> Student<span class="token punctuation">.</span>Sno<span class="token operator">&lt;</span><span class="token number">100</span> <span class="token operator">AND</span> SC<span class="token punctuation">.</span>Sno<span class="token operator">&lt;</span><span class="token number">100</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="其他重写策略：去除非必要谓词">其他重写策略：去除非必要谓词</h2>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token function">MAX</span><span class="token punctuation">(</span><span class="token keyword">DISTINCT</span> Grade<span class="token punctuation">)</span>
+<span class="token keyword">FROM</span> SC
+<span class="token keyword">WHERE</span> Cno<span class="token operator">=</span><span class="token string">"1"</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>优化为</p>
+<pre class="line-numbers language-sql" data-language="sql"><code class="language-sql"><span class="token keyword">SELECT</span> <span class="token function">MAX</span><span class="token punctuation">(</span>Grade<span class="token punctuation">)</span>
+<span class="token keyword">FROM</span> SC
+<span class="token keyword">WHERE</span> Cno<span class="token operator">=</span><span class="token string">"1"</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h1>物理优化</h1>
+<p>对于查询重写后，要需要完成</p>
+<ul>
+<li>符合交换律和结合律的运算的执行顺序</li>
+<li>逻辑计划中每个算子在物理执行时采用的算法</li>
+<li>逻辑计划中未体现出的物理运算，例如排序和扫描</li>
+<li>在运算符之间数据传递的方式</li>
+</ul>
+<p>故使用代价模型来确定计划优劣</p>
+<h2 id="代价估计">代价估计</h2>
+<p>代价估计的核心是基数估计，有以下概念（p为谓词）</p>
+<ul>
+<li>基数：查询结果的元组数。表示为	card(p)</li>
+<li>选择度：符合𝑝元组占所有元组的比例,表示为sel(p)</li>
+</ul>
+<p>统计信息说明：</p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T®</td>
+<td>关系R的元组数目</td>
+</tr>
+<tr>
+<td>B®</td>
+<td>关系R的所有元组需要的页面数</td>
+</tr>
+<tr>
+<td>L®</td>
+<td>关系R一个元组平均所需的字节数</td>
+</tr>
+<tr>
+<td>f®</td>
+<td>一个页面能存储的关系R的元组数</td>
+</tr>
+<tr>
+<td>min(R,A)</td>
+<td>关系R在属性A上取值的最小值</td>
+</tr>
+<tr>
+<td>max(R,A)</td>
+<td>关系R在属性A上取值的最大值</td>
+</tr>
+<tr>
+<td>V(R,A)</td>
+<td>关系R在属性A上不同值个数。当A扩展为属性集合a时，V(R,a)表示关系R在属性集a上投影后不同的元组数，即Πa®元组数</td>
+</tr>
+<tr>
+<td>MCV(R,A)</td>
+<td>关系R在属性A上取值最频繁的topk（most common value）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="估计工具：直方图">估计工具：直方图</h3>
+<p>等深直方图（equal-depthhistogram）：按属性不同值出现频率调整区间宽度</p>
+<p>等宽直方图（equal-width histogram）：将属性按照相同间距划分区间</p>
+<p><img src="/2025/02/03/learn-database-note12/2.png" alt="img.png"></p>
+<h3 id="选择运算的基数估计">选择运算的基数估计</h3>
+<p>等值谓词</p>
+<ul>
+<li>形式：𝜎 A=x ®</li>
+<li>估计：T® / V(R, A)</li>
+</ul>
+<p>范围谓词</p>
+<ul>
+<li>形式：𝜎 A≤x ®</li>
+<li>估计规则：
+<ul>
+<li>若 x &lt; min(R,A)：0</li>
+<li>若 x ≥ max(R,A)：T®</li>
+<li>若在区间内：<img src="https://math.now.sh?inline=T%28R%29%20%5Ccdot%20%5Cfrac%7Bx-%5Cmin(R%2CA)%7D%7B%5Cmax(R%2CA)-%5Cmin(R%2CA)%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></li>
+<li>其他运算符类推</li>
+</ul>
+</li>
+</ul>
+<h3 id="连接运算的基数估计">连接运算的基数估计</h3>
+<p>考虑两个关系 R1(A, B) 和 R2(A, C)</p>
+<p>属性 A 为这两个关系进行自然连接的属性集合，B 和 C 分别是关系 R1 和 R2 的非连接属性。</p>
+<p>要进行结果基数估计的自然连接是 R1(A, B) ⋈ R2(A, C) 。</p>
+<p>基数估计结果为： <img src="https://math.now.sh?inline=T%28R_1(A%2C%20B%29%20%5Cbowtie%20R_2(A%2C%20C))%20%3D%20%5Cfrac%7BT(R_1)%20%5Ctimes%20T(R_2)%7D%7B%5Cprod_%7Ba%20%5Cin%20A%7D%20%5Cmax(V(R_1%2C%20a)%2C%20V(R_2%2C%20a))%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<h2 id="连接顺序选择">连接顺序选择</h2>
+<ul>
+<li>连接树：表示n个关系连接时采用的连接顺序，是一个二叉树，只有叶子节点是关系模型，内节点都是连接运算。</li>
+<li>左深连接树：内部节点的右子节点都是叶子节点的连接树</li>
+<li>右深连接树：内部节点的左子节点都是叶子节点的连接树</li>
+<li>浓密树：不是左深树和右深树的连接树</li>
+</ul>
+<p>n个关系构成的结构不同的连接树个数为卡特兰数。全排列一定对应一个连接树。</p>
+<p>我们仅考虑左深连接树，因其数量小，利于连接运算高效运行。</p>
+<h3 id="动态规划算法">动态规划算法</h3>
+<p>对于枚举所有的左深连接树，我们可以将子问题存储，提高子问题的利用率。</p>
+<p>若要连接[R1, R2, R3, R4 … Rn] 所有关系</p>
+<p>当枚举到任意子集 S 例如 [Ra, Rb, Rc, Rd]，可被拆为S1和S2，记</p>
+<ul>
+<li>C(S)：为 S 所有连接中最小的代价</li>
+<li>ConCost(S1, S2)：连接子集S1和S2的连接代价，估为T(S)</li>
+<li>C(S) = C(S1) + C(S2) + ConCost(S1, S2)</li>
+</ul>
+<p>我们需要枚举所有子集，使用动态规划即先遍历所有大小为1的子集，再递增上去。</p>
+<p>对于任意子集，有 C(S) = ( C(S), C(S1) + C(S2) + ConCost(S1, S2) )，其中S1 S2之间的分界线随枚举而定。</p>
+<p>空间复杂度O(2^n) 时间复杂度 O(n * 2^n)，稠密树时间复杂度 O(3^n)</p>
+<p>以下是一个例子，R1 —A— R2 —B— R3 —C— R4，仅结果练习验证，过程略</p>
+<p>第一轮：</p>
+<table>
+<thead>
+<tr>
+<th>关系集合 S</th>
+<th>T(S)</th>
+<th>V(S, A)</th>
+<th>V(S, B)</th>
+<th>V(S, C)</th>
+<th>C(S)</th>
+<th>Seq(S)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{R1}</td>
+<td>1000</td>
+<td>50</td>
+<td>-</td>
+<td>-</td>
+<td>1000</td>
+<td>R1</td>
+</tr>
+<tr>
+<td>{R2}</td>
+<td>1000</td>
+<td>40</td>
+<td>100</td>
+<td>-</td>
+<td>1000</td>
+<td>R2</td>
+</tr>
+<tr>
+<td>{R3}</td>
+<td>1000</td>
+<td>-</td>
+<td>20</td>
+<td>200</td>
+<td>1000</td>
+<td>R3</td>
+</tr>
+<tr>
+<td>{R4}</td>
+<td>1000</td>
+<td>-</td>
+<td></td>
+<td>1000</td>
+<td>1000</td>
+<td>R4</td>
+</tr>
+</tbody>
+</table>
+<p>第二轮：</p>
+<table>
+<thead>
+<tr>
+<th>关系集合 S</th>
+<th>T(S)</th>
+<th>V(S, A)</th>
+<th>V(S, B)</th>
+<th>V(S, C)</th>
+<th>C(S)</th>
+<th>Seq(S)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{R1, R2}</td>
+<td>20000</td>
+<td>40</td>
+<td>100</td>
+<td>-</td>
+<td>22000</td>
+<td>R1⋈R2</td>
+</tr>
+<tr>
+<td>{R2, R3}</td>
+<td>10000</td>
+<td>40</td>
+<td>20</td>
+<td>200</td>
+<td>12000</td>
+<td>R2⋈R3</td>
+</tr>
+<tr>
+<td>{R3, R4}</td>
+<td>4000</td>
+<td>-</td>
+<td>20</td>
+<td>200</td>
+<td>6000</td>
+<td>R3⋈R4</td>
+</tr>
+</tbody>
+</table>
+<p>第三轮：</p>
+<table>
+<thead>
+<tr>
+<th>关系集合 S</th>
+<th>T(S)</th>
+<th>V(S, A)</th>
+<th>V(S, B)</th>
+<th>V(S, C)</th>
+<th>C(S)</th>
+<th>Seq(S)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{R1, R2, R3}</td>
+<td>200000</td>
+<td>40</td>
+<td>20</td>
+<td>200</td>
+<td>213000</td>
+<td>(R2 ⋈ R3) ⋈ R1</td>
+</tr>
+<tr>
+<td>{R2, R3, R4}</td>
+<td>40000</td>
+<td>40</td>
+<td>20</td>
+<td>200</td>
+<td>47000</td>
+<td>(R3 ⋈ R4) ⋈ R2</td>
+</tr>
+</tbody>
+</table>
+<p>第四轮：</p>
+<p>Seq{R2,R3,R4} ⋈ Seq({R1}) 代价：848000</p>
+<p>Seq{R1,R2} ⋈Seq({R3,R4}) 代价：828000</p>
+<p>选择Seq{R1,R2} ⋈Seq({R3,R4}) ： (R1 ⋈ R2) ⋈ (R3 ⋈ R4)</p>
+<h3 id="贪心算法">贪心算法</h3>
+<p>每次选择当前状态下增加的代价最小的关系连接。</p>
+<p>步骤：</p>
+<ul>
+<li>选择一个大小T® 最小的关系作为当前Rcur</li>
+<li>从余下没有被选择过的关系中选择与Rcur连接后结果最小的Rnext，将Rcur更新为Rcur ⋈Rnext</li>
+<li>不断重复步骤2，直到所有关系都被选择过。</li>
+</ul>
+<p>时间复杂度(n2)</p>
+<p>以下是一个例子，R1 —A— R2 —B— R3 —C— R4</p>
+<table>
+<thead>
+<tr>
+<th>关系集合 S</th>
+<th>T(S)</th>
+<th>V(S, A)</th>
+<th>V(S, B)</th>
+<th>V(S, C)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{R1}</td>
+<td>1000</td>
+<td>50</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>{R2}</td>
+<td>1000</td>
+<td>40</td>
+<td>100</td>
+<td>-</td>
+</tr>
+<tr>
+<td>{R3}</td>
+<td>1000</td>
+<td>-</td>
+<td>20</td>
+<td>200</td>
+</tr>
+<tr>
+<td>{R4}</td>
+<td>1000</td>
+<td>-</td>
+<td></td>
+<td>1000</td>
+</tr>
+</tbody>
+</table>
+<p>由于R2可以和R1和R3连接，故选取R2作为Rcur</p>
+<p>比较 R1⋈ R2 和 R3 ⋈ R2 的代价</p>
+<table>
+<thead>
+<tr>
+<th>关系集合 S</th>
+<th>T(S)</th>
+<th>V(S, A)</th>
+<th>V(S, B)</th>
+<th>V(S, C)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{R1, R2}</td>
+<td>20000</td>
+<td>40</td>
+<td>100</td>
+<td>-</td>
+</tr>
+<tr>
+<td>{R2, R3}</td>
+<td>10000</td>
+<td>40</td>
+<td>20</td>
+<td>200</td>
+</tr>
+</tbody>
+</table>
+<p>由于T(R2 ⋈ R3) 更小，选择 Rcur = R2 ⋈ R3，尝试连接R1或者R4</p>
+<table>
+<thead>
+<tr>
+<th>关系集合 S</th>
+<th>T(S)</th>
+<th>V(S, A)</th>
+<th>V(S, B)</th>
+<th>V(S, C)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{R1, R2, R3}</td>
+<td>200000</td>
+<td>40</td>
+<td>20</td>
+<td>200</td>
+</tr>
+<tr>
+<td>{R2, R3, R4}</td>
+<td>40000</td>
+<td>40</td>
+<td>20</td>
+<td>200</td>
+</tr>
+</tbody>
+</table>
+<p>T((R2 ⋈ R3) ⋈ R1) 和 T((R2 ⋈ R3) ⋈ R4)，T((R2 ⋈ R3) ⋈ R4)更小，选择Rcur = (R2 ⋈ R3) ⋈ R4。</p>
+<p>仅剩下R1，故选择R1，有((R2 ⋈ R3) ⋈ R4) ⋈ R1 作为最终结果。</p>
+<p>由于贪心并不会考虑周全，故该方案只是较优，并非最优</p>
+<h3 id="遗传算法">遗传算法</h3>
+<p>启发式的优化方法，从多个不同的连接顺序中不断进行优化和淘汰。</p>
+<p>作为随机化算法，优化结果具有不确定性。</p>
+<p>概念：</p>
+<ul>
+<li>交叉：对连接顺序进行组合替换。也就是由已有的两个连接顺序合并为一个新的连接顺序，其中每个连接顺序只有一部分被保留在合并后的结果中</li>
+<li>变异：对某个顺序自身进行调整（例如替换物理算子），得到一个新的连接顺序</li>
+<li>选择：代价较低的顺序，直接遗传到下一代</li>
+</ul>
+<p><img src="/2025/02/03/learn-database-note12/3.png" alt="img.png"></p>
+<p>步骤：</p>
+<ul>
+<li>初始化：随机选择一批计划</li>
+<li>第一轮：计划1代价最大，被淘汰</li>
+<li>计划2、计划3 变异，选择与交叉，得到第二轮候选计划</li>
+<li>不断迭代以上过程，结束条件：代价不再降低；达到轮数</li>
+</ul>
+<h2 id="物理算子选择">物理算子选择</h2>
+<p>添加每个算子的物理算子代价，动态规划中添加物理算子代价。</p>
+<p>将动态规划多考虑一维，来表示不同算子作为连接的代价。</p>
+<h3 id="Selinger风格的优化">Selinger风格的优化</h3>
+<p>对于每个子表达式不只保留代价最小的计划，也会保留一些当前代价较高，但具有一些可能利于后续优化的性质的计划。</p>
+<p>有趣顺序：Selinger风格的优化器考虑的性质是查询计划的输出结果在某列的有序性。（查询可能要求有序或者大幅度降低后续运算的代价）</p>
+<p>（动态规划算法中单独保留带有顺序方法的计划即可）</p>
+<h1>优化器系统</h1>
+<h2 id="优化器系统的计划生成">优化器系统的计划生成</h2>
+<p><img src="/2025/02/03/learn-database-note12/4.png" alt="img.png"></p>
+<h3 id="自底向上（R系统）">自底向上（R系统）</h3>
+<ul>
+<li>直观，易于实现，但是难以使用剪枝策略，无法提前停止。</li>
+<li>枚举计划并选择代价最低的计划</li>
+</ul>
+<p>动态规划是一种典型的“自底向上”的方法，由上图可以看出，左边的就属于自底而上，和上面使用动态规划的思路一致，从小的子集计划到大的计划。</p>
+<p><img src="/2025/02/03/learn-database-note12/5.png" alt="img.png"></p>
+<ul>
+<li>容易实现，不需要穷尽搜索就能找到较为合理的执行计划</li>
+<li>仍然没有摆脱启发式转换，优化时间长，添加规则繁琐</li>
+</ul>
+<h3 id="自顶向下（Cascades）">自顶向下（Cascades）</h3>
+<ul>
+<li>实现比较复杂，但易于添加新规则，可以进行大量剪枝</li>
+<li>优化的过程中不断剪枝</li>
+</ul>
+<p>以查询的最终输出为起点，由计划树的根节点向下进行搜索，不断添加为得到最终输出需要的逻辑算子和物理算子，最终确定要采用的计划树</p>
+<p><img src="/2025/02/03/learn-database-note12/6.png" alt="img.png"></p>
+<ul>
+<li>相较于两阶段的方法，统一搜索会产生更多的转换，优化效果可能更好，可以提前中止，添加规则简单</li>
+<li>空间开销更大、优化慢、添加规则繁琐</li>
+</ul>
+<h2 id="优化器系统的发展">优化器系统的发展</h2>
+<p><img src="/2025/02/03/learn-database-note12/7.png" alt="img.png"></p>
+<h3 id="启发式方法">启发式方法</h3>
+<p>通过在优化器代码中静态定义规则来实现由逻辑计划到物理计划的转换</p>
+<ul>
+<li>优先执行选择度更高的选择运算</li>
+<li>在连接运算前执行所有的选择运算</li>
+<li>当选择条件为等值时，如果关系在该属性上有索引，则优先使用索引扫描</li>
+</ul>
+<p>优点：易于实现与调试；优化速度快</p>
+<p>缺点：完全依赖于预定义的规则；复杂查询优化效果不好，没有考虑算子之间的相互关系</p>
+<h3 id="启发式方法-代价选择连接顺序">启发式方法+代价选择连接顺序</h3>
+<p>利用静态规则进行初步优化（有 R系统，早期的IBM DB2等等）</p>
+<p>利用动态规划算法选择多表连接时的连接顺序（首次基于代价+自底而上）</p>
+<p>优点：通常无需进行穷尽的搜索就可以找到一个比较好的计划，简单易实现</p>
+<p>缺点：添加规则繁琐，优化时间慢，左深连接树不总是最优，在代价模型中需要考虑到数据的物理属性（例如有序性）</p>
+<h3 id="随机化搜索">随机化搜索</h3>
+<p>（Postgres中的遗传算法。仍在Postgres中进行应用）</p>
+<p>利用随机化策略来跳出搜索空间中的局部最优</p>
+<p>优点：可以快速优化各种复杂查询，内存占用较小，计划质量好于启发式，优化速度好于动态规划</p>
+<p>缺点：计划质量无法保证，无法在所有情形下都得到好的优化效果</p>
+<h3 id="分层-统一搜索">分层 + 统一搜索</h3>
+<p>使用声明式DSL（domain-specific language）来编写转换规则，让优化器在计划过程中强制使用</p>
+<p>使数据库开发人员只需编写用于优化查询的声明式规则，由优化器充当编译器的角色来自动地确定等价规则，并在优化过程中执行这些规则。</p>
+<p>允许数据库的实现人员编写声明式的规则优化查询</p>
+<h3 id="分层搜索">分层搜索</h3>
+<p>分层搜索利用了优化器生成器，在数据库内维护的不再是一个规则列表，而是一个规则引擎。在优化时，规则引擎以最初的逻辑计划为输入，会自动生成出需要使用的规则</p>
+<p>Starburst优化器（使用声明式规则）：</p>
+<ul>
+<li>查询重写：计算一个SQL块级的的查询关系演算表示</li>
+<li>物理优化：执行与R系统类似的动态规划</li>
+</ul>
+<p>优点：实现简单，实践中验证了其高效性</p>
+<p>缺点：难以确定转换规则执行顺序，由于在转换时完全不考虑代价的估计，一些转换的好坏在选择前难以进行评估，维护转换规则比较困难。</p>
+<h3 id="统一搜索">统一搜索</h3>
+<p>Cascades采用的优化方法，仍在MSSQL和Greenplum数据库中被使用。</p>
+<p>在统一搜索策略下，逻辑到逻辑的转换与逻辑到物理的转换都被统一成同一阶段进行的转换</p>
+<ul>
+<li>整个查询计划的确定都在同一个阶段利用搜索完成。</li>
+<li>产生了许多转换，因此会大量使用了记忆化，以减少重复的计算（自顶向下）</li>
+</ul>
+<p>优点：使用声明式规则生成等价转换，利于添加新规则，规则扩展性好， 利用记忆化减少冗余的计算，可以提前剪枝，提升表数较多时的计划生成速度。</p>
+<p>缺点：所有的等价转换都会被使用，生成出所有可能的逻辑计划，逻辑规则较多时，优化代价高</p>
+<h2 id="Cascades优化器（统一搜索）">Cascades优化器（统一搜索）</h2>
+<p>自顶向下迭代使用规则进行优化，整个搜索空间会形成一个Operator Tree的森林。</p>
+<p>将一组逻辑上等价的逻辑表达式以及它们对应的所有物理表达式定义为一个组</p>
+<p>逻辑1逻辑Implementation：逻辑算子可以转换成物理算子；例如Join转换成NestLoop或者HashJoin等</p>
+<p>逻辑2物理Transformation：逻辑算子可以做等价变换；例如交换Inner Join的两个子节点，即可枚举Join顺序</p>
+<p>探索更多的表达式，按优先级对转换规则进行排序，并在搜索过程中，动态地调整排序</p>
+<p><img src="/2025/02/03/learn-database-note12/8.png" alt="img.png"></p>
+<p>概念解释：</p>
+<ul>
+<li>逻辑表达式：例如 (R1⋈ R2) ⋈ R3</li>
+<li>物理表达式：例如 (R1⋈归并连接 R2) ⋈嵌套循环 R3</li>
+<li>组：一组逻辑上等价的逻辑表达式以及它们对应的所有物理表达式</li>
+</ul>
+<p><img src="/2025/02/03/learn-database-note12/9.png" alt="img.png"></p>
+<ul>
+<li>多重表达式：优化器不将一个组中所有可能的表达式实例化，而是隐式地将一个组中重复的表达式表示为一个多重表达式，减少了变换个数，从而节省了空间开销，避免了重复的代价估计。</li>
+<li>规则：规则是将一个表达式转换为逻辑等价的表达式。每个规则都可以表示为一对属性
+<ul>
+<li>模式Pattern：定义可以应用规则的逻辑表达式的结构</li>
+<li>替换Substitute：定义应用规则产生的结果结构</li>
+</ul>
+</li>
+</ul>
+<p><img src="/2025/02/03/learn-database-note12/10.png" alt="img.png"></p>
+<h2 id="物化与流水线">物化与流水线</h2>
+<p>使用流水线执行能够减少磁盘的I/O，因而在内存足够的情况下流水线方法一般总是更好的选择。</p>
+<ul>
+<li>物化：将每个运算的结果存储为磁盘上的临时关系，会带来大量磁盘读写的开销</li>
+<li>流水线：得到一个操作的部分结果时就会将数据传递到下一个操作中，避免了临时文件的读写</li>
+</ul>
+<p>能够流水线执行的运算需要像选择、投影运算一样，在收到部分输入元组后就可以开始输出运算产生的结果元组。</p>
+<p>存在阻塞的算子不能流水线执行。</p>
+<p>例子：</p>
+<ul>
+<li>哈希连接需要先对内外关系建立哈希表，在没有收到完整的输入元组前无法完成，因此无法流水线执行</li>
+<li>而如果要进行连接的两个关系都是有序的，归并连接就是可以流水线执行的</li>
+</ul>
+<h1>物化视图</h1>
+<ul>
+<li>视图：一个经过命名存储在数据库中的查询，又被称为“虚关系”</li>
+<li>物化视图：将定义视图的结果存储到磁盘上，减少重复查询，空间换时间</li>
+</ul>
+<p>例如：有SQL是个频繁执行的查询，则可以将该查询按如下SQL语句声明为一个物化视图存储在磁盘上</p>
+<h2 id="物化视图的维护方式">物化视图的维护方式</h2>
+<p>当定义物化视图的基表数据发生改变时，如何保证物化视图的数据能够高效地被更新</p>
+<p>当基本关系发生变化时，需要对物化视图进行更新，从而使物化视图与其派生自的基本关系保持一致</p>
+<p>按照何时更新可分为：立即视图维护和延迟视图维护</p>
+<p>视图维护方式可分为：重新建立视图和增量视图维护</p>
+<h2 id="总结">总结</h2>
+<p><img src="/2025/02/03/learn-database-note12/11.png" alt="img.png"></p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/01/30/learn-database-note11/">数据库管理系统——查询处理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a><a class="-none-link" href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" rel="tag">查询优化</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/02/03/learn-database-note12/">数据库管理系统——查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/01/30/learn-database-note11/">数据库管理系统——查询处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/12/10/learn-database-note10/">数据库管理系统——数据库索引</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/29/machine-learning-note7/">《图解机器学习算法》笔记——评估方法和各种数据的处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/26/database-huadb3/">数据库内核实验报告三</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/25/machine-learning-note6/">《图解机器学习算法》笔记——无监督学习2</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 15.71px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 12.86px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
