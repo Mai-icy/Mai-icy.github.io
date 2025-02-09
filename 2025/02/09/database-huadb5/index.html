@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库内核实验报告五：查询优化 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库内核实验报告五：查询优化"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库内核实验报告五：查询优化</h2>
+            <div class="post-meta">
+                <time class="date">2025.02.09</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>基础实现思路和难度总结</h1>
+<p>本次实验内容实现了查询重写和连接顺序优化的查询优化。</p>
+<p>查询重写只涉及 <strong>分解复合选择谓词</strong>  <strong>下推选择运算  笛卡尔积转为连接运算</strong></p>
+<p>连接顺序优化以 <strong>贪心算法</strong> 为例</p>
+<h2 id="框架基本认识">框架基本认识</h2>
+<p>本次实验只需修改optimizer.cpp 和 optimizer.h</p>
+<p>对于查询优化而言，输入的为查询计划树，故先要了解查询计划树在框架中的数据结构。</p>
+<h3 id="查询计划操作-Operator">查询计划操作 Operator</h3>
+<p>查询计划操作为查询计划的基本节点，一个Operator 作为基类，是构成查询计划树的主要组成部分，每个Operator作为节点，自然有 children_ 来记录孩子节点，其为空时，即为叶子节点；有左右孩子时，即连接操作。</p>
+<p>对于以上枚举的所有操作种类，都设计了一个派生类，部分派生类有自己专属的成员，以下以几个基本的派生类作为例子介绍</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">enum</span> <span class="token keyword">class</span> <span class="token class-name">OperatorType</span> <span class="token punctuation">&#123;</span>
+  AGGREGATE<span class="token punctuation">,</span>
+  DELETE<span class="token punctuation">,</span>
+  FILTER<span class="token punctuation">,</span>
+  HASHJOIN<span class="token punctuation">,</span>
+  INSERT<span class="token punctuation">,</span>
+  LIMIT<span class="token punctuation">,</span>
+  LOCK_ROWS<span class="token punctuation">,</span>
+  MERGEJOIN<span class="token punctuation">,</span>
+  NESTEDLOOP<span class="token punctuation">,</span>
+  ORDERBY<span class="token punctuation">,</span>
+  PROJECTION<span class="token punctuation">,</span>
+  SEQSCAN<span class="token punctuation">,</span>
+  UPDATE<span class="token punctuation">,</span>
+  VALUES<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Operator</span> <span class="token punctuation">&#123;</span>
+ <span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">Operator</span><span class="token punctuation">(</span>OperatorType type<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>ColumnList<span class="token operator">></span> column_list<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">>></span> children<span class="token punctuation">)</span>
+      <span class="token operator">:</span> <span class="token function">type_</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">column_list_</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>column_list<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">children_</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>children<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token operator">~</span><span class="token function">Operator</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> std<span class="token double-colon punctuation">::</span>string <span class="token function">ToString</span><span class="token punctuation">(</span>size_t indent_num <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">const</span> ColumnList <span class="token operator">&amp;</span><span class="token function">OutputColumns</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> <span class="token operator">*</span>column_list_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  OperatorType <span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> type_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">>></span> <span class="token operator">&amp;</span><span class="token function">GetChildren</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> children_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+  OperatorType type_<span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>ColumnList<span class="token operator">></span> column_list_<span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">>></span> children_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="筛选操作-FilterOperator">筛选操作 FilterOperator</h3>
+<p>作为筛选操作，会有一个专属的predicate_即谓词，作为选择的条件，之后会介绍谓词表达式类。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">FilterOperator</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">Operator</span></span> <span class="token punctuation">&#123;</span>
+ <span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">FilterOperator</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>ColumnList<span class="token operator">></span> column_list<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> child<span class="token punctuation">,</span>
+                 std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> predicate<span class="token punctuation">)</span>
+      <span class="token operator">:</span> <span class="token function">Operator</span><span class="token punctuation">(</span>OperatorType<span class="token double-colon punctuation">::</span>FILTER<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>column_list<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>child<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">predicate_</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>predicate<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  std<span class="token double-colon punctuation">::</span>string <span class="token function">ToString</span><span class="token punctuation">(</span>size_t indent_num <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> fmt<span class="token double-colon punctuation">::</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"&#123;&#125;Filter: &#123;&#125;\\n&#123;&#125;"</span><span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span><span class="token function">string</span><span class="token punctuation">(</span>indent_num <span class="token operator">*</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token char">' '</span><span class="token punctuation">)</span><span class="token punctuation">,</span> predicate_<span class="token punctuation">,</span>
+                       children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">ToString</span><span class="token punctuation">(</span>indent_num <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> predicate_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="扫描读取表操作-SeqScanOperator">扫描读取表操作 SeqScanOperator</h3>
+<p>作为读取扫描表操作，自然需要记录扫描的表是谁，提供了GetTableNameOrAlias函数来获取扫描的表名。</p>
+<pre class="line-numbers language-none"><code class="language-none">class SeqScanOperator : public Operator &#123;
+ public:
+  SeqScanOperator(std::shared_ptr&lt;ColumnList&gt; column_list, oid_t table_oid, std::string table_name,
+                  std::optional&lt;std::string&gt; alias, bool has_lock)
+      : Operator(OperatorType::SEQSCAN, std::move(column_list), &#123;&#125;),
+        table_oid_(table_oid),
+        table_name_(std::move(table_name)),
+        alias_(std::move(alias)),
+        has_lock_(has_lock) &#123;&#125;
+  std::string ToString(size_t indent_num &#x3D; 0) const override &#123;
+    if (alias_) &#123;
+      return fmt::format(&quot;&#123;&#125;SeqScan: &#123;&#125; &#123;&#125;&quot;, std::string(indent_num * 2, &#39; &#39;), table_name_, *alias_);
+    &#125; else &#123;
+      return fmt::format(&quot;&#123;&#125;SeqScan: &#123;&#125;&quot;, std::string(indent_num * 2, &#39; &#39;), table_name_);
+    &#125;
+  &#125;
+
+  oid_t GetTableOid() const &#123; return table_oid_; &#125;
+  const std::string &amp;GetTableNameOrAlias() const &#123;
+    if (alias_) &#123;
+      return *alias_;
+    &#125; else &#123;
+      return table_name_;
+    &#125;
+  &#125;
+  const std::string &amp;GetTableName() const &#123; return table_name_; &#125;
+  bool HasLock() const &#123; return has_lock_; &#125;
+
+ private:
+  oid_t table_oid_;
+  std::string table_name_;
+  std::optional&lt;std::string&gt; alias_;
+  bool has_lock_;
+&#125;;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="连接操作-NestedLoopJoinOperator">连接操作 NestedLoopJoinOperator</h3>
+<p>需要一个连接的条件join_condition_，即一个条件表达式，当其为常量 true的时候，即笛卡尔积连接，所有连接情况都被允许通过。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">NestedLoopJoinOperator</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">Operator</span></span> <span class="token punctuation">&#123;</span>
+ <span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">NestedLoopJoinOperator</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>ColumnList<span class="token operator">></span> column_list<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> left<span class="token punctuation">,</span>
+                         std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> right<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> join_condition<span class="token punctuation">,</span>
+                         JoinType join_type <span class="token operator">=</span> JoinType<span class="token double-colon punctuation">::</span>INNER<span class="token punctuation">)</span>
+      <span class="token operator">:</span> <span class="token function">join_condition_</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>join_condition<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">join_type_</span><span class="token punctuation">(</span>join_type<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">Operator</span><span class="token punctuation">(</span>OperatorType<span class="token double-colon punctuation">::</span>NESTEDLOOP<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>column_list<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>left<span class="token punctuation">)</span><span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>right<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  std<span class="token double-colon punctuation">::</span>string <span class="token function">ToString</span><span class="token punctuation">(</span>size_t indent_num <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> fmt<span class="token double-colon punctuation">::</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"&#123;&#125;NestedLoopJoin: &#123;&#125;\\n&#123;&#125;\\n&#123;&#125;"</span><span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span><span class="token function">string</span><span class="token punctuation">(</span>indent_num <span class="token operator">*</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token char">' '</span><span class="token punctuation">)</span><span class="token punctuation">,</span> join_condition_<span class="token punctuation">,</span>
+                       children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">ToString</span><span class="token punctuation">(</span>indent_num <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">ToString</span><span class="token punctuation">(</span>indent_num <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> join_condition_<span class="token punctuation">;</span>
+  JoinType join_type_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="查询计划表达式-OperatorExpression">查询计划表达式 OperatorExpression</h3>
+<p>查询计划表达式一般属于一些操作，例如上面的选择操作。其也有多个子类。</p>
+<p>不论是一条完整的表达式，还是一个单独的常量，都用OperatorExpression 基类可以代表。</p>
+<p>对于一个完整表达式，即为多个OperatorExpression 嵌套，同时使用类型标识其属于常量还是表达式。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">enum</span> <span class="token keyword">class</span> <span class="token class-name">OperatorExpressionType</span> <span class="token punctuation">&#123;</span>
+  AGGREGATE<span class="token punctuation">,</span>
+  ARITHMETIC<span class="token punctuation">,</span>
+  TYPE_CAST<span class="token punctuation">,</span>
+  COLUMN_VALUE<span class="token punctuation">,</span>
+  COMPARISON<span class="token punctuation">,</span>
+  CONST<span class="token punctuation">,</span>
+  FUNC_CALL<span class="token punctuation">,</span>
+  LIST<span class="token punctuation">,</span>
+  LOGIC<span class="token punctuation">,</span>
+  NULL_TEST
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">OperatorExpression</span> <span class="token punctuation">&#123;</span>
+ <span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">OperatorExpression</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token function">OperatorExpression</span><span class="token punctuation">(</span>OperatorExpressionType expr_type<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">>></span> children<span class="token punctuation">,</span>
+                     Type value_type<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>string name <span class="token operator">=</span> <span class="token string">"&lt;no_name>"</span><span class="token punctuation">,</span> size_t size <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+      <span class="token operator">:</span> <span class="token function">expr_type_</span><span class="token punctuation">(</span>expr_type<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">children_</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>children<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">value_type_</span><span class="token punctuation">(</span>value_type<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">name_</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">size_</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> Value <span class="token function">Evaluate</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span><span class="token keyword">const</span> Record<span class="token operator">></span> record<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"Evaluate method not implemented"</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> Value <span class="token function">EvaluateJoin</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span><span class="token keyword">const</span> Record<span class="token operator">></span> left<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span><span class="token keyword">const</span> Record<span class="token operator">></span> right<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"EvaluateJoin method not implemented"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> std<span class="token double-colon punctuation">::</span>string <span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> <span class="token string">"OperatorExpression"</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+  OperatorExpressionType <span class="token function">GetExprType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> expr_type_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  Type <span class="token function">GetValueType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> value_type_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  size_t <span class="token function">GetSize</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> size_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">void</span> <span class="token function">SetName</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>string <span class="token operator">&amp;</span>name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> name_ <span class="token operator">=</span> name<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+  OperatorExpressionType expr_type_<span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>string name_<span class="token punctuation">;</span>
+  std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">>></span> children_<span class="token punctuation">;</span>
+  Type value_type_<span class="token punctuation">;</span>
+  size_t size_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="逻辑表达式-Logic">逻辑表达式 Logic</h3>
+<p>逻辑表达式会有 children_ 即用 逻辑关系AND, OR 连接的左右表达式，其中，本二元逻辑表达式的children_ 中只有两个对象，右对象可能是单个表达式也可能是再一个逻辑表达式，左对象可能是单个表达式也可能是再一个逻辑表达式，一个Logic只记录一个逻辑关系，通过不断嵌套，来做到多逻辑关系的逻辑表达式。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">enum</span> <span class="token keyword">class</span> <span class="token class-name">LogicType</span> <span class="token punctuation">&#123;</span> AND<span class="token punctuation">,</span> OR<span class="token punctuation">,</span> NOT <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token keyword">class</span> <span class="token class-name">Logic</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">OperatorExpression</span></span> <span class="token punctuation">&#123;</span>
+ <span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">Logic</span><span class="token punctuation">(</span>LogicType logic_type<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> arg<span class="token punctuation">)</span>
+      <span class="token operator">:</span> <span class="token function">OperatorExpression</span><span class="token punctuation">(</span>OperatorExpressionType<span class="token double-colon punctuation">::</span>LOGIC<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>arg<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> Type<span class="token double-colon punctuation">::</span>BOOL<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">logic_type_</span><span class="token punctuation">(</span>logic_type<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>logic_type <span class="token operator">==</span> LogicType<span class="token double-colon punctuation">::</span>NOT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token function">Logic</span><span class="token punctuation">(</span>LogicType logic_type<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> left<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>OperatorExpression<span class="token operator">></span> right<span class="token punctuation">)</span>
+      <span class="token operator">:</span> <span class="token function">OperatorExpression</span><span class="token punctuation">(</span>OperatorExpressionType<span class="token double-colon punctuation">::</span>LOGIC<span class="token punctuation">,</span> <span class="token punctuation">&#123;</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>left<span class="token punctuation">)</span><span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>right<span class="token punctuation">)</span><span class="token punctuation">&#125;</span><span class="token punctuation">,</span> Type<span class="token double-colon punctuation">::</span>BOOL<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token function">logic_type_</span><span class="token punctuation">(</span>logic_type<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+  Value <span class="token function">Evaluate</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span><span class="token keyword">const</span> Record<span class="token operator">></span> record<span class="token punctuation">)</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>logic_type_ <span class="token operator">==</span> LogicType<span class="token double-colon punctuation">::</span>NOT<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Evaluate</span><span class="token punctuation">(</span>record<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Not</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      Value lhs <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Evaluate</span><span class="token punctuation">(</span>record<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      Value rhs <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Evaluate</span><span class="token punctuation">(</span>record<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> <span class="token function">Compute</span><span class="token punctuation">(</span>lhs<span class="token punctuation">,</span> rhs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  Value <span class="token function">EvaluateJoin</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span><span class="token keyword">const</span> Record<span class="token operator">></span> left<span class="token punctuation">,</span> std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span><span class="token keyword">const</span> Record<span class="token operator">></span> right<span class="token punctuation">)</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>logic_type_ <span class="token operator">==</span> LogicType<span class="token double-colon punctuation">::</span>NOT<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">Evaluate</span><span class="token punctuation">(</span>left<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Not</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      Value lhs <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">EvaluateJoin</span><span class="token punctuation">(</span>left<span class="token punctuation">,</span> right<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      Value rhs <span class="token operator">=</span> children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">EvaluateJoin</span><span class="token punctuation">(</span>left<span class="token punctuation">,</span> right<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> <span class="token function">Compute</span><span class="token punctuation">(</span>lhs<span class="token punctuation">,</span> rhs<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  std<span class="token double-colon punctuation">::</span>string <span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>logic_type_ <span class="token operator">==</span> LogicType<span class="token double-colon punctuation">::</span>NOT<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> fmt<span class="token double-colon punctuation">::</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"&#123;&#125; &#123;&#125;"</span><span class="token punctuation">,</span> logic_type_<span class="token punctuation">,</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> fmt<span class="token double-colon punctuation">::</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"&#123;&#125; &#123;&#125; &#123;&#125;"</span><span class="token punctuation">,</span> children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> logic_type_<span class="token punctuation">,</span> children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  LogicType <span class="token function">GetLogicType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> logic_type_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+ <span class="token keyword">private</span><span class="token operator">:</span>
+  LogicType logic_type_<span class="token punctuation">;</span>
+  Value <span class="token function">Compute</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>lhs<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>rhs<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>lhs<span class="token punctuation">.</span><span class="token function">IsNull</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">||</span> rhs<span class="token punctuation">.</span><span class="token function">IsNull</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token function">Value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>lhs<span class="token punctuation">.</span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">case</span> Type<span class="token double-colon punctuation">::</span>BOOL<span class="token operator">:</span>
+        <span class="token keyword">return</span> <span class="token function">Value</span><span class="token punctuation">(</span><span class="token function">DoOperation</span><span class="token punctuation">(</span>lhs<span class="token punctuation">.</span><span class="token generic-function"><span class="token function">GetValue</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> rhs<span class="token punctuation">.</span><span class="token generic-function"><span class="token function">GetValue</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">default</span><span class="token operator">:</span>
+        <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"Type unsupported for logic operation"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">bool</span> <span class="token function">DoOperation</span><span class="token punctuation">(</span><span class="token keyword">bool</span> lhs<span class="token punctuation">,</span> <span class="token keyword">bool</span> rhs<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">switch</span> <span class="token punctuation">(</span>logic_type_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">case</span> LogicType<span class="token double-colon punctuation">::</span>AND<span class="token operator">:</span>
+        <span class="token keyword">return</span> lhs <span class="token operator">&amp;&amp;</span> rhs<span class="token punctuation">;</span>
+      <span class="token keyword">case</span> LogicType<span class="token double-colon punctuation">::</span>OR<span class="token operator">:</span>
+        <span class="token keyword">return</span> lhs <span class="token operator">||</span> rhs<span class="token punctuation">;</span>
+      <span class="token keyword">default</span><span class="token operator">:</span>
+        <span class="token keyword">throw</span> <span class="token function">DbException</span><span class="token punctuation">(</span><span class="token string">"Unknown logic type"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="查询重写"><strong>查询重写</strong></h2>
+<p>lab5/10-filter-pushdown.test</p>
+<p>lab5/20-join-pushdown.test</p>
+<h3 id="分解复合的选择谓词"><strong>分解复合的选择谓词</strong></h3>
+<p>分解复合的选择谓词即将单个节点的长表达式 A and B 变成两个节点连接代替原节点，在原本查询树的基础上多了一个选择节点。</p>
+<p>分解复合谓词有前提条件，即当前节点是选择节点，并且这个节点的表达式为AND逻辑，我们即可将表达式分割为两个，然后再分别用这两个表达式来创建出两个选择节点，让左的指向右的。再让右指向原来的孩子，再将原本指针指向左选择表达式节点。</p>
+<p>需要注意的是，作为表达式，一次的分割可能不够，需要多次不断修改，故将得到的表达式递归即可。</p>
+<p>为了遍历这一整个计划查询树，故在后面再遍历所有的子节点。使用的方式类似于DFS的递归。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> <span class="token class-name">Optimizer</span><span class="token double-colon punctuation">::</span><span class="token function">SplitPredicates</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> plan<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>plan<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorType<span class="token double-colon punctuation">::</span>FILTER<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    ptrFilter curFilter <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>FilterOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>plan<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    ptrExpr curExpr <span class="token operator">=</span> curFilter<span class="token operator">-></span>predicate_<span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>curExpr<span class="token operator">-></span><span class="token function">GetExprType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorExpressionType<span class="token double-colon punctuation">::</span>LOGIC<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      ptrLogic curLogic <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>Logic<span class="token operator">></span></span></span><span class="token punctuation">(</span>curExpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>curLogic<span class="token operator">-></span><span class="token function">GetLogicType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> LogicType<span class="token double-colon punctuation">::</span>AND<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        ptrExpr leftExpr <span class="token operator">=</span> curExpr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        ptrExpr rightExpr <span class="token operator">=</span> curExpr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        
+        std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>ColumnList<span class="token operator">></span> columns <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>ColumnList<span class="token operator">></span></span></span><span class="token punctuation">(</span>plan<span class="token operator">-></span><span class="token function">OutputColumns</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        ptrFilter rightFilter <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>FilterOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>columns<span class="token punctuation">,</span> plan<span class="token operator">-></span><span class="token function">GetChildren</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> rightExpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ptrOP rightNode <span class="token operator">=</span> <span class="token function">SplitPredicates</span><span class="token punctuation">(</span>rightFilter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ptrFilter leftFilter <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>FilterOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>plan<span class="token operator">-></span>column_list_<span class="token punctuation">,</span> rightNode<span class="token punctuation">,</span> leftExpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ptrOP leftNode <span class="token operator">=</span> <span class="token function">SplitPredicates</span><span class="token punctuation">(</span>leftFilter<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        plan <span class="token operator">=</span> leftNode<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">for</span><span class="token punctuation">(</span>ptrOP <span class="token operator">&amp;</span>son<span class="token operator">:</span> plan<span class="token operator">-></span>children_<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    son <span class="token operator">=</span> <span class="token function">SplitPredicates</span><span class="token punctuation">(</span>son<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">return</span> plan<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="下推选择运算收集阶段"><strong>下推选择运算收集阶段</strong></h3>
+<p>作为下推选择，实际上分为三步：</p>
+<ul>
+<li>记录所有的选择谓词</li>
+<li>再遍历下面子树中判断能将之前的选择谓词下推</li>
+<li>遍历后判断这个选择谓词是否下推成功，若成功，删除本节点，若不成功不删除。</li>
+</ul>
+<p>三步操作实际上就是再 递归前 递归中 递归后 的三部分编写即可。</p>
+<p>不过要考虑到的是，这个步骤在<strong>分解复合的选择谓词</strong>之后，所以所有的选择节点的表达式都是单独的表达式，而不是逻辑表达式。</p>
+<p>先判断谓词是否Comparison 类型：</p>
+<p>选择谓词分为普通谓词和连接谓词，其区别在于表达式的类型。如果表达式左右两边都是COLUMN_VALUE类型，即例如 <a target="_blank" rel="noopener" href="http://a.id">a.id</a> = <a target="_blank" rel="noopener" href="http://b.id">b.id</a>，这就属于连接谓词。否则属于普通谓词。</p>
+<p>作为下推选择运算，本函数只要考虑记录和判断是否删除节点即可。</p>
+<p>使用 join_predicates 和 selection_predicates 来记录有哪些谓词，使用一个映射predicate_pushdown_status 来记录谓词是否下移成功。故第三部分就可以借助predicate_pushdown_status 来判断是否要删除</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> <span class="token class-name">Optimizer</span><span class="token double-colon punctuation">::</span><span class="token function">PushDownFilter</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> plan<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  ptrFilter curFilter <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>FilterOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>plan<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  ptrExpr curExpr <span class="token operator">=</span> curFilter<span class="token operator">-></span>predicate_<span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>curExpr<span class="token operator">-></span><span class="token function">GetExprType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorExpressionType<span class="token double-colon punctuation">::</span>COMPARISON<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    ptrExpr left <span class="token operator">=</span> curExpr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    ptrExpr right <span class="token operator">=</span> curExpr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>left<span class="token operator">-></span><span class="token function">GetExprType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorExpressionType<span class="token double-colon punctuation">::</span>COLUMN_VALUE 
+    <span class="token operator">and</span> right<span class="token operator">-></span><span class="token function">GetExprType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorExpressionType<span class="token double-colon punctuation">::</span>COLUMN_VALUE<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      join_predicates<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>curExpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      selection_predicates<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span>curExpr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    predicate_pushdown_status<span class="token punctuation">[</span>curExpr<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  plan<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">PushDown</span><span class="token punctuation">(</span>plan<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>predicate_pushdown_status<span class="token punctuation">[</span>curExpr<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> plan<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> plan<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="下推选择运算（普通谓词下推）"><strong>下推选择运算（普通谓词下推）</strong></h3>
+<p>遇到扫描操作的时候就会执行这个函数，也就是我们实际下推谓词的时候，此时，如果记录的谓词符合当前扫描的标准，就用该谓词创建一个选择操作节点，再将这个节点插入这个扫描操作的上方即可。</p>
+<p>ColumnValue 的 name_ 字段为 “table_name.column_name” 的形式，再借助扫描操作可以获取表的名字，通过比较table_name来判断能否下推该谓词到这个扫描，同时记录当前谓词已成功下移。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> <span class="token class-name">Optimizer</span><span class="token double-colon punctuation">::</span><span class="token function">PushDownSeqScan</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> plan<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  ptrScan curScan <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>SeqScanOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>plan<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">for</span><span class="token punctuation">(</span>ptrExpr expr<span class="token operator">:</span> selection_predicates<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    ptrExpr columnValue <span class="token operator">=</span> expr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+
+    std<span class="token double-colon punctuation">::</span>string columnName <span class="token operator">=</span> columnValue<span class="token operator">-></span>name_<span class="token punctuation">;</span>
+    size_t pos <span class="token operator">=</span> columnName<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token char">'.'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>string tableName <span class="token operator">=</span> columnName<span class="token punctuation">.</span><span class="token function">substr</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> pos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    std<span class="token double-colon punctuation">::</span>string scanName <span class="token operator">=</span> curScan<span class="token operator">-></span><span class="token function">GetTableNameOrAlias</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span><span class="token punctuation">(</span>tableName <span class="token operator">==</span> scanName<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>ColumnList<span class="token operator">></span> column <span class="token operator">=</span> plan<span class="token operator">-></span>column_list_<span class="token punctuation">;</span>
+      ptrFilter newFilter <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_shared</span><span class="token generic class-name"><span class="token operator">&lt;</span>FilterOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>column<span class="token punctuation">,</span> plan<span class="token punctuation">,</span> expr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      plan <span class="token operator">=</span> newFilter<span class="token punctuation">;</span>
+      predicate_pushdown_status<span class="token punctuation">[</span>expr<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">return</span> plan<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此10-filter-pushdown.test已通过。</p>
+<h3 id="下推选择运算（笛卡尔积转连接）（连接谓词下推）">下推选择运算（笛卡尔积转连接）（连接谓词下推）</h3>
+<p>和下推普通谓词类似，对于笛卡尔积转连接，只需要同样判断是否符合条件，一旦符合条件，就将该连接置于操作的join_condition_ ，即连接的条件。同时标记该连接谓词已使用。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> <span class="token class-name">Optimizer</span><span class="token double-colon punctuation">::</span><span class="token function">PushDownJoin</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> plan<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">auto</span> <span class="token operator">&amp;</span>child <span class="token operator">:</span> plan<span class="token operator">-></span>children_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    child <span class="token operator">=</span> <span class="token function">PushDown</span><span class="token punctuation">(</span>child<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  ptrJoin curJoin <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>NestedLoopJoinOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>plan<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>curJoin<span class="token operator">-></span>join_condition_<span class="token operator">-></span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token string">"true"</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span>ptrExpr expr<span class="token operator">:</span> join_predicates<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>predicate_pushdown_status<span class="token punctuation">[</span>expr<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">continue</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      std<span class="token double-colon punctuation">::</span>string columnA <span class="token operator">=</span> expr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span>name_<span class="token punctuation">;</span>
+      std<span class="token double-colon punctuation">::</span>string columnB <span class="token operator">=</span> expr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token operator">-></span>name_<span class="token punctuation">;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>curJoin<span class="token operator">-></span>column_list_<span class="token operator">-></span><span class="token function">TryGetColumnIndex</span><span class="token punctuation">(</span>columnA<span class="token punctuation">)</span> <span class="token operator">!=</span> std<span class="token double-colon punctuation">::</span>nullopt
+      <span class="token operator">and</span> curJoin<span class="token operator">-></span>column_list_<span class="token operator">-></span><span class="token function">TryGetColumnIndex</span><span class="token punctuation">(</span>columnB<span class="token punctuation">)</span> <span class="token operator">!=</span> std<span class="token double-colon punctuation">::</span>nullopt<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        curJoin<span class="token operator">-></span>join_condition_ <span class="token operator">=</span> expr<span class="token punctuation">;</span>
+        predicate_pushdown_status<span class="token punctuation">[</span>expr<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> plan<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此，通过 20-join-pushdown.test 测试样例</p>
+<h2 id="连接顺序选择（贪心算法）"><strong>连接顺序选择（贪心算法）</strong></h2>
+<p>30-join-order.test</p>
+<h3 id="代价估计">代价估计</h3>
+<p>贪心算法的实现基于代价估计，对于表的代价估计，基于表的统计，需要用到的有：</p>
+<ul>
+<li>T®：关系R的元组数目</li>
+<li>V(R,A)：关系R在属性A上不同值个数。当A扩展为属性集合a时，V(R,a)表示关系R在属性集a上投影后不同的元组数，即 Πa® 元组数</li>
+</ul>
+<p>复习一遍需要知道的前提条件，基于贪心算法的连接顺序选择，连接的代价估计为连接之后T的大小，例如要连接Ra和Rb代价即T(Ra⋈Rb)</p>
+<p>对于Ra和Rb在col上进行连接即 Ra.col = Rb.col，有以下：</p>
+<p>T(Ra⋈Rb) = T(Ra) * T(Rb) / max(V(Ra, col), V(Rb, col))</p>
+<p>同时更新其V，有以下：</p>
+<p>V(Ra⋈Rb, col) = min(V(Ra, col), V(Rb, col))</p>
+<h3 id="贪心算法">贪心算法</h3>
+<p>步骤：</p>
+<ul>
+<li>选择一个大小T最小的关系作为当前Rcur</li>
+<li>从余下没有被选择过的关系中选择与Rcur连接后结果最小的Rnext，将Rcur更新为Rcur ⋈Rnext</li>
+<li>不断重复步骤2，直到所有关系都被选择过。</li>
+</ul>
+<p>其中，如果T相等，我们优先选择能连接选择最多的表。</p>
+<h3 id="实现">实现</h3>
+<p>类似于图的性质，因此我们将表看做节点，通过tables映射来记录，通过递归的DFS来记录所有的表，同时记录所有的连接，连接即看做一条边，我们此时将一个连接计划变成了一个图，图中记录了边的情况，使用了邻接表的结构。</p>
+<p>这段代码没有进行很深的优化，以展现算法思路为主。</p>
+<p>使用collect DFS进行信息收集，收集所有的边，将原来的题目转化为一个图。</p>
+<p>遍历一遍所有的table，通过T和边的数目来选择初始的表。</p>
+<p>使用一个near来记录所有当前联通情况下的边，例如我已经连接了AB，那就把A的所有边和B的所有边记录下来。</p>
+<p>使用一个visited来记录所有的表是否已经被连接。</p>
+<p>使用curV和curT来记录当前连接情况下的T和V的情况，通过连接不断更新，同时更新指针结构，构建新的计划树。</p>
+<ul>
+<li>选择起点</li>
+<li>不断遍历能连接到的所有的表</li>
+<li>找到连接代价最小的表</li>
+<li>更新当前连接情况下的统计数据</li>
+<li>更新当前连接计划树结构</li>
+<li>回到第二步，直到所有表连接完</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> <span class="token class-name">Optimizer</span><span class="token double-colon punctuation">::</span><span class="token function">ReorderJoin</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>shared_ptr<span class="token operator">&lt;</span>Operator<span class="token operator">></span> plan<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token comment">// 通过 catalog_.GetCardinality 和 catalog_.GetDistinct 从系统表中读取表和列的元信息</span>
+  <span class="token comment">// 可根据 join_order_algorithm_ 变量的值选择不同的连接顺序选择算法，默认为 None，表示不进行连接顺序优化</span>
+  <span class="token keyword">using</span> <span class="token keyword">namespace</span> std<span class="token punctuation">;</span>
+
+  map<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> ptrOP<span class="token operator">></span> tables<span class="token punctuation">;</span>
+  map<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> set<span class="token operator">&lt;</span>string<span class="token operator">>></span> colOfTable<span class="token punctuation">;</span>
+  map<span class="token operator">&lt;</span>pair<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> string<span class="token operator">></span><span class="token punctuation">,</span> ptrJoin<span class="token operator">></span> joins<span class="token punctuation">;</span>
+  map<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> vector<span class="token operator">&lt;</span>pair<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> string<span class="token operator">>></span><span class="token operator">></span> edges<span class="token punctuation">;</span>
+  map<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> ptrJoin<span class="token operator">></span> col2Join<span class="token punctuation">;</span>
+
+  function<span class="token operator">&lt;</span><span class="token function">string</span><span class="token punctuation">(</span>ptrOP<span class="token punctuation">)</span><span class="token operator">></span> getName <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span>ptrOP cur<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>cur<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorType<span class="token double-colon punctuation">::</span>SEQSCAN<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      ptrScan curScan <span class="token operator">=</span> <span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>SeqScanOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>cur<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> curScan<span class="token operator">-></span><span class="token function">GetTableNameOrAlias</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token function">getName</span><span class="token punctuation">(</span>cur<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+  ptrOP PreOP <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+
+  function<span class="token operator">&lt;</span><span class="token keyword">void</span><span class="token punctuation">(</span>ptrOP<span class="token punctuation">,</span> ptrOP<span class="token punctuation">)</span><span class="token operator">></span> collect <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token operator">&amp;</span><span class="token punctuation">]</span><span class="token punctuation">(</span>ptrOP cur<span class="token punctuation">,</span> ptrOP par<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+
+    <span class="token keyword">if</span><span class="token punctuation">(</span>cur<span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorType<span class="token double-colon punctuation">::</span>NESTEDLOOP<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>PreOP <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        PreOP <span class="token operator">=</span> par<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      ptrJoin curJoin <span class="token operator">=</span> <span class="token generic-function"><span class="token function">dynamic_pointer_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>NestedLoopJoinOperator<span class="token operator">></span></span></span><span class="token punctuation">(</span>cur<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      ptrExpr curExpr <span class="token operator">=</span> curJoin<span class="token operator">-></span>join_condition_<span class="token punctuation">;</span>
+
+      string table1 <span class="token operator">=</span> curExpr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span>name_<span class="token punctuation">;</span>
+      string table2 <span class="token operator">=</span> curExpr<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token operator">-></span>name_<span class="token punctuation">;</span>
+      size_t pos <span class="token operator">=</span> table1<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token char">'.'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      table1 <span class="token operator">=</span> table1<span class="token punctuation">.</span><span class="token function">substr</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> pos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      pos <span class="token operator">=</span> table2<span class="token punctuation">.</span><span class="token function">find</span><span class="token punctuation">(</span><span class="token char">'.'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      string column <span class="token operator">=</span> table2<span class="token punctuation">.</span><span class="token function">substr</span><span class="token punctuation">(</span>pos <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      table2 <span class="token operator">=</span> table2<span class="token punctuation">.</span><span class="token function">substr</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> pos<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      tables<span class="token punctuation">[</span><span class="token function">getName</span><span class="token punctuation">(</span>curJoin<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> curJoin<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+      joins<span class="token punctuation">[</span><span class="token punctuation">&#123;</span>table1<span class="token punctuation">,</span> table2<span class="token punctuation">&#125;</span><span class="token punctuation">]</span> <span class="token operator">=</span> curJoin<span class="token punctuation">;</span>
+      joins<span class="token punctuation">[</span><span class="token punctuation">&#123;</span>table2<span class="token punctuation">,</span> table1<span class="token punctuation">&#125;</span><span class="token punctuation">]</span> <span class="token operator">=</span> curJoin<span class="token punctuation">;</span>
+      edges<span class="token punctuation">[</span>table1<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span><span class="token punctuation">&#123;</span>table2<span class="token punctuation">,</span> column<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      edges<span class="token punctuation">[</span>table2<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span><span class="token punctuation">&#123;</span>table1<span class="token punctuation">,</span> column<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      colOfTable<span class="token punctuation">[</span>table1<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>column<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      colOfTable<span class="token punctuation">[</span>table2<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>column<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      col2Join<span class="token punctuation">[</span>column<span class="token punctuation">]</span> <span class="token operator">=</span> curJoin<span class="token punctuation">;</span>
+
+      <span class="token keyword">if</span><span class="token punctuation">(</span>cur<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token operator">-></span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> OperatorType<span class="token double-colon punctuation">::</span>NESTEDLOOP<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token function">collect</span><span class="token punctuation">(</span>cur<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> cur<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+        tables<span class="token punctuation">[</span><span class="token function">getName</span><span class="token punctuation">(</span>curJoin<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">]</span> <span class="token operator">=</span> curJoin<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>cur<span class="token operator">-></span>children_<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token function">collect</span><span class="token punctuation">(</span>cur<span class="token operator">-></span>children_<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> cur<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">if</span><span class="token punctuation">(</span>join_order_algorithm_ <span class="token operator">==</span> JoinOrderAlgorithm<span class="token double-colon punctuation">::</span>GREEDY<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token function">collect</span><span class="token punctuation">(</span>plan<span class="token punctuation">,</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span>tables<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> plan<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    set<span class="token operator">&lt;</span>pair<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> string<span class="token operator">>></span> nears<span class="token punctuation">;</span>
+    ptrOP ptrCur <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token keyword">int</span> curT <span class="token operator">=</span> <span class="token number">1e9</span><span class="token punctuation">;</span>
+    string minTable<span class="token punctuation">;</span>
+
+    map<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> <span class="token keyword">int</span><span class="token operator">></span> curV<span class="token punctuation">;</span>
+    map<span class="token operator">&lt;</span>string<span class="token punctuation">,</span> <span class="token keyword">bool</span><span class="token operator">></span> visited<span class="token punctuation">;</span>
+
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token punctuation">[</span>table<span class="token punctuation">,</span> op<span class="token punctuation">]</span><span class="token operator">:</span> tables<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      visited<span class="token punctuation">[</span>table<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>catalog_<span class="token punctuation">.</span><span class="token function">GetCardinality</span><span class="token punctuation">(</span>table<span class="token punctuation">)</span> <span class="token operator">&lt;</span> curT<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        curT <span class="token operator">=</span> catalog_<span class="token punctuation">.</span><span class="token function">GetCardinality</span><span class="token punctuation">(</span>table<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ptrCur <span class="token operator">=</span> op<span class="token punctuation">;</span>
+        minTable <span class="token operator">=</span> table<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>catalog_<span class="token punctuation">.</span><span class="token function">GetCardinality</span><span class="token punctuation">(</span>table<span class="token punctuation">)</span> <span class="token operator">==</span> curT <span class="token operator">and</span> edges<span class="token punctuation">[</span>table<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">></span> edges<span class="token punctuation">[</span>minTable<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        curT <span class="token operator">=</span> catalog_<span class="token punctuation">.</span><span class="token function">GetCardinality</span><span class="token punctuation">(</span>table<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        ptrCur <span class="token operator">=</span> op<span class="token punctuation">;</span>
+        minTable <span class="token operator">=</span> table<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    visited<span class="token punctuation">[</span>minTable<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> col<span class="token operator">:</span> colOfTable<span class="token punctuation">[</span>minTable<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      curV<span class="token punctuation">[</span>col<span class="token punctuation">]</span> <span class="token operator">=</span> catalog_<span class="token punctuation">.</span><span class="token function">GetDistinct</span><span class="token punctuation">(</span>minTable<span class="token punctuation">,</span> col<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> edge<span class="token operator">:</span> edges<span class="token punctuation">[</span>minTable<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      nears<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>edge<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    
+    <span class="token keyword">while</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+
+      <span class="token keyword">bool</span> all_connected <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+      <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token punctuation">[</span>table<span class="token punctuation">,</span> _<span class="token punctuation">]</span><span class="token operator">:</span>tables<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> visited<span class="token punctuation">[</span>table<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+          all_connected <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span><span class="token punctuation">(</span>all_connected<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">break</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+
+      <span class="token keyword">int</span> minCost <span class="token operator">=</span> <span class="token number">1e9</span><span class="token punctuation">;</span>
+      string nextTableName<span class="token punctuation">;</span>
+      string nextCol<span class="token punctuation">;</span>
+
+      <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span><span class="token punctuation">[</span>table<span class="token punctuation">,</span> col<span class="token punctuation">]</span><span class="token operator">:</span> nears<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>visited<span class="token punctuation">[</span>table<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">continue</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> T2 <span class="token operator">=</span> catalog_<span class="token punctuation">.</span><span class="token function">GetCardinality</span><span class="token punctuation">(</span>table<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> V2 <span class="token operator">=</span> catalog_<span class="token punctuation">.</span><span class="token function">GetDistinct</span><span class="token punctuation">(</span>table<span class="token punctuation">,</span> col<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">int</span> cost <span class="token operator">=</span> curT <span class="token operator">*</span> T2 <span class="token operator">/</span> <span class="token function">max</span><span class="token punctuation">(</span>V2<span class="token punctuation">,</span> curV<span class="token punctuation">[</span>col<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>cost <span class="token operator">&lt;</span> minCost<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+          minCost <span class="token operator">=</span> cost<span class="token punctuation">;</span>
+          nextTableName <span class="token operator">=</span> table<span class="token punctuation">;</span>
+          nextCol <span class="token operator">=</span> col<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+      curT <span class="token operator">=</span> minCost<span class="token punctuation">;</span>
+      <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> col<span class="token operator">:</span>colOfTable<span class="token punctuation">[</span>nextTableName<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span><span class="token punctuation">(</span>curV<span class="token punctuation">.</span><span class="token function">count</span><span class="token punctuation">(</span>col<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+          curV<span class="token punctuation">[</span>col<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">min</span><span class="token punctuation">(</span>curV<span class="token punctuation">[</span>col<span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>catalog_<span class="token punctuation">.</span><span class="token function">GetDistinct</span><span class="token punctuation">(</span>nextTableName<span class="token punctuation">,</span> col<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token keyword">else</span><span class="token punctuation">&#123;</span>
+          curV<span class="token punctuation">[</span>col<span class="token punctuation">]</span> <span class="token operator">=</span> catalog_<span class="token punctuation">.</span><span class="token function">GetDistinct</span><span class="token punctuation">(</span>nextTableName<span class="token punctuation">,</span> col<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">for</span><span class="token punctuation">(</span><span class="token keyword">auto</span> edge<span class="token operator">:</span>edges<span class="token punctuation">[</span>nextTableName<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        nears<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>edge<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      ptrOP tmp <span class="token operator">=</span> col2Join<span class="token punctuation">[</span>nextCol<span class="token punctuation">]</span><span class="token punctuation">;</span>
+      tmp<span class="token operator">-></span>children_ <span class="token operator">=</span> <span class="token punctuation">&#123;</span>ptrCur<span class="token punctuation">,</span> tables<span class="token punctuation">[</span>nextTableName<span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+      ptrCur <span class="token operator">=</span> tmp<span class="token punctuation">;</span>
+      visited<span class="token punctuation">[</span>nextTableName<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    PreOP<span class="token operator">-></span>children_ <span class="token operator">=</span> <span class="token punctuation">&#123;</span>ptrCur<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  
+  <span class="token keyword">return</span> plan<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>至此，通过样例30-join-order.test</p>
+<p>本次实验完成</p>
+<h1><strong>难度和坑的总结</strong></h1>
+<p>对于连接优化，许多统计数据都需要自己重新部分暴力的实现，属于一个比较少资源的情况下完成的测试样例。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/02/03/learn-database-note12/">数据库管理系统——查询优化</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" rel="tag">数据库实验</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/02/09/database-huadb5/">数据库内核实验报告五：查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/03/learn-database-note12/">数据库管理系统——查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/01/30/learn-database-note11/">数据库管理系统——查询处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/12/10/learn-database-note10/">数据库管理系统——数据库索引</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/29/machine-learning-note7/">《图解机器学习算法》笔记——评估方法和各种数据的处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/26/database-huadb3/">数据库内核实验报告三：多版本并发控制</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 15.71px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 14.29px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
