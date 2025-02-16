@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>数据库管理系统——查询执行 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="数据库管理系统——查询执行"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>数据库管理系统——查询执行</h2>
+            <div class="post-meta">
+                <time class="date">2025.02.16</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>输入是物理执行计划，由优化器产生并给予，输出代码或者机器码。</p>
+<h2 id="发展过程">发展过程</h2>
+<ul>
+<li>1994：火山模型（尽量减少内存）</li>
+<li>2000：物化模型</li>
+<li>2005：向量化执行</li>
+<li>2010：源到源编译模型</li>
+<li>2011：实时编译模型HYPER</li>
+</ul>
+<h1>执行器概述</h1>
+<h2 id="拉取式模型与推送式模型">拉取式模型与推送式模型</h2>
+<p><img src="/2025/02/16/learn-database-note13/1.png" alt="image.png"></p>
+<h1>拉取式模型</h1>
+<p>拉取式模型从根节点往下调用数据，可以使用以下模型：</p>
+<ul>
+<li>open()：初始化，申请空间，设置连接</li>
+<li>getNext()：获取符合当前节点条件的下一条记录</li>
+<li>colse()：清理</li>
+</ul>
+<p>对于一个树中节点的getNext()，通过获取子节点的getNext即可获得自己接收的数据集合，再将通过本节点条件的数据返回，如果没有数据，即代表结束。</p>
+<h2 id="火山模型">火山模型</h2>
+<p>一次一个元组</p>
+<p>火山模型（volcano model）又被称为迭代模型（iterator model）或流水线模型（pipeline model）。类似于迭代操作一样，每个节点都在不断迭代自己要处理的数据行，也类似与流水线一样，每行数据从下往上给出。</p>
+<p><img src="/2025/02/16/learn-database-note13/2.png" alt="image.png"></p>
+<p>以上给出了每个节点的next操作，从执行最上面的next即可运行完整一个计划执行树</p>
+<h2 id="物化模型">物化模型</h2>
+<p>算子会将所有输入处理好后，将处理完的所有结果一次性输出。输出既可以是完整的元组，也可以只包含其中部分的列。</p>
+<p><img src="/2025/02/16/learn-database-note13/3.png" alt="image.png"></p>
+<p>以上给出了每个节点的next部分，不同火山模型的是，不再有多次递归，而是把本节点所有的符合条件的元组集合返回回去。</p>
+<h2 id="向量化执行模型">向量化执行模型</h2>
+<p>向量化执行模型（Vectorization Model）可以在一定程度上被视为火山模型与物化模型的中间形态。</p>
+<p>通过next()函数自上而下地拉取数据，每次会拉取一个批次的元组数据，而不是只有一个。</p>
+<p><img src="/2025/02/16/learn-database-note13/4.png" alt="image.png"></p>
+<p>以上给出了每个节点的next部分，与火山模型不同的是，每次返回的数据不是一条，但与物化模型不同的是，并不是每次都返回所有的数据，而是一部分，即将一条改为一块，至于块数据大小由n决定。</p>
+<h2 id="模型比较">模型比较</h2>
+<p>火山模型更消耗递归成本，而物化模型更消耗缓存成本，向量化执行模型是两者的中间态。</p>
+<table>
+<thead>
+<tr>
+<th>函数调用</th>
+<th>火山</th>
+<th>物化</th>
+<th>向量化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>流水线</td>
+<td>多</td>
+<td>少</td>
+<td>中</td>
+</tr>
+<tr>
+<td>内存</td>
+<td>好</td>
+<td>无</td>
+<td>中</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>OLTP</td>
+<td>OLTP</td>
+<td>OLAP</td>
+</tr>
+<tr>
+<td>代码局部性</td>
+<td>差</td>
+<td>好</td>
+<td>中</td>
+</tr>
+<tr>
+<td>数据局部性</td>
+<td>中</td>
+<td>好</td>
+<td>好</td>
+</tr>
+<tr>
+<td>实现难度</td>
+<td>简单</td>
+<td>中</td>
+<td>难</td>
+</tr>
+</tbody>
+</table>
+<h1>推送式模型 Push-based</h1>
+<p>自底向上运行，</p>
+<p>遇到汇聚节点（连接，哈希，排序，分组）需要需要分解为不同的pipeline</p>
+<p>Pipeline之间需要调度：并行或者先后依赖。</p>
+<p>每个Pipeline自底向上执行</p>
+<h2 id="Pipeline分解">Pipeline分解</h2>
+<p><img src="/2025/02/16/learn-database-note13/5.png" alt="image.png"></p>
+<p>以上是一个Pipeline分解，有以下步骤：</p>
+<ul>
+<li>枚举算子</li>
+<li>找到sink节点（连接，哈希，排序，分组）</li>
+<li>根据sink节点生成pipeline</li>
+<li>确定pipeline的先后关系</li>
+</ul>
+<h2 id="Pipeline调度">Pipeline调度</h2>
+<p>事件驱动的调度器使用生产者消费者的线程池模型，根据任务队列和父子pipline之间的依赖关系进行调度。</p>
+<p>每类节点的执行状态有四种：Have_more_output，Need_more_input，Finished，Blocked</p>
+<h2 id="优点">优点</h2>
+<p><img src="/2025/02/16/learn-database-note13/6.png" alt="image.png"></p>
+<ul>
+<li><strong>Vector Cache</strong>: 通过在操作符之间添加小缓存，可以减少数据重复扫描，提高查询效率，特别是在处理重复或相似查询时。</li>
+<li><strong>Scan Sharing</strong>: 允许将一次扫描的结果推送到多个接收端，减少重复扫描的开销，提升整体系统性能，尤其是在多个操作需要相同数据时。</li>
+<li><strong>Backpressure</strong>: 当缓冲区满时暂停管道，防止系统过载，确保数据处理稳定性和资源有效利用，避免数据丢失或系统崩溃。</li>
+<li><strong>Async I/O</strong>: 在HTTP请求进行时暂停管道，等待数据可用时再恢复，提高系统响应性和资源利用率，特别是在处理外部数据源时。</li>
+</ul>
+<h2 id="推送式模型比较">推送式模型比较</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>拉取式</th>
+<th>推送式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>开始节点</td>
+<td>根节点</td>
+<td>叶子节点</td>
+</tr>
+<tr>
+<td>执行方向</td>
+<td>自上而下</td>
+<td>自下而上</td>
+</tr>
+<tr>
+<td>核心</td>
+<td>以算子为核心</td>
+<td>以数据为核心</td>
+</tr>
+<tr>
+<td>执行方式</td>
+<td>通过函数从子节点“拉取数据”</td>
+<td>将数据“推送”给父节点</td>
+</tr>
+<tr>
+<td>优势</td>
+<td>易实现、优雅、省内存</td>
+<td>函数调用少、缓存命中率高、效率高</td>
+</tr>
+<tr>
+<td>劣势</td>
+<td>函数调用多、缓存命中率低</td>
+<td>Limit, sort-merge join效率低，内存消耗高</td>
+</tr>
+</tbody>
+</table>
+<h1>并行执行</h1>
+<ul>
+<li>节点间多机器并行 MPP：Massively Parallel Processing</li>
+<li>节点内多线程并行 SMP：Symmetric Multi-Processing</li>
+<li>单指令多数据并行 SIMD：Single Instruction Multiple Data</li>
+</ul>
+<p><img src="/2025/02/16/learn-database-note13/7.png" alt="image.png"></p>
+<h2 id="节点间多机器并行-MPP">节点间多机器并行 MPP</h2>
+<ul>
+<li>传统分发-汇聚的分布式计划</li>
+<li>协调节点旁路技术</li>
+<li>数据节点自协同的流式计划</li>
+</ul>
+<p><img src="/2025/02/16/learn-database-note13/8.png" alt="image.png"></p>
+<h2 id="节点内多线程并行-SMP">节点内多线程并行 SMP</h2>
+<ul>
+<li>算子间并行：计划切分，流水线</li>
+<li>算子内并行： 数据分区</li>
+</ul>
+<p><img src="/2025/02/16/learn-database-note13/9.png" alt="image.png"></p>
+<h2 id="单指令流多数据-SIMD">单指令流多数据 SIMD</h2>
+<p>是一种允许同一个处理器在多个数据点上执行相同操作，进而形成并行计算的技术。</p>
+<p><img src="/2025/02/16/learn-database-note13/10.png" alt="image.png"></p>
+<h1>编译执行</h1>
+<ul>
+<li>通过编译执行技术避免大量虚函数调用，并裁剪了大量执行中的分支判断等指令，减少了无用指令数量。</li>
+<li>在火山模型中，每次获取数据都需要访问一次内存，编译执行避免迭代调用过程，通过多级存储和预取技术将数据缓存在CPU，提升了缓存命中率</li>
+<li>循环展开和优化，通过流水线和指令重排序技术，提升了循环的运行效率。</li>
+</ul>
+<p>有两种编译执行方法：</p>
+<ul>
+<li>查询执行计划 → 高级语言代码（例如C）→ 可执行代码   [代价高]</li>
+<li>查询执行计划 → 中间表示IR（LLVM）→ 可执行代码</li>
+</ul>
+<h2 id="LLVM">LLVM</h2>
+<ul>
+<li>模组化的架构，允许所有人对它进行改进</li>
+<li>后端允许将IR转换为不同CPU架构上的机器码</li>
+<li>前端允许将不同代码转换为IR</li>
+<li>IR会不断地自我优化，直到达到最优解</li>
+</ul>
+<h2 id="LLVM编译执行">LLVM编译执行</h2>
+<p><img src="/2025/02/16/learn-database-note13/11.png" alt="image.png"></p>
+<h2 id="预先编译与实时编译">预先编译与实时编译</h2>
+<p>预先编译是指在程序运行之前进行编译。其优点在于可以提前将代码编译好，这样在实际运行时就可以省去编译时间，并且可以快速启动并达到较高的性能</p>
+<p>实时编译是在程序运行中编译而不是之前。许多高级编程语言中存在定义不明确的情况，因此在合适的时机进行编译可以有效避免计算资源或存储资源的浪费。</p>
+<p>实时编译的优势：</p>
+<ul>
+<li>避免不必要的判断步骤</li>
+<li>优化表达式的计算</li>
+<li>优化执行流程：在获取到查询计划之后，数据库就可以根据查询计划针对性地设计执行流程，使元组尽可能长的留存在寄存器中。</li>
+</ul>
+<p>拓展了解：源到源编译模型HIQUE，实时编译模型HYPER</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/02/09/database-huadb5/">数据库内核实验报告五：查询优化</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" rel="tag">数据库</a><a class="-none-link" href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" rel="tag">查询执行</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/02/16/learn-database-note13/">数据库管理系统——查询执行</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/09/database-huadb5/">数据库内核实验报告五：查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/03/learn-database-note12/">数据库管理系统——查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/01/30/learn-database-note11/">数据库管理系统——查询处理</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/12/10/learn-database-note10/">数据库管理系统——数据库索引</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/11/29/machine-learning-note7/">《图解机器学习算法》笔记——评估方法和各种数据的处理</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.67px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/python/" style="font-size: 15px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.67px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.67px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 15px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 15px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.67px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 16.67px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 16.67px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.67px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 13.33px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.33px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
