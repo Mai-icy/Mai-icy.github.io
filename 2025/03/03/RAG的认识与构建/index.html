@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>RAG的认识与构建 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="RAG的认识与构建"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>RAG的认识与构建</h2>
+            <div class="post-meta">
+                <time class="date">2025.03.03</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>概念解析</h1>
+<p>RAG（Retrieval-Augmented Generation，检索增强生成）是一种结合信息检索（Retrieval）和文本生成（Generation）的技术，常用于大模型（如GPT、LLM）中，以提升回答的准确性和可控性。</p>
+<p>其中信息检索涉及到知识库的构建和知识库检索</p>
+<p>而文本生成涉及大模型的使用，通常是使用现成的大模型，例如qwen，deepseek等，主要利用了大模型的逻辑推理能力。</p>
+<p>简单的来说，RAG应用实际并没有听着那么高级，更像是大模型的先进使用，不拘泥于只使用大模型进行问答，而是提供了参考文档，让大模型根据文档进行检索和回答。</p>
+<p>例如构建校园问答应用，只需要构建校园信息的知识库，再在每次提问的时候，将初始提问和校园信息知识库进行结合为新提问，将新提问提供给大模型，大模型会结合新提问里面给予的参考信息进行回答。</p>
+<h1>信息检索</h1>
+<h2 id="概念解析">概念解析</h2>
+<h3 id="Embedding">Embedding</h3>
+<p>Embedding（嵌入） 是一种将文本、图像或其他数据转换为高维数值向量的技术，使其能够在向量空间中表示语义相似性。</p>
+<p>例如，语义相近的句子会被映射到相近的向量。例如，queen和king在Embedding里面的相似度高于queen和apple。</p>
+<p>现在的Embedding大多基于句子级别，根据整个句子的语义动态生成。句意思更相近的，两个向量的余弦相似度较高。</p>
+<p>Embedding 通常用于自然语言处理（NLP）、推荐系统 和 检索增强生成（RAG） 等任务，常见模型包括 OpenAI Embeddings、BERT、SBERT 等。</p>
+<p>对于以上我们可以得到一种新的方式，用于判断两个句子的相近程度，而许多厂商都有提供Embedding API，即使用同一个Embedding模型的情况下，两个句子的高维向量可以表示两个句子之间的联系。</p>
+<p>对于langchain，有一定的预备接口以满足</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">os<span class="token punctuation">.</span>environ<span class="token punctuation">[</span><span class="token string">"OPENAI_API_BASE"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">"&lt;https://api.gptsapi.net/v1>"</span> <span class="token comment"># 可以修改基础url</span>
+embedding <span class="token operator">=</span> OpenAIEmbeddings<span class="token punctuation">(</span>
+    model<span class="token operator">=</span><span class="token string">"text-embedding-3-large"</span><span class="token punctuation">,</span>
+    openai_api_key<span class="token operator">=</span>key<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>或者以下是一个构建Embeddings实例，此处使用自定义的Embeddings</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">import</span> torch
+<span class="token keyword">from</span> transformers <span class="token keyword">import</span> AutoTokenizer<span class="token punctuation">,</span> AutoModel
+<span class="token keyword">from</span> langchain_core<span class="token punctuation">.</span>embeddings <span class="token keyword">import</span> Embeddings
+<span class="token keyword">from</span> tqdm <span class="token keyword">import</span> tqdm
+
+<span class="token keyword">class</span> <span class="token class-name">MathBERTEmbeddings</span><span class="token punctuation">(</span>Embeddings<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> model_name<span class="token operator">=</span><span class="token string">"tbs17/MathBERT"</span><span class="token punctuation">,</span> device<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>model_name <span class="token operator">=</span> model_name
+        self<span class="token punctuation">.</span>device <span class="token operator">=</span> device <span class="token keyword">or</span> <span class="token punctuation">(</span><span class="token string">"cuda"</span> <span class="token keyword">if</span> torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>is_available<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">else</span> <span class="token string">"cpu"</span><span class="token punctuation">)</span>
+        <span class="token comment"># 加载模型和分词器</span>
+        self<span class="token punctuation">.</span>tokenizer <span class="token operator">=</span> AutoTokenizer<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span>model_name<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>model <span class="token operator">=</span> AutoModel<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span>model_name<span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>self<span class="token punctuation">.</span>device<span class="token punctuation">)</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"MathBERT模型加载完成"</span><span class="token punctuation">)</span>
+    
+    <span class="token keyword">def</span> <span class="token function">embed_documents</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> texts<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token triple-quoted-string string">"""为文档列表创建嵌入"""</span>
+        embeddings <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        
+        <span class="token comment"># 使用tqdm显示进度</span>
+        <span class="token keyword">for</span> text <span class="token keyword">in</span> tqdm<span class="token punctuation">(</span>texts<span class="token punctuation">,</span> desc<span class="token operator">=</span><span class="token string">"创建嵌入"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            embeddings<span class="token punctuation">.</span>append<span class="token punctuation">(</span>self<span class="token punctuation">.</span>_embed_text<span class="token punctuation">(</span>text<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            
+        <span class="token keyword">return</span> embeddings
+    
+    <span class="token keyword">def</span> <span class="token function">embed_query</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> text<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> self<span class="token punctuation">.</span>_embed_text<span class="token punctuation">(</span>text<span class="token punctuation">)</span>
+    
+    <span class="token keyword">def</span> <span class="token function">_embed_text</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> text<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        inputs <span class="token operator">=</span> self<span class="token punctuation">.</span>tokenizer<span class="token punctuation">(</span>
+            text<span class="token punctuation">,</span> 
+            return_tensors<span class="token operator">=</span><span class="token string">"pt"</span><span class="token punctuation">,</span> 
+            max_length<span class="token operator">=</span><span class="token number">512</span><span class="token punctuation">,</span>
+            padding<span class="token operator">=</span><span class="token string">"max_length"</span><span class="token punctuation">,</span>
+            truncation<span class="token operator">=</span><span class="token boolean">True</span>
+        <span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>self<span class="token punctuation">.</span>device<span class="token punctuation">)</span>
+        <span class="token keyword">with</span> torch<span class="token punctuation">.</span>no_grad<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            outputs <span class="token operator">=</span> self<span class="token punctuation">.</span>model<span class="token punctuation">(</span><span class="token operator">**</span>inputs<span class="token punctuation">,</span> output_hidden_states<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+            last_hidden_state <span class="token operator">=</span> outputs<span class="token punctuation">.</span>last_hidden_state
+            cls_embedding <span class="token operator">=</span> last_hidden_state<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>cpu<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>numpy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            
+            <span class="token keyword">return</span> cls_embedding<span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用例：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python">vector <span class="token operator">=</span> embedding<span class="token punctuation">.</span>embed_query<span class="token punctuation">(</span><span class="token string">"hello"</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>vector<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token number">3</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token comment"># [-0.024605071172118187, -0.0075481850653886795, 0.004001544788479805]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="向量数据库">向量数据库</h3>
+<p>是知识库的基础，也就是用于存放我们参考信息的数据库，由于参考信息经过Embedding变成了多个高维向量集合，将其都存储进向量数据库，接下来的需求就是：</p>
+<p>输入一个句子，根据Embedding的原理找到相近的数据作为参考依据。</p>
+<p>为了查找和检索效率，产生了向量数据库，对相近向量的检索有特别的优化，提高了效率。</p>
+<h2 id="构建知识库">构建知识库</h2>
+<p>在 检索增强生成（RAG） 框架下，向量数据库主要用于存储和高效检索知识。典型流程如下：</p>
+<p>数据准备</p>
+<ul>
+<li>采集知识（如文档、论文、对话记录）</li>
+<li>预处理文本（分段、去噪、去重）</li>
+</ul>
+<p>生成向量（Embedding）</p>
+<ul>
+<li>使用 Embedding API（如 OpenAI Embeddings、Hugging Face、BERT）</li>
+<li>将文本转换为向量并存入向量数据库</li>
+</ul>
+<p>存入向量数据库（Vector DB）</p>
+<ul>
+<li>选择合适的数据库（如 FAISS、Milvus、Pinecone）</li>
+<li>存储向量及其关联的原始文本</li>
+</ul>
+<p>以下是一个使用例</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">def</span> <span class="token function">create_faiss_index_from_limo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">r"limo_test.json"</span><span class="token punctuation">,</span> <span class="token string">"r"</span><span class="token punctuation">,</span> encoding<span class="token operator">=</span><span class="token string">"utf-8"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
+            data <span class="token operator">=</span> json<span class="token punctuation">.</span>load<span class="token punctuation">(</span>f<span class="token punctuation">)</span>
+            documents <span class="token operator">=</span> <span class="token punctuation">[</span>
+                Document<span class="token punctuation">(</span>
+                    page_content<span class="token operator">=</span><span class="token string-interpolation"><span class="token string">f"问题: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>item<span class="token punctuation">[</span><span class="token string">'instruction'</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span></span><span class="token string">\\n\\n解答: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>item<span class="token punctuation">[</span><span class="token string">'output'</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span></span><span class="token string">"</span></span><span class="token punctuation">,</span>
+                <span class="token punctuation">)</span> 
+                <span class="token keyword">for</span> item <span class="token keyword">in</span> tqdm<span class="token punctuation">(</span>data<span class="token punctuation">,</span> desc<span class="token operator">=</span><span class="token string">"处理数据"</span><span class="token punctuation">)</span>
+            <span class="token punctuation">]</span>
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"加载数据时出错: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>e<span class="token punctuation">&#125;</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">None</span>
+    
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        embedding <span class="token operator">=</span> OpenAIEmbeddings<span class="token punctuation">(</span>
+            model<span class="token operator">=</span><span class="token string">"text-embedding-3-large"</span><span class="token punctuation">,</span>
+            openai_api_key<span class="token operator">=</span>key<span class="token punctuation">)</span>
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"创建Embeddings模型时出错: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>e<span class="token punctuation">&#125;</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">None</span>
+    
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        vectorstore <span class="token operator">=</span> FAISS<span class="token punctuation">.</span>from_documents<span class="token punctuation">(</span>documents<span class="token punctuation">,</span> embedding<span class="token punctuation">)</span>
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"构建FAISS索引时出错: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>e<span class="token punctuation">&#125;</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">None</span>
+    
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        vectorstore<span class="token punctuation">.</span>save_local<span class="token punctuation">(</span><span class="token string">"faiss_index"</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> vectorstore
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"保存索引时出错: </span><span class="token interpolation"><span class="token punctuation">&#123;</span>e<span class="token punctuation">&#125;</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token boolean">None</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="使用知识库">使用知识库</h2>
+<p>查询 &amp; 召回（Retrieval）</p>
+<ul>
+<li>用户输入问题（转换为向量）</li>
+<li>在向量数据库中进行相似度搜索（如余弦相似度）</li>
+<li>召回最相关的知识片段</li>
+</ul>
+<p>最后将检索到的知识提供给大模型作为参考。</p>
+<h1>使用Langchain进行实践</h1>
+<p>Langchain集成了RAG的整个流程,</p>
+<p>同时，为了满足langchain中模型的使用，修改了llm的类方法</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">class</span> <span class="token class-name">QwenMath</span><span class="token punctuation">(</span>LLM<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    model<span class="token punctuation">:</span> <span class="token builtin">object</span> <span class="token operator">=</span> <span class="token boolean">None</span>
+    tokenizer<span class="token punctuation">:</span> <span class="token builtin">object</span> <span class="token operator">=</span> <span class="token boolean">None</span>
+    max_new_tokens<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">512</span>
+    device<span class="token punctuation">:</span> <span class="token builtin">object</span> <span class="token operator">=</span> torch<span class="token punctuation">.</span>device<span class="token punctuation">(</span><span class="token string">"cuda"</span> <span class="token keyword">if</span> torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>is_available<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">else</span> <span class="token string">"cpu"</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> model_name<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token builtin">super</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>__init__<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+        <span class="token comment"># 加载模型和tokenizer</span>
+        self<span class="token punctuation">.</span>tokenizer <span class="token operator">=</span> AutoTokenizer<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span>model_name<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>model <span class="token operator">=</span> AutoModelForCausalLM<span class="token punctuation">.</span>from_pretrained<span class="token punctuation">(</span>
+            model_name<span class="token punctuation">,</span>
+            torch_dtype<span class="token operator">=</span><span class="token string">"auto"</span><span class="token punctuation">,</span>
+            device_map<span class="token operator">=</span><span class="token punctuation">&#123;</span><span class="token string">""</span><span class="token punctuation">:</span> <span class="token number">0</span><span class="token punctuation">&#125;</span>
+        <span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">chat</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> model<span class="token punctuation">,</span> tokenizer<span class="token punctuation">,</span> msgs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        text <span class="token operator">=</span> tokenizer<span class="token punctuation">.</span>apply_chat_template<span class="token punctuation">(</span>
+            msgs<span class="token punctuation">,</span>
+            tokenize<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span>
+            add_generation_prompt<span class="token operator">=</span><span class="token boolean">True</span>
+        <span class="token punctuation">)</span>
+
+        model_inputs <span class="token operator">=</span> tokenizer<span class="token punctuation">(</span>text<span class="token punctuation">,</span> return_tensors<span class="token operator">=</span><span class="token string">"pt"</span><span class="token punctuation">,</span> max_length<span class="token operator">=</span><span class="token number">512</span><span class="token punctuation">,</span> truncation<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">.</span>to<span class="token punctuation">(</span>self<span class="token punctuation">.</span>device<span class="token punctuation">)</span>
+
+        generated_ids <span class="token operator">=</span> model<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>
+            <span class="token operator">**</span>model_inputs<span class="token punctuation">,</span>
+            max_new_tokens<span class="token operator">=</span>self<span class="token punctuation">.</span>max_new_tokens<span class="token punctuation">,</span>
+        <span class="token punctuation">)</span>
+        generated_ids <span class="token operator">=</span> <span class="token punctuation">[</span>
+            output_ids<span class="token punctuation">[</span><span class="token builtin">len</span><span class="token punctuation">(</span>input_ids<span class="token punctuation">)</span><span class="token punctuation">:</span><span class="token punctuation">]</span>
+            <span class="token keyword">for</span> input_ids<span class="token punctuation">,</span> output_ids <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>model_inputs<span class="token punctuation">.</span>input_ids<span class="token punctuation">,</span> generated_ids<span class="token punctuation">)</span>
+        <span class="token punctuation">]</span>
+        response <span class="token operator">=</span> tokenizer<span class="token punctuation">.</span>batch_decode<span class="token punctuation">(</span>generated_ids<span class="token punctuation">,</span> skip_special_tokens<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+
+        <span class="token keyword">return</span> response
+
+    <span class="token keyword">def</span> <span class="token function">_call</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> prompt<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> stop<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">"&lt;|user|>"</span><span class="token punctuation">]</span><span class="token punctuation">,</span> run_manager<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token operator">**</span>kwargs<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        msgs <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        <span class="token keyword">for</span> line <span class="token keyword">in</span> prompt<span class="token punctuation">.</span>splitlines<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">if</span> line<span class="token punctuation">.</span>startswith<span class="token punctuation">(</span><span class="token string">"System: "</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                msgs<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">&#123;</span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'system'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> line<span class="token punctuation">[</span><span class="token number">8</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+            <span class="token keyword">elif</span> line<span class="token punctuation">.</span>startswith<span class="token punctuation">(</span><span class="token string">"Human: "</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                msgs<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">&#123;</span><span class="token string">'role'</span><span class="token punctuation">:</span> <span class="token string">'user'</span><span class="token punctuation">,</span> <span class="token string">'content'</span><span class="token punctuation">:</span> line<span class="token punctuation">[</span><span class="token number">7</span><span class="token punctuation">:</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+
+        response <span class="token operator">=</span> self<span class="token punctuation">.</span>chat<span class="token punctuation">(</span>self<span class="token punctuation">.</span>model<span class="token punctuation">,</span> self<span class="token punctuation">.</span>tokenizer<span class="token punctuation">,</span> msgs<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> response
+
+    <span class="token decorator annotation punctuation">@property</span>
+    <span class="token keyword">def</span> <span class="token function">_llm_type</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">str</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token string">"Qwen2"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以下是一个完整使用例：</p>
+<pre class="line-numbers language-python" data-language="python"><code class="language-python"><span class="token keyword">from</span> langchain<span class="token punctuation">.</span>chains <span class="token keyword">import</span> create_history_aware_retriever<span class="token punctuation">,</span> create_retrieval_chain
+<span class="token keyword">from</span> langchain<span class="token punctuation">.</span>chains<span class="token punctuation">.</span>combine_documents <span class="token keyword">import</span> create_stuff_documents_chain
+<span class="token keyword">from</span> langchain_core<span class="token punctuation">.</span>prompts <span class="token keyword">import</span> ChatPromptTemplate<span class="token punctuation">,</span> MessagesPlaceholder
+<span class="token keyword">from</span> QwenMath <span class="token keyword">import</span> QwenMath
+<span class="token keyword">from</span> langchain_community<span class="token punctuation">.</span>vectorstores <span class="token keyword">import</span> FAISS
+
+<span class="token keyword">from</span> ed <span class="token keyword">import</span> MathBERTEmbeddings
+<span class="token keyword">import</span> os
+os<span class="token punctuation">.</span>environ<span class="token punctuation">[</span><span class="token string">"KMP_DUPLICATE_LIB_OK"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token string">"TRUE"</span>
+
+embeddings <span class="token operator">=</span> MathBERTEmbeddings<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># ✅ 1. 创建 LLM</span>
+llm <span class="token operator">=</span> QwenMath<span class="token punctuation">(</span><span class="token string">"Qwen2.5-Math-7B"</span><span class="token punctuation">)</span>
+
+<span class="token comment"># ✅ 2. 创建知识库检索器</span>
+vectorstore <span class="token operator">=</span> FAISS<span class="token punctuation">.</span>load_local<span class="token punctuation">(</span><span class="token string">"faiss_mathbert_index"</span><span class="token punctuation">,</span> embeddings<span class="token punctuation">,</span>
+                               allow_dangerous_deserialization<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>  <span class="token comment"># 你的向量存储</span>
+retriever <span class="token operator">=</span> vectorstore<span class="token punctuation">.</span>as_retriever<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token comment"># ✅ 3. 改写查询，使其带有历史上下文</span>
+contextualize_q_system_prompt <span class="token operator">=</span> <span class="token punctuation">(</span>
+    <span class="token string">"Given a chat history and the latest user question "</span>
+    <span class="token string">"which might reference context in the chat history, "</span>
+    <span class="token string">"formulate a standalone question which can be understood "</span>
+    <span class="token string">"without the chat history. Do NOT answer the question, just "</span>
+    <span class="token string">"reformulate it if needed and otherwise return it as is."</span>
+<span class="token punctuation">)</span>
+contextualize_q_prompt <span class="token operator">=</span> ChatPromptTemplate<span class="token punctuation">.</span>from_messages<span class="token punctuation">(</span>
+    <span class="token punctuation">[</span>
+        <span class="token punctuation">(</span><span class="token string">"system"</span><span class="token punctuation">,</span> contextualize_q_system_prompt<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        MessagesPlaceholder<span class="token punctuation">(</span><span class="token string">"chat_history"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># 这里用于存储聊天历史</span>
+        <span class="token punctuation">(</span><span class="token string">"human"</span><span class="token punctuation">,</span> <span class="token string">"&#123;input&#125;"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># 用户的新问题</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">)</span>
+history_aware_retriever <span class="token operator">=</span> create_history_aware_retriever<span class="token punctuation">(</span>
+    llm<span class="token punctuation">,</span> retriever<span class="token punctuation">,</span> contextualize_q_prompt
+<span class="token punctuation">)</span>
+
+<span class="token comment"># ✅ 4. 让 LLM 结合知识库回答问题</span>
+qa_system_prompt <span class="token operator">=</span> <span class="token punctuation">(</span>
+    <span class="token string">"你是一个数学方面的助手，需要帮助用户解决数学问题，要求答案正确，并且要提供思考步骤。\\n\\n"</span>
+    <span class="token string">"&#123;context&#125;"</span>
+<span class="token punctuation">)</span>
+qa_prompt <span class="token operator">=</span> ChatPromptTemplate<span class="token punctuation">.</span>from_messages<span class="token punctuation">(</span>
+    <span class="token punctuation">[</span>
+        <span class="token punctuation">(</span><span class="token string">"system"</span><span class="token punctuation">,</span> qa_system_prompt<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        MessagesPlaceholder<span class="token punctuation">(</span><span class="token string">"chat_history"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token punctuation">(</span><span class="token string">"human"</span><span class="token punctuation">,</span> <span class="token string">"&#123;input&#125;"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">]</span>
+<span class="token punctuation">)</span>
+question_answer_chain <span class="token operator">=</span> create_stuff_documents_chain<span class="token punctuation">(</span>llm<span class="token punctuation">,</span> qa_prompt<span class="token punctuation">)</span>
+
+<span class="token comment"># ✅ 5. 创建 RAG（检索增强生成）链</span>
+rag_chain <span class="token operator">=</span> create_retrieval_chain<span class="token punctuation">(</span>
+    history_aware_retriever<span class="token punctuation">,</span> question_answer_chain
+<span class="token punctuation">)</span>
+
+<span class="token comment"># ✅ 6. 运行</span>
+chat_history <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>  <span class="token comment"># 用于存储历史消息</span>
+query <span class="token operator">=</span> <span class="token string">"求解Inx＝x-e的解"</span>
+
+result <span class="token operator">=</span> rag_chain<span class="token punctuation">.</span>invoke<span class="token punctuation">(</span><span class="token punctuation">&#123;</span><span class="token string">"input"</span><span class="token punctuation">:</span> query<span class="token punctuation">,</span> <span class="token string">"chat_history"</span><span class="token punctuation">:</span> chat_history<span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>result<span class="token punctuation">[</span><span class="token string">"answer"</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/02/25/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2%E5%A4%A7%E6%A8%A1%E5%9E%8BQwen-math-7b/">本地部署大模型Qwen-math-7b</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/RAG/" rel="tag">RAG</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/03/03/RAG%E7%9A%84%E8%AE%A4%E8%AF%86%E4%B8%8E%E6%9E%84%E5%BB%BA/">RAG的认识与构建</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/25/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2%E5%A4%A7%E6%A8%A1%E5%9E%8BQwen-math-7b/">本地部署大模型Qwen-math-7b</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/17/database-huadb4/">数据库内核实验报告四：查询执行</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/16/learn-database-note13/">数据库管理系统——查询执行</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/09/database-huadb5/">数据库内核实验报告五：查询优化</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/03/learn-database-note12/">数据库管理系统——查询优化</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 10px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
