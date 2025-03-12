@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>灯塔&amp;3D-3D:ICP - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="灯塔&amp;3D-3D:ICP"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>灯塔&amp;3D-3D:ICP</h2>
+            <div class="post-meta">
+                <time class="date">2025.03.12</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>补传一下，好久之前做的。</p>
+<h1><strong>理想下双灯塔求结果点</strong></h1>
+<p>函数原型</p>
+<pre class="line-numbers language-none"><code class="language-none">bool lighthouseGeometryGetPositionFromRayIntersection(const baseStationGeometry_t* geo1, const baseStationGeometry_t* geo2, float angles1[2], float angles2[2], vec3d position, float *position_delta);
+&#x2F;**
+ * @brief Get a normalized vector representing the direction of a ray in world reference frame, based on
+ * sweep angles and base station orientation.
+ *
+ * @param baseStation - Geometry data for the base statsion (position and orientation)
+ * @param angle1 - horizontal sweep angle
+ * @param angle2 - vertical sweep angle
+ * @param ray - (output) the resulting normalized vector
+ *&#x2F;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="提供的数据"><strong>提供的数据</strong></h2>
+<h3 id="灯塔"><strong>灯塔</strong></h3>
+<p>这个函数首先获取了两个<code>baseStationGeometry_t</code>记录了两个灯塔的信息</p>
+<pre class="line-numbers language-none"><code class="language-none">#define vec3d_size 3
+typedef float vec3d[vec3d_size];
+typedef float mat3d[vec3d_size][vec3d_size];
+
+typedef struct &#123;
+  __attribute__((aligned(4))) vec3d origin;
+  __attribute__((aligned(4))) mat3d mat;
+  bool valid;
+&#125; __attribute__((packed)) baseStationGeometry_t;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>vec3d</code>代表了灯塔的具体位置，<code>mat3d</code>存储了三个向量，分别表示了<strong>前向量，上向量，右向量</strong></p>
+<h3 id="角度"><strong>角度</strong></h3>
+<p>每个灯塔的两次扫描会得到两个角度，这两个角度表示的两个面交于一线来表示一条空间直线</p>
+<p>两个灯塔各有两个角度，一共提供四个角度即可。</p>
+<h2 id="计算的结果"><strong>计算的结果</strong></h2>
+<h3 id="结果点"><strong>结果点</strong></h3>
+<p>通过两个灯塔扫描出的点的坐标</p>
+<h3 id="偏差范围"><strong>偏差范围</strong></h3>
+<p>两个灯塔的射线最近距离长度</p>
+<h2 id="计算流程"><strong>计算流程</strong></h2>
+<h3 id="先获取向量"><strong>先获取向量</strong></h3>
+<p>我们有角度a和角度b，角度a代表平面和xoz面的角度，角度b代表平面与xoy平面的角度，可得直线方程</p>
+<p><img src="https://math.now.sh?inline=%5Cbegin%7Barray%7D%7B%7D%20%5Csin%7Ba%7D%5C%20*%20x%20-%20%5Ccos%7Ba%7D%20*%20y%20%3D%200%20%5C%5C%20-%5Csin%7Ba%7D%5C%20*%20x%20%2B%20%5Ccos%7Ba%7D%20*%20z%20%3D%200%20%5C%5C%20%5Cend%7Barray%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>叉乘两个平面的法向量即可获得交线的方向向量p</p>
+<p style="filter: opacity(90%);transform:scale(0.85);text-align:center;"><img src="https://math.now.sh?from=p%20%3D%20%28%5Csin%7Ba%7D%2C-%5Ccos%7Ba%7D%2C0%29%20%5Ctimes%20(-%5Csin%7Bb%7D%2C0%2C%5Ccos%7Bb%7D)%0A"></p><p>再对p进行单位化。此时的p是相对于灯塔，以灯塔作为坐标原点的，需要进行下一步转换。</p>
+<p>利用灯塔的mat3d(记录了灯塔朝向)对该向量进行基变换</p>
+<p><img src="https://math.now.sh?inline=%5Cleft%5B%5Cbegin%7Barray%7D%7Bc%7D%20a_1%20%26%20b_1%20%26%20c_1%20%5C%5C%20a_2%20%26%20b_2%20%26%20c_2%20%5C%5C%20a_3%20%26%20b_3%20%26%20c_3%20%5Cend%7Barray%7D%5Cright%5D%20%5Cleft%5B%5Cbegin%7Barray%7D%7Bc%7D%20p_1%20%20%5C%5C%20p_2%20%20%5C%5C%20p_3%20%5Cend%7Barray%7D%5Cright%5D%20%3D%20%5Cleft%5B%5Cbegin%7Barray%7D%7Bc%7D%20d_1%20%20%5C%5C%20d_2%20%20%5C%5C%20d_3%20%5Cend%7Barray%7D%5Cright%5D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>此时的向量d就被转化为了绝对向量，是基于地面的。</p>
+<pre class="line-numbers language-none"><code class="language-none">void lighthouseGeometryGetRay(const baseStationGeometry_t* baseStationGeometry, const float angleH, const float angleV, vec3d ray) &#123;
+    vec3d a &#x3D; &#123;arm_sin_f32(angleH), -arm_cos_f32(angleH), 0&#125;;  &#x2F;&#x2F; Normal vector to X plane
+    vec3d b &#x3D; &#123;-arm_sin_f32(angleV), 0, arm_cos_f32(angleV)&#125;;  &#x2F;&#x2F; Normal vector to Y plane
+    &#x2F;&#x2F; 获取两个面  两个面的交线就是直线
+    vec3d raw_ray &#x3D; &#123;&#125;;
+    vec_cross_product(b, a, raw_ray); &#x2F;&#x2F; Intersection of two planes -&gt; ray vector.
+    &#x2F;&#x2F; 方向向量
+    float len &#x3D; vec_length(raw_ray);
+    arm_scale_f32(raw_ray, 1 &#x2F; len, raw_ray, vec3d_size); &#x2F;&#x2F; Normalize raw ray length.
+    &#x2F;&#x2F; 单位化方向向量
+    arm_matrix_instance_f32 source_rotation_matrix &#x3D; &#123;3, 3, (float32_t *)baseStationGeometry-&gt;mat&#125;;
+    arm_matrix_instance_f32 ray_vec &#x3D; &#123;3, 1, raw_ray&#125;;
+    arm_matrix_instance_f32 ray_rotated_vec &#x3D; &#123;3, 1, ray&#125;;
+    mat_mult(&amp;source_rotation_matrix, &amp;ray_vec, &amp;ray_rotated_vec);
+    &#x2F;&#x2F; 通过发出面的方向旋转当前向量
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="调整出发点偏移"><strong>调整出发点偏移</strong></h3>
+<p>激光发射器与灯塔坐标有一定的偏移，进行调整。</p>
+<pre class="line-numbers language-none"><code class="language-none">void lighthouseGeometryGetBaseStationPosition(const baseStationGeometry_t* bs, vec3d baseStationPos) &#123;
+    &#x2F;&#x2F; TODO: Make geometry adjustments within base station.
+    vec3d rotated_origin_delta &#x3D; &#123;&#125;;
+    &#x2F;&#x2F;vec3d base_origin_delta &#x3D; &#123;-0.025f, -0.025f, 0.f&#125;;  &#x2F;&#x2F; Rotors are slightly off center in base station.
+    &#x2F;&#x2F; arm_matrix_instance_f32 origin_vec &#x3D; &#123;3, 1, base_origin_delta&#125;;
+    &#x2F;&#x2F; arm_matrix_instance_f32 origin_rotated_vec &#x3D; &#123;3, 1, rotated_origin_delta&#125;;
+    &#x2F;&#x2F; mat_mult(&amp;source_rotation_matrix, &amp;origin_vec, &amp;origin_rotated_vec);
+    baseStationGeometry_t* bs_unconst &#x3D; (baseStationGeometry_t*)bs;
+    arm_add_f32(bs_unconst-&gt;origin, rotated_origin_delta, baseStationPos, vec3d_size);
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="计算结果点"><strong>计算结果点</strong></h3>
+<p>我们有两个基站的坐标以及它们发射出去的向量方向</p>
+<p>此时产生两条射线，由于射线不一定相交，所以只能找到估计点。对于这两个射线的最短距离的线段，估计点就是这个线段的中点。</p>
+<p>线段AB有点A在射线1上，点B在射线2上，容易理解A是在射线1上距离B最近的点，易得AB垂直于两射线。</p>
+<p>设p1为射线1(灯塔1)的起始点，p2为射线2(灯塔2)的起始点，对于射线1上的点A有</p>
+<p>OA = Op1 + t1 * d1</p>
+<p>OB = Op2 + t2 * d2</p>
+<p>上式同理(t1和t2都是待计算的值)</p>
+<p>有以下推导</p>
+<p><img src="https://math.now.sh?inline=p_1%20%2B%20t_1d_1%20%2B%20AB%20%3D%20p_2%20%2B%20t_2d_2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=t_1d_1%3D%20p_2%20%2B%20t_2d_2%20-%20p_1%20-%20AB" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=t_1d_1%20%5Ctimes%20d_2%20%3D%20%28p_2%20%2B%20t_2d_2%20-%20p_1%20-%20AB%29%20%5Ctimes%20d_2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=t_1%28d_1%20%5Ctimes%20d_2%29%20%3D%20(p_2%20-%20p_1)%20%5Ctimes%20d_2%20%2B%20t_2(d_2%5Ctimes%20d_2)%20-%20AB%20%5Ctimes%20d_2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=t_1%28d_1%20%5Ctimes%20d_2%29%20%3D%20(p_2%20-%20p_1)%20%5Ctimes%20d_2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=t_1%20%3D%20%5Cfrac%7B%28(p_2%20-%20p_1%29%20%5Ctimes%20d_2)%5Ccdot%20(d_1%20%5Ctimes%20d_2)%7D%7B%7C%7Cd_1%20%5Ctimes%20d_2%7C%7C%5E2%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=t_2%20%3D%20%5Cfrac%7B%28(p_2%20-%20p_1%29%20%5Ctimes%20d_1)%5Ccdot%20(d_1%20%5Ctimes%20d_2)%7D%7B%7C%7Cd_1%20%5Ctimes%20d_2%7C%7C%5E2%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>有了t1和t2，AB点的值就得出来了，</p>
+<p>再求AB两点的中点即为答案点。</p>
+<pre class="line-numbers language-none"><code class="language-none">static bool intersect_lines(vec3d orig1, vec3d vec1, vec3d orig2, vec3d vec2, vec3d res, float *dist) &#123;
+
+    vec3d w0 &#x3D; &#123;&#125;;
+    arm_sub_f32(orig1, orig2, w0, vec3d_size);
+
+    float a, b, c, d, e;
+    arm_dot_prod_f32(vec1, vec1, vec3d_size, &amp;a);
+    arm_dot_prod_f32(vec1, vec2, vec3d_size, &amp;b);
+    arm_dot_prod_f32(vec2, vec2, vec3d_size, &amp;c);
+    arm_dot_prod_f32(vec1, w0, vec3d_size, &amp;d);
+    arm_dot_prod_f32(vec2, w0, vec3d_size, &amp;e);
+
+    float denom &#x3D; a * c - b * b;
+    &#x2F;&#x2F; 求|vec1 x vec2|^2的值，越小越相近
+
+    if (fabsf(denom) &lt; 1e-5f) &#123;
+        return false;
+    &#125;
+    &#x2F;&#x2F; 可能基站过近，两个向量几乎重合，无法计算
+
+    &#x2F;&#x2F; Closest point to 2nd line on 1st line
+    float t1 &#x3D; (b * e - c * d) &#x2F; denom;
+    vec3d pt1 &#x3D; &#123;&#125;;
+    arm_scale_f32(vec1, t1, pt1, vec3d_size);
+    arm_add_f32(pt1, orig1, pt1, vec3d_size);
+
+    &#x2F;&#x2F; Closest point to 1st line on 2nd line
+    float t2 &#x3D; (a * e - b * d) &#x2F; denom;
+    vec3d pt2 &#x3D; &#123;&#125;;
+    arm_scale_f32(vec2, t2, pt2, vec3d_size);
+    arm_add_f32(pt2, orig2, pt2, vec3d_size);
+
+    &#x2F;&#x2F; Result is in the middle
+    vec3d tmp &#x3D; &#123;&#125;;
+    arm_add_f32(pt1, pt2, tmp, vec3d_size);
+    arm_scale_f32(tmp, 0.5f, res, vec3d_size);
+
+    &#x2F;&#x2F; Dist is distance between pt1 and pt2
+    arm_sub_f32(pt1, pt2, tmp, vec3d_size);
+    *dist &#x3D; vec_length(tmp);
+
+    return true;
+&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>3D-3D:ICP 推导</h1>
+<p>激光SLAM（没有点和点之间的匹配）</p>
+<p>先验：确定匹配关系</p>
+<p>给定了点Pi和Qi，计算刚体变换Rt使得 RPi + T≈Qi</p>
+<p>优化问题：（使得误差最小）</p>
+<p><img src="https://math.now.sh?inline=f%28R%2C%20t%29%3D%5Csum%5E%7Bn%7D_%7Bi%20%3D%201%7D%5Cfrac%7B1%7D%7B2%7D%20%7C%7CRP_i%20%2B%20t%20-%20q_i%7C%7C%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>设最优解为(R*, t*)</p>
+<p>由最优化理论易得最优解在一阶导数为0</p>
+<p><img src="https://math.now.sh?inline=%5Cfrac%7B%5Cpartial%20f%7D%7B%5Cpartial%20t%7D%20%3D%20%5Csum%5E%7Bn%7D*%7Bi%20%3D%201%7D%28Rp_i%20%2B%20t%20-%20q_i%29*" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=%5Cfrac%7B%5Cpartial%20f%7D%7B%5Cpartial%20t%7D%28R%5E%5C*%2C%20t%5E%5C*%29%20%3D%20%5Csum%5E%7Bn%7D*%7Bi%20%3D%201%7D(R%5E*p_i%20%2B%20t%5E*%20-%20q_i)%20%3D%200" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=R%5E*%28%5Csum%5E%7Bn%7D_%7Bi%20%3D%201%7Dpi%29%20%2B%20nt%5E*%20%3D%20%5Csum%5E%7Bn%7D*%7Bi%20%3D%201%7Dq_i*" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=R%5E%5C*%28%5Cfrac%7B1%7D%7Bn%7D%5Csum%5E%7Bn%7D*%7Bi%20%3D%201%7Dpi%29%20%2B%20t%5E*%20%3D%20%5Cfrac%7B1%7D%7Bn%7D%5Csum%5E%7Bn%7D*%7Bi%20%3D%201%7Dq_i" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">*</p>
+<p>$ 记C_p = \frac{1}{n}\sum^{n}<em>{i = 1}pi，C_q = \frac{1}{n}\sum^{n}</em>{i = 1}q_i$</p>
+<p><img src="https://math.now.sh?inline=%5Cfrac%7B1%7D%7Bn%7D%5Csum%5E%7Bn%7D%7Bi%20%3D%201%7D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"> pi实际上就是点云A的质心<img src="https://math.now.sh?inline=%5Cfrac%7B1%7D%7Bn%7D%5Csum%5E%7Bn%7D_%7Bi%20%3D%201%7Dq_i" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;">也就是点云B的质心可得：<img src="https://math.now.sh?inline=t%5E*%20%3D%20C_q%20-%20R%5E*C_p" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>把t*代入原优化函数</p>
+<p><img src="https://math.now.sh?inline=f%28R%2Ct%29%20%3D%20f(R%2C%20C_q-RC_p)%20%3D%20%5Cfrac%7B1%7D%7B2%7D%5Csum%5En_%7Bi%20%3D%201%7D%7C%7CRp_i%20%2B%20C_q%20-%20RC_p%20-%20q_i%7C%7C%5E2%5C%5C%20%3D%20%5Cfrac%7B1%7D%7B2%7D%5Csum%5En_%7Bi%20%3D%201%7D%7C%7CR(p_i%20-%20C_p)%20-%20(q_i%20-%20C_q)%7C%7C%5E2" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>几何意义上相当于每个点去掉点云的质心，把点云移动到了原点附近，之后的pi和qi记为减去质心的点。</p>
+<p><img src="https://math.now.sh?inline=F%28R%29%20%3D%20%5Cfrac%7B1%7D%7B2%7D%5Csum%5En_%7Bi%20%3D%201%7D%7C%7CRp_i%20-%20q_i%7C%7C%5E2%5C%5C%20%3D%20%5Csum%5En_%7Bi%20%3D%201%7D%7C%7CRp_i%7C%7C%5E2%20%2B%20%7C%7Cq_i%7C%7C%5E2%20-%202%3CRp_i%2C%20q_i%3E" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>我们要试F®最小化，也就是让<code>&lt;Rpi, qi&gt;</code>最大化T®即可</p>
+<p><img src="https://math.now.sh?inline=T%28R%29%20%3D%20%5Csum%5En_%7Bi%20%3D%201%7D%3CRp_i%2C%20q_i%3E%3D%5Csum%5En_%7Bi%20%3D%201%7Dq_i%5ETRp_i" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p><img src="https://math.now.sh?inline=%3D%20%5Csum%5En_%7Bi%20%3D%201%7D%20trace%28p_iq_i%5ETR%29%20%3D%20trace%5B(%5Csum%5En_%7Bi%20%3D%201%7Dp_iq_i%5ET)R%5D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>记矩阵<img src="https://math.now.sh?inline=A%20%3D%20%5Csum%5En_%7Bi%20%3D%201%7Dp_iq_i%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>A的SVD分解有 <img src="https://math.now.sh?inline=A%20%3D%20U%5CSigma%20V%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>原式<img src="https://math.now.sh?inline=%3D%20trace%5BU%5CSigma%20V%5ETR%5D%20%3D%20trace%5B%5CSigma%20V%5ETRU%5D" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<p>已知V^TRU依旧是一个正交矩阵，可得要使原式值最大，<img src="https://math.now.sh?inline=V%5ETRU%20%3D%20E%5C%5C%20%E5%BE%97%E5%88%B0%20R%20%3D%20V%20U%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+<blockquote>
+<p>trace(AB) = trace(BA)</p>
+</blockquote>
+<p><img src="https://math.now.sh?inline=R%20%3D%20V%20U%5ET" style="filter: opacity(90%);transform:scale(0.85);text-align:center;display:inline-block;margin: 0;"></p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/03/05/rust-module-diesel/">rust库学习——Diesel</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/3D-3D-ICP/" rel="tag">3D-3D:ICP</a><a class="-none-link" href="/tags/LightHouse/" rel="tag">LightHouse</a><a class="-none-link" href="/tags/SLAM/" rel="tag">SLAM</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/03/12/light-house-ICP3D/">灯塔&3D-3D:ICP</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/03/05/rust-module-diesel/">rust库学习——Diesel</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/03/03/RAG%E7%9A%84%E8%AE%A4%E8%AF%86%E4%B8%8E%E6%9E%84%E5%BB%BA/">RAG的认识与构建</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/25/%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2%E5%A4%A7%E6%A8%A1%E5%9E%8BQwen-math-7b/">本地部署大模型Qwen-math-7b</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/17/database-huadb4/">数据库内核实验报告四：查询执行</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/02/16/learn-database-note13/">数据库管理系统——查询执行</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 10px;">DNS</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 10px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
