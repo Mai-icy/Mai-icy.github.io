@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>计算机网络笔记11——网络层重点 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="计算机网络笔记11——网络层重点"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>计算机网络笔记11——网络层重点</h2>
+            <div class="post-meta">
+                <time class="date">2025.06.16</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>因特网的网络层提供了单一的服务, 称为尽力而为服务（Best-Effort Service）. 就主机到主机数据报的传递而论, 因特网的服务模型什么也保证不了, 传送的分组既不能保证以它们发送的顺序被接收, 也不能保证它们最终交付; 既不能保证端到端时延, 也不能保证有最小的带宽.</p>
+<h1>路由算法</h1>
+<h2 id="静态">静态</h2>
+<ul>
+<li>手动配置，适用于小型网络或拓扑不变的环境</li>
+<li>优点：简单、开销小</li>
+<li>缺点：不具备容错性，无法动态适应拓扑变化</li>
+</ul>
+<h3 id="最长前缀匹配（Longest-Prefix-Match-LPM）">最长前缀匹配（Longest Prefix Match, LPM）</h3>
+<ul>
+<li>当目标 IP 地址匹配多条路由时，选择“网络前缀最长”的那条（即掩码最长）。</li>
+<li>路由器查找路由表时优先选择匹配位数（子网掩码选择部分）最多的路由。</li>
+</ul>
+<p>例子：</p>
+<table>
+<thead>
+<tr>
+<th>目标地址</th>
+<th>匹配路由前缀</th>
+<th>子网掩码</th>
+<th>匹配位数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192.168.1.15</td>
+<td>192.168.0.0/16</td>
+<td>/16</td>
+<td>16</td>
+</tr>
+<tr>
+<td></td>
+<td>192.168.1.0/24</td>
+<td>/24</td>
+<td>24</td>
+</tr>
+<tr>
+<td></td>
+<td>192.168.1.0/25</td>
+<td>/25</td>
+<td>25 ✅</td>
+</tr>
+</tbody>
+</table>
+<p>→ 最终选中 <code>192.168.1.0/25</code>，因为它有最长的前缀匹配（25位）。</p>
+<p>其中<code>0.0.0.0/0</code> 是所有 IP 的匹配“兜底项”，当没有其他更具体路由可匹配时才会使用。</p>
+<h2 id="动态">动态</h2>
+<ul>
+<li>依据网络拓扑动态变化自动更新每个节点的路由表</li>
+<li>分类：
+<ul>
+<li>距离矢量（Distance Vector）算法：如 RIP</li>
+<li>链路状态（Link State）算法：如 OSPF</li>
+</ul>
+</li>
+<li>优点：自动适应网络变化</li>
+<li>缺点：收敛时间、资源消耗大于静态</li>
+</ul>
+<h1>层次路由</h1>
+<ul>
+<li>将网络划分为自治系统（AS）或区域，减少路由表规模</li>
+</ul>
+<p>既然有了区域，那就有了内外之分，为了维护路由，我们需要两个路由表：</p>
+<ul>
+<li>IGP 路由表：负责内部网络，例如对于3c来说，其IGP路由表负责3a, 3b</li>
+<li>BGP 路由表：专门用来管理和选择外部路径（前缀到 AS 的路径）负责除了自己之外的AS</li>
+</ul>
+<p><img src="/2025/06/16/computer-network-note11/1.png" alt="image.png"></p>
+<p>如图所示（假设虚线不存在），我们有四个 AS 群，连接关系：AS4 — AS3 — AS1 — AS2</p>
+<p>每个 AS 群内部的 IGP 路由表都由他们自己设定的 IGP 协议来管理：RIP 或 OSPF 都可以。</p>
+<p>但对于 BGP 表来说。3a, 3b, 3c 都有自己的BGP表，他们如何动态更新BGP表就涉及BGP的两个子协议：iBGP 和 eBGP。</p>
+<ul>
+<li>iBGP：负责AS内的BGP表传播</li>
+<li>eBGP：负责AS之间的BGP表传播</li>
+</ul>
+<p>例子：</p>
+<p>假定AS3和AS2正在运行其AS内部选路协议OSPF，AS1和AS4正在运行其AS内部选路协议RIP。</p>
+<p>假定AS间选路协议使用的是eBGP和iBGP。（前缀 x 在 AS4 的 4a ）</p>
+<p>1）路由器3c从OSPF、RIP、eBGP或iBGP中哪个选路协议学习到了前缀x? 2）路由器3a从OSPF、RIP、eBGP或iBGP中哪个选路协议学习到了前缀x?   3）路由器1c从OSPF、RIP、eBGP或iBGP中哪个选路协议学习到了前缀x? 4）路由器1d从OSPF、RIP、eBGP或iBGP中哪个选路协议学习到了前缀x?</p>
+<p>分析：</p>
+<p>前缀x对于这四个题的路由器而言，都属于外部的数据，故存在BGP表中，只涉及BGP协议</p>
+<p>1）3c是从AS4直接获取的，故是eBGP。</p>
+<p>2）3a是从3b的表获取的，故是iBGP。</p>
+<p>3）1c是从AS3直接获取的，故是eBGP。</p>
+<p>4）1d是从1a的表获取的，故是iBGP。</p>
+<h1>IPv6</h1>
+<ul>
+<li>地址长度：128位（16字节）</li>
+<li>首部固定40字节，简化处理</li>
+<li>不使用广播，改为组播/任播</li>
+<li>解决 IPv4 地址枯竭问题，支持更多设备接入</li>
+</ul>
+<h1>IPv4</h1>
+<ul>
+<li>IPv4地址长度：32位</li>
+<li>首部结构（20B）：
+<ul>
+<li>版本、首部长度、服务类型、总长度</li>
+<li>标识、标志、片偏移（单位为8字节）</li>
+<li>生存时间（TTL）、协议、首部校验和</li>
+<li>源地址、目的地址</li>
+</ul>
+</li>
+</ul>
+<h2 id="IP分类">IP分类</h2>
+<p>IP在初期设计情况下，是依据点来判断当前所处的网络。</p>
+<p>早期情况下，希望每个设备都有一个ip，以方便连接，但也希望一个大机构或者是一个很大的地区，使用一个网络号，便于管理。</p>
+<p>于是有以下的分类：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>公网 IP 范围（首字节）</th>
+<th>默认子网掩码</th>
+<th>ip数量</th>
+<th>网络数量</th>
+<th>前面固定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A 类</td>
+<td><code>1.0.0.0 ~ 126.255.255.255</code>（不含私有和保留）</td>
+<td><code>255.0.0.0</code></td>
+<td>2²⁴ = 16,777,216</td>
+<td>126</td>
+<td>0xxx xxxx</td>
+</tr>
+<tr>
+<td>B 类</td>
+<td><code>128.0.0.0 ~ 191.255.255.255</code>（不含私有）</td>
+<td><code>255.255.0.0</code></td>
+<td>2¹⁶ = 65,536</td>
+<td>16,384</td>
+<td>10xx xxxx</td>
+</tr>
+<tr>
+<td>C 类</td>
+<td><code>192.0.0.0 ~ 223.255.255.255</code>（不含私有）</td>
+<td><code>255.255.255.0</code></td>
+<td>2⁸ = 256</td>
+<td>2,097,152</td>
+<td>110x xxxx</td>
+</tr>
+</tbody>
+</table>
+<p>同时，还有许多私网ip：</p>
+<p>私网IP为组织和机构预留了一片“非公网、可重复使用”的地址空间，方便他们内部自由使用IP地址，不必从ISP或IANA申请大量公网地址。私网ip是不能连入公用网络的。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>私有地址范围</th>
+<th>子网掩码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A 类</td>
+<td><code>10.0.0.0 ~ 10.255.255.255</code></td>
+<td><code>255.0.0.0</code></td>
+</tr>
+<tr>
+<td>B 类</td>
+<td><code>172.16.0.0 ~ 172.31.255.255</code></td>
+<td><code>255.240.0.0</code></td>
+</tr>
+<tr>
+<td>C 类</td>
+<td><code>192.168.0.0 ~ 192.168.255.255</code></td>
+<td><code>255.255.0.0</code></td>
+</tr>
+</tbody>
+</table>
+<p>可见A类网络的ip数量非常多，但是全世界只有126个，美国作为发明者，直接分配了几个例如：</p>
+<table>
+<thead>
+<tr>
+<th>A 类网络号</th>
+<th>分配单位</th>
+<th>备注说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>3.0.0.0/8</code></td>
+<td>General Electric（通用电气）</td>
+<td>美国公司</td>
+</tr>
+<tr>
+<td><code>4.0.0.0/8</code></td>
+<td>Level 3 Communications（现 Lumen）</td>
+<td>网络运营商</td>
+</tr>
+<tr>
+<td><code>6.0.0.0/8</code></td>
+<td>美国陆军</td>
+<td>政府机构</td>
+</tr>
+<tr>
+<td><code>7.0.0.0/8</code></td>
+<td>美国国防部</td>
+<td>政府机构</td>
+</tr>
+<tr>
+<td><code>8.0.0.0/8</code></td>
+<td>Level 3（后被转给 Cloudflare）</td>
+<td><code>8.8.8.8</code> 是 Google DNS</td>
+</tr>
+<tr>
+<td><code>9.0.0.0/8</code></td>
+<td>IBM（国际商业机器公司）</td>
+<td>大型 IT 企业</td>
+</tr>
+<tr>
+<td><code>11.0.0.0/8</code></td>
+<td>美国国防部</td>
+<td>军方用途</td>
+</tr>
+<tr>
+<td><code>12.0.0.0/8</code></td>
+<td>AT&amp;T（美国电话电报公司）</td>
+<td>电信运营商</td>
+</tr>
+<tr>
+<td><code>13.0.0.0/8</code></td>
+<td>Xerox（施乐公司）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>17.0.0.0/8</code></td>
+<td>Apple Inc.（苹果公司）</td>
+<td>所有 <code>17.x.x.x</code> 都归苹果</td>
+</tr>
+<tr>
+<td><code>18.0.0.0/8</code></td>
+<td>MIT（麻省理工学院）</td>
+<td>教育科研用途</td>
+</tr>
+</tbody>
+</table>
+<p>于是如何判断这个ip源自于哪，属于什么机构，就只要判断ipv4的第一个数字就可以。</p>
+<p>同样，如果这个机构没有这么大，我们就可以给他们分配B类的网络。</p>
+<p>在开发者早期并没有想到网络发展如此之快，ip 资源消耗超出预想。</p>
+<p>而且，许多机构拿到一个 B 类网络（约 6 万多个地址），但实际只使用几百个，导致大量地址闲置。再加上路由表庞大，固定类地址导致路由表条目过多，给路由器带来压力。</p>
+<p>因此，这种划分方式太过奢侈，提出了子网划分。</p>
+<h2 id="子网划分">子网划分</h2>
+<p>子网划分就是在原有的网络号和主机号之间，借用主机号的一部分作为子网号，从而将一个大网络划分成多个更小的子网。</p>
+<p>我们不再使用那三个点来判断当前ip属于哪一个网络了，通过子网划分。</p>
+<p>例如，一个 B 类地址默认掩码是 255.255.0.0，但通过子网掩码可以调整为 255.255.255.0，将网络划分成更多子网。例如可以把B变成多个C一样。</p>
+<p>这样，这个机构就不会浪费太多资源，可以把多的资源分给其他机构。</p>
+<h2 id="CIDR（Classless-Inter-Domain-Routing，无类域间路由）">CIDR（Classless Inter-Domain Routing，无类域间路由）</h2>
+<p>出现时间：1993年由RFC 1519正式提出。</p>
+<p>在CIDR出现之前，地址划分全依赖ABCD，未免有些过于死板了，而且ABCD每一类网络的ip数量天差地别，数量差距也有百倍。</p>
+<p>为了更灵活和让机构的ip使用更加节俭，于是打破了固定A/B/C类地址划分，允许灵活指定任意长度的网络前缀（如/20、/22），提高地址利用率，减少路由表膨胀。</p>
+<p>如 192.168.0.0/22 可聚合多个C类地址</p>
+<h2 id="VLSM（Variable-Length-Subnet-Mask，变长子网掩码）">VLSM（Variable Length Subnet Mask，变长子网掩码）</h2>
+<p>出现时间：概念基本与CIDR同步或稍晚，常在CIDR基础上被推广使用。</p>
+<p>作用：允许在同一网络内部使用不同长度的子网掩码，实现更灵活细粒度的子网划分。</p>
+<p>特点：是一种子网划分技术，实质上是CIDR在局域网或自治系统内部的应用</p>
+<h2 id="NAT（网络地址转换）">NAT（网络地址转换）</h2>
+<p>再到现在，ipv4根本不可能够用，秉承着先到先得。老美坏的要死，自己国家拥有约15亿个ip（41.6%），而作为后来者的十几亿人口的CN就只有3亿（9.3%）根本不可能够用呀。</p>
+<p>于是提出了NAT技术。这时，之前空留的私有IP就发挥作用了。</p>
+<p>技术主要功能：</p>
+<ul>
+<li>将私有地址转换为公网地址</li>
+<li>类型：静态NAT、动态NAT、端口地址转换（PAT）</li>
+</ul>
+<p>将公网IP作为一个出口，其下面可以承载一个全是内网IP的网络，所有从这个出口出去的包都会被NAT设备把源ip从原有的私有改为这个出口的ip。</p>
+<p>介于十分便于管理并且省下一堆ip，甚至可以一个机构内部全使用内网ip，然后再依赖一个公网ip作为出口。</p>
+<h2 id="路由聚合">路由聚合</h2>
+<p>路由聚合（Route Aggregation），也叫路由汇总（Route Summarization），是指在路由表中将多个连续的网络前缀合并成一个更大的前缀，从而减少路由条目数量、优化路由器性能、降低带宽开销的技术。</p>
+<p>例如：</p>
+<p>假设一个 ISP 有以下四个子网：</p>
+<pre class="line-numbers language-none"><code class="language-none">192.168.0.0&#x2F;24
+192.168.1.0&#x2F;24
+192.168.2.0&#x2F;24
+192.168.3.0&#x2F;24<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这些子网在路由表中原本会占据 4 条路由项。</p>
+<p>但实际上，这些子网是连续的，可以聚合成一个更大的网络：</p>
+<pre class="line-numbers language-none"><code class="language-none">192.168.0.0&#x2F;22<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这个 /22 网络范围包含从 <code>192.168.0.0</code> 到 <code>192.168.3.255</code> 的所有地址。</p>
+<h1>ARP（地址解析协议）</h1>
+<p>（不算严格意义的网络层协议，处于网络层和链路层之间）</p>
+<p>在以太网中，数据帧是通过 MAC 地址发送的，但我们通常只知道对方的 IP 地址。</p>
+<p>所以，在发送数据之前，主机会先通过 ARP 找到对应的 MAC 地址，用它来构造以太网帧，完成数据传输。</p>
+<p>ARP只用于局域网，互联网中通常是多个路由器之间的连接网络，通常使用路由表。</p>
+<h2 id="ARP-工作流程">ARP 工作流程</h2>
+<p>举个例子：<code>主机 A</code> 想向 IP 地址为 <code>192.168.1.2</code> 的主机发送数据：</p>
+<ol>
+<li>查缓存：A 先查自己有没有 <code>192.168.1.2</code> 的 MAC 地址（ARP 缓存表）。</li>
+<li>没有就广播：A 广播一个 ARP 请求包：（广播帧会发给局域网内所有设备）</li>
+</ol>
+<p>“谁是 192.168.1.2？请告诉我你的 MAC！”</p>
+<ol>
+<li>目标回应：192.168.1.2 的主机会单播回应：</li>
+</ol>
+<p>“我是 192.168.1.2，我的 MAC 是 aa:bb:cc:dd:ee:ff”</p>
+<ol>
+<li>更新缓存并发送数据：A 收到回应后，将 IP 和 MAC 绑定，写入 ARP 缓存表，然后开始发送数据。</li>
+</ol>
+<p>举个例子：</p>
+<p>主机A发送IP数据报给主机B，途中经过了5个路由器。试问在IP数据报的发送过程中总共使用了几次ARP？</p>
+<p>分析每一跳（假设所有链路都是以太网）：</p>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>发送方</th>
+<th>接收方</th>
+<th>发送方是否需要 ARP</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>主机 A</td>
+<td>路由器 R1</td>
+<td>✅ 是，查找默认网关 MAC</td>
+</tr>
+<tr>
+<td>2</td>
+<td>R1</td>
+<td>R2</td>
+<td>✅ 是，查找 R2 的 MAC</td>
+</tr>
+<tr>
+<td>3</td>
+<td>R2</td>
+<td>R3</td>
+<td>✅ 是，查找 R3 的 MAC</td>
+</tr>
+<tr>
+<td>4</td>
+<td>R3</td>
+<td>R4</td>
+<td>✅ 是，查找 R4 的 MAC</td>
+</tr>
+<tr>
+<td>5</td>
+<td>R4</td>
+<td>R5</td>
+<td>✅ 是，查找 R5 的 MAC</td>
+</tr>
+<tr>
+<td>6</td>
+<td>R5</td>
+<td>主机 B</td>
+<td>✅ 是，查找 B 的 MAC</td>
+</tr>
+</tbody>
+</table>
+<p>故使用了6次。</p>
+<h1>ICMP（互联网控制消息协议）</h1>
+<ul>
+<li>ICMP 是 IP 协议族中的一个辅助协议，主要用于在网络设备之间传递控制信息和错误报告。</li>
+<li>它不传输数据，只用于报告网络状态和诊断问题。</li>
+<li>工作在网络层（OSI 模型的第三层），通常封装在 IP 数据包中传输。</li>
+</ul>
+<h3 id="基础概念">基础概念</h3>
+<ul>
+<li>ICMP 属于网络层协议，是 IP 协议的一个“辅助协议”。</li>
+<li>用于在主机与路由器之间传递 控制信息 和 差错报告，不是传输用户数据。</li>
+<li>RFC 792 定义了 ICMP 协议。</li>
+</ul>
+<p>ICMP 报文主要分为两类：</p>
+<h3 id="差错报告报文（Error-Messages）">差错报告报文（Error Messages）</h3>
+<p>用于报告传输过程中出现的问题，不用于纠正错误。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>名称</th>
+<th>功能说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>目的不可达（Destination Unreachable）</td>
+<td>通知无法到达目标地址</td>
+</tr>
+<tr>
+<td>4</td>
+<td>源站抑制（Source Quench）</td>
+<td>告诉源主机降低发送速率（已弃用）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>重定向（Redirect）</td>
+<td>告诉主机改用其他路由</td>
+</tr>
+<tr>
+<td>11</td>
+<td>超时（Time Exceeded）</td>
+<td>报告 IP 数据包生命周期（TTL）到期</td>
+</tr>
+<tr>
+<td>12</td>
+<td>参数问题（Parameter Problem）</td>
+<td>报告 IP 报头字段出错</td>
+</tr>
+</tbody>
+</table>
+<h3 id="查询报文（Query-Messages）">查询报文（Query Messages）</h3>
+<p>用于诊断和网络信息查询。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>名称</th>
+<th>功能说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0/8</td>
+<td>回送应答/请求（Echo Reply/Request）</td>
+<td>用于 ping 工具，检测主机是否可达</td>
+</tr>
+<tr>
+<td>13/14</td>
+<td>时间戳请求/应答</td>
+<td>检测网络时延（很少用）</td>
+</tr>
+<tr>
+<td>10/9</td>
+<td>路由请求/应答</td>
+<td>查询路由器可达性（已弃用）</td>
+</tr>
+</tbody>
+</table>
+<h1>路由协议</h1>
+<p>接下来来详细介绍路由协议</p>
+<h2 id="IGP（内部网关协议）">IGP（内部网关协议）</h2>
+<p>下面说明的两个协议都是需要维护自己的路由表</p>
+<p>路由表需要记录的数据（简化例子）：</p>
+<table>
+<thead>
+<tr>
+<th>目的网络 (Destination)</th>
+<th>下一跳 (Next Hop)</th>
+<th>成本 (Metric)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>B</td>
+<td>1</td>
+</tr>
+<tr>
+<td>B</td>
+<td>C</td>
+<td>2</td>
+</tr>
+<tr>
+<td>C</td>
+<td>D</td>
+<td>3</td>
+</tr>
+<tr>
+<td>D</td>
+<td>E</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="RIP（Routing-Information-Protocol）">RIP（Routing Information Protocol）</h3>
+<p>借助邻居发送的路由表来更新自己的路由表，我们先要厘清一个性质：</p>
+<ul>
+<li>设X = 当前点到邻居的距离，邻居给我的表所有距离+X，就是我收到的数据</li>
+<li>邻居告诉我  他到A的距离 + X = 我经过 邻居 到A的距离</li>
+<li>所以 我到A的最短距离 就是 所有邻居到A + X的最短距离</li>
+</ul>
+<p>那有的人就要问了，如果当前有一条路径断了，我该怎么更新这个距离，可以见下面的行为。</p>
+<p>在合并路由表的时候有以下行为：</p>
+<ol>
+<li>收到某条路由的跳数为16（不可达）时：
+<ul>
+<li>必须立刻将该路由的跳数标记为16（不可达），表示该目的网络现在不可达（出现断路）。</li>
+<li>这个不可达信息要尽快通知所有邻居，防止环路。</li>
+</ul>
+</li>
+<li>其他情况下（跳数&lt;16）：
+<ul>
+<li>从所有邻居收到的到某目的网络的跳数，取最小值 + 1，即选择最短路径。</li>
+</ul>
+</li>
+</ol>
+<p>来一个例子：</p>
+<p>来自B的向量为(5,0,8,12,6,2)；来自D的向量为(16,12,6,0,9,10)；来自E的向量为(7,6,3,9,0,4)。经过测量，C到B,D,E的延迟分别是6，3，5，求C到达所有节点的最短路径和下一跳跃。</p>
+<p><img src="/2025/06/16/computer-network-note11/2.png" alt="image.png"></p>
+<p>分析：</p>
+<p>C经过B（11, 6  , 14, 18, 12,   8）全部+6</p>
+<p>C经过D（19, 15,   9,   3, 12, 13）全部+3</p>
+<p>C经过E（12, 11，8,  14,   5,   9）全部+5</p>
+<p>得到C（11,  6,  0,  3,  5,  8）全部取min</p>
+<p>下一跳：（B, B, 0,  D, E, E, B）</p>
+<p>还要注意的一点是跳数=16就是不可达。</p>
+<p>路由器会在定时+变化触发的时候把自己的路由表发送给邻居。</p>
+<h3 id="OSPF（Open-Shortest-Path-First）">OSPF（Open Shortest Path First）</h3>
+<p>OSPF是链路状态协议，基于“全局拓扑视图”计算最短路径，核心流程：</p>
+<ol>
+<li>每个路由器向同一区域内所有路由器广播自己与邻居的链路状态信息（LSA，链路状态公告）。</li>
+<li>每个路由器收集所有LSA，构建整个网络拓扑图。</li>
+<li>利用Dijkstra算法计算从自己到所有目的地的最短路径。</li>
+<li>生成路由表，确定每个目的地的下一跳。</li>
+</ol>
+<p>主要借助Dijkstra算法。学会Dijkstra就会了。</p>
+<h2 id="EGP（外部网关协议）">EGP（外部网关协议）</h2>
+<h3 id="BGP（Border-Gateway-Protocol）">BGP（Border Gateway Protocol）</h3>
+<ul>
+<li>基于路径向量，应用于自治系统之间</li>
+<li>支持路由策略控制与路径选择</li>
+<li>协议端口号：TCP 179</li>
+</ul>
+<h1>IP组播（Multicast）</h1>
+<h2 id="简介">简介</h2>
+<p>IP组播是一种网络通信方式，允许一台主机（发送者）将数据包发送给一组感兴趣的接收者（组播组），而不是单播（一对一）或广播（一对全网）。</p>
+<h3 id="特点：">特点：</h3>
+<ul>
+<li>一对多通信：发送方只发一份数据，网络设备（路由器/交换机）负责将数据复制转发给所有组成员，节省带宽。</li>
+<li>组播地址：IPv4中，组播地址范围是224.0.0.0到239.255.255.255（D类地址）。</li>
+<li>组成员管理：主机通过协议（如IGMP）加入或离开组播组。</li>
+<li>路由支持：路由器使用组播路由协议（如PIM）在网络中构建转发树，确保数据从源到所有组成员高效传输。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>通信方式</th>
+<th>发送数据量</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单播</td>
+<td>N份</td>
+<td>一对一通信</td>
+</tr>
+<tr>
+<td>广播</td>
+<td>1份</td>
+<td>一对所有，局域网内</td>
+</tr>
+<tr>
+<td>组播</td>
+<td>1份</td>
+<td>一对多，跨网络多接收</td>
+</tr>
+</tbody>
+</table>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/06/15/computer-network-note10/">计算机网络笔记10——传输层重点</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" rel="tag">网络层</a><a class="-none-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" rel="tag">计算机网络</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/06/16/computer-network-note11/">计算机网络笔记11——网络层重点</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/15/computer-network-note10/">计算机网络笔记10——传输层重点</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/08/Java%20Web%20%E6%A6%82%E8%BF%B0%E5%92%8C%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%86/">Java Web 概述和基本认识</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/04/%E5%9F%BA%E4%BA%8EOceanbase%E7%AE%80%E5%8D%95%E6%9E%84%E5%BB%BARAG/">基于 Oceanbase 简单构建RAG</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/29/%E5%9C%A8%20surfacebook2%20%E4%B8%8A%E5%AE%89%E8%A3%85%20ubuntu%20%E5%8F%8C%E7%B3%BB%E7%BB%9F/">在 surfacebook2 上安装 ubuntu 双系统</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/04/21/%E4%BD%BF%E7%94%A8%20Bind%20%E6%90%AD%E5%BB%BA%20DNS%20%E6%9C%8D%E5%8A%A1%E5%99%A8/">使用 Bind 搭建 DNS 服务器</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 10px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
