@@ -302,6 +302,7 @@
 </ul>
 </li>
 </ul>
+<p>指数退避算法用于处理数据冲突后的重传策略：当设备检测到冲突后，它不会立即重发数据，而是等待一个随机时间再尝试。每次连续冲突后，等待时间的上限会按2的指数级增长（如第n次冲突，从0到2ⁿ−1个时隙中随机选择），最多增加到一个预设上限，以避免多台设备频繁同时重传，减小冲突概率。</p>
 <p>特点：</p>
 <ul>
 <li>实时冲突检测，提高可靠性；</li>
@@ -446,6 +447,52 @@
 </ul>
 <p>每当检测到 连续5个1 后，如果下一个是0，就将它删掉还原为原始数据；</p>
 <p>如果下一个是1，则说明这是帧标志字段的部分（<code>01111110</code>），标志着一帧结束或开始。</p>
+<h1>设备</h1>
+<h2 id="网桥">网桥</h2>
+<p>网桥是一种数据链路层（第二层）设备，用于连接两个局域网段，使其作为一个逻辑上的局域网运行。网桥会根据帧中的MAC地址判断是否转发数据帧。</p>
+<h3 id="主要功能">主要功能</h3>
+<ul>
+<li>帧过滤：网桥根据目的MAC地址判断是否将帧转发到另一个网段；</li>
+<li>广播扩散：广播帧会被网桥转发；</li>
+<li>透明工作：对主机透明，不改变数据帧格式。</li>
+</ul>
+<h3 id="工作机制">工作机制</h3>
+<p>网桥维护一张MAC地址表，记录“哪个MAC地址出现在哪个端口”。当帧进入时：</p>
+<ol>
+<li>记录源地址与接收端口；</li>
+<li>检查目的地址是否在表中：
+<ul>
+<li>是：只将帧发往对应端口；</li>
+<li>否：广播帧到所有端口（除了接收端口）</li>
+</ul>
+</li>
+</ol>
+<h2 id="交换机">交换机</h2>
+<p>交换机是网桥的升级版，工作在数据链路层，但性能更高、端口更多。每个端口都拥有专用带宽，不再像集线器那样共享带宽。</p>
+<h3 id="交换机自学习">交换机自学习</h3>
+<p>交换机的“自学习”功能指的是：自动学习并维护 MAC 地址表。具体过程如下：</p>
+<ol>
+<li>当交换机接收到一帧时，记录源MAC地址和进入的端口；</li>
+<li>将该MAC地址加入交换表（或更新记录）；</li>
+<li>这样下次再有帧发往该地址，就知道应该从哪个端口转发。</li>
+</ol>
+<p>这就是为什么我们说交换机“越用越聪明”。</p>
+<h3 id="帧过滤和转发">帧过滤和转发</h3>
+<p>当交换机收到一帧时，会进行如下操作：</p>
+<ol>
+<li>查表过滤（Filter）：
+<ul>
+<li>如果源和目的地址都在同一端口，就丢弃帧（无需转发）；</li>
+</ul>
+</li>
+<li>选择性转发（Forward）：
+<ul>
+<li>若目标地址已知，就定向转发；</li>
+<li>若未知，则广播到除接收端口外的所有端口。</li>
+</ul>
+</li>
+</ol>
+<p>这提高了网络效率，避免了不必要的流量。</p>
 
         </article>
         <section class="post-near">
@@ -513,5 +560,20 @@
 
 <script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
 
-  </body>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
 </html>
