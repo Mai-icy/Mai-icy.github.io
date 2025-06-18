@@ -94,21 +94,6 @@
 <li>累积确认：可批量确认多个报文，每次确认x，代表x+1没收到，x之前的全收到了。</li>
 <li>滑动窗口：与流量控制配合使用</li>
 </ul>
-<h3 id="回退N步">回退N步</h3>
-<p>更早期的方案，对接收方要求低</p>
-<ul>
-<li>发送方维持一个发送窗口，可以连续发送多个数据包（比如 seq=1~5）。</li>
-<li>接收方只按顺序接收，如果中间某个包丢了，就只确认前一个正确的包。</li>
-<li>一旦发生丢包或出错，发送方会回退重传这个包及其后面的所有包。</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://media.pearsoncmg.com/ph/esm/ecs_kurose_compnetwork_8/cw/content/interactiveanimations/go-back-n-protocol/index.html">点我试试</a></p>
-<h3 id="选择重传">选择重传</h3>
-<ul>
-<li>发送方仍可连续发送多个数据包。</li>
-<li>接收方可以缓存乱序到达的数据包，并分别确认每一个。</li>
-<li>只有丢失的那个数据包会被重传，而不是之后所有的。</li>
-</ul>
-<p><a target="_blank" rel="noopener" href="https://media.pearsoncmg.com/ph/esm/ecs_kurose_compnetwork_8/cw/content/interactiveanimations/selective-repeat-protocol/index.html">点我试试</a></p>
 <h3 id="RTT估计和重传定时器调整">RTT估计和重传定时器调整</h3>
 <ul>
 <li>TCP会对每个数据包计算往返时间（RTT），用于动态调整重传超时（RTO）值，保证可靠传输同时避免不必要的重传。</li>
