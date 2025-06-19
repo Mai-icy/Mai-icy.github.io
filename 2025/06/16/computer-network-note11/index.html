@@ -151,8 +151,29 @@
 <li>地址长度：128位（16字节）</li>
 <li>首部固定40字节，简化处理</li>
 <li>不使用广播，改为组播/任播</li>
-<li>解决 IPv4 地址枯竭问题，支持更多设备接入</li>
+<li>解决 IPv4 地址枯竭问题，支持更多设备接入IPv6 地址书写规则</li>
 </ul>
+<ol>
+<li>
+<p><strong>基本格式</strong></p>
+<p>IPv6 地址由8组16位的十六进制数组成，每组之间用冒号 <code>:</code> 分隔。</p>
+<p>例如：</p>
+<pre class="line-numbers language-none"><code class="language-none">2001:0db8:85a3:0000:0000:8a2e:0370:7334<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li>
+<p><strong>去除前导零</strong></p>
+<p>每组中前导的零可以省略（但每组至少要有一位）。</p>
+<p>例如：</p>
+<pre class="line-numbers language-none"><code class="language-none">2001:db8:85a3:0:0:8a2e:370:7334<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+</li>
+<li>
+<p><strong>连续的零组用双冒号代替</strong></p>
+<p>对连续的一段或多段全为0的组，可以用 <code>::</code> 代替一次（只能用一次，避免歧义）。</p>
+<p>例如：</p>
+<pre class="line-numbers language-none"><code class="language-none">2001:db8:85a3::8a2e:370:7334<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>表示中间有连续的零组。</p>
+</li>
+</ol>
 <h1>IPv4</h1>
 <ul>
 <li>IPv4地址长度：32位</li>
@@ -343,6 +364,65 @@
 <p>但实际上，这些子网是连续的，可以聚合成一个更大的网络：</p>
 <pre class="line-numbers language-none"><code class="language-none">192.168.0.0&#x2F;22<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
 <p>这个 /22 网络范围包含从 <code>192.168.0.0</code> 到 <code>192.168.3.255</code> 的所有地址。</p>
+<h2 id="IP分片">IP分片</h2>
+<p>不同链路层的最大帧长度（MTU）不同：</p>
+<ul>
+<li>以太网的标准 MTU 是 <strong>1500 字节</strong></li>
+</ul>
+<p>我们要对很大的数据传输进行分片传输</p>
+<h3 id="字段">字段</h3>
+<p>IP头部中的以下字段用于分片和重组：</p>
+<table>
+<thead>
+<tr>
+<th>字段名</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>标识符（Identification）</strong></td>
+<td>分片组的唯一标识，所有分片相同</td>
+</tr>
+<tr>
+<td><strong>标志位（Flags）</strong></td>
+<td>3位：</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>第1位保留</p>
+</li>
+<li>
+<p>第2位 DF（Don’t Fragment，不分片）</p>
+</li>
+<li>
+<p>第3位 MF（More Fragments，后面还有分片） |</p>
+<p>| 片偏移（Fragment Offset） | 当前分片在原始数据报中的偏移（以8字节为单位） |</p>
+</li>
+</ul>
+<h3 id="分片过程示例">分片过程示例</h3>
+<p>设有一条链路 MTU = 620 字节，要传输一个总长度为 1500 字节（含IP头部20字节） 的 IP 数据报：</p>
+<ol>
+<li>可用于数据的空间 = 620 - 20 = 600 字节</li>
+<li>分片需按照 8字节对齐，所以每个分片最多只能装 600/8 = 75 个 8字节 → 即 600字节整</li>
+<li>第一个分片：
+<ul>
+<li>数据部分为 600 字节，偏移 = 0，MF=1</li>
+</ul>
+</li>
+<li>第二个分片：
+<ul>
+<li>数据部分再 600 字节，偏移 = 600/8 = 75，MF=1</li>
+</ul>
+</li>
+<li>第三个分片：
+<ul>
+<li>剩余数据 1500 - 20 - 600 - 600 = 280 字节，偏移 = (600+600)/8 = 150，MF=0</li>
+</ul>
+</li>
+</ol>
 <h1>ARP（地址解析协议）</h1>
 <p>（不算严格意义的网络层协议，处于网络层和链路层之间）</p>
 <p>在以太网中，数据帧是通过 MAC 地址发送的，但我们通常只知道对方的 IP 地址。</p>
