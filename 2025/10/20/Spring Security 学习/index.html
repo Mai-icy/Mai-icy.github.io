@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>Spring Security 学习 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="Spring Security 学习"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>Spring Security 学习</h2>
+            <div class="post-meta">
+                <time class="date">2025.10.20</time>
+            
+                <span class="category"><a class="category-link" href="/categories/java/">java</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>概述</h1>
+<p>Spring Security 有三大功能可以概括为：</p>
+<ul>
+<li>认证（Authentication）：确认用户身份，确保访问系统的主体是真实可信的。常用方式包括用户名/密码、Token、OAuth2 等。</li>
+<li>授权（Authorization）：控制用户对资源或操作的访问权限，可以基于 URL、方法或角色进行精细化控制，例如使用注解 <code>@PreAuthorize</code> 或配置访问规则。</li>
+<li>防护（Protection）：针对常见安全威胁提供防御措施，包括 CSRF 防护、防止 Session 固定攻击、点击劫持（Clickjacking）以及密码加密存储等，保障应用的整体安全性。</li>
+</ul>
+<p>整个请求在进入应用之前都会沿着过滤器链依次经过各类 Filter，认证、授权和防护都在链内按顺序处理；只有当请求通过所有检查，才会到达应用的核心 Servlet。</p>
+<h2 id="核心逻辑">核心逻辑</h2>
+<ul>
+<li>认证产生认证对象</li>
+<li>授权访问认证对象进行权限检查</li>
+</ul>
+<h1>过滤器链运行流程</h1>
+<h2 id="进入链">进入链</h2>
+<p>所有请求先到达 <code>FilterChainProxy</code>，这是 Spring Security 在 Servlet 容器里注册的唯一安全入口。它根据请求路径，选择合适的 <code>SecurityFilterChain</code>。</p>
+<h2 id="链的结构">链的结构</h2>
+<p><code>SecurityFilterChain</code> 的内部其实就是一组按照顺序排列的 <code>Filter</code>。这些 Filter 都实现了 <code>javax.servlet.Filter</code> 接口，并遵循统一的调用规范：<code>doFilter(ServletRequest request, ServletResponse response, FilterChain chain)</code>。在执行过程中，请求会依次经过链上的各个 Filter，每一个 Filter 都可能对请求进行处理，例如：</p>
+<ul>
+<li>处理请求（比如认证、鉴权、上下文维护）</li>
+<li>决定是否继续往下走（调用 <code>chain.doFilter</code>)</li>
+<li>或者直接中断（返回响应，比如认证失败 401）。</li>
+</ul>
+<h2 id="链中节点特性">链中节点特性</h2>
+<ul>
+<li>拦截点：每个 Filter 都是一个检查点。</li>
+<li>条件执行：有的 Filter 只处理特定请求（比如 <code>/login</code> 时才进入认证 Filter）。</li>
+<li>职责单一：每个 Filter 做一件事（认证、CSRF、异常翻译、权限判断等）。</li>
+<li>可短路：一旦某个 Filter 决定返回响应，请求就不会继续向下传。</li>
+</ul>
+<h2 id="出链">出链</h2>
+<p>如果没有被拦截、认证/授权成功，请求会一路穿过所有 Filter，最终进入应用的 Servlet（如 DispatcherServlet → Controller）。响应返回时，也会逆向经过这些 Filter（有些 Filter 会在响应阶段做处理，比如写回 SecurityContext）。</p>
+<h1>认证</h1>
+<h2 id="AbstractAuthenticationProcessingFilter">AbstractAuthenticationProcessingFilter</h2>
+<p>由于都是在链内完成的，涉及认证的主要 Fliter 就是 <code>AbstractAuthenticationProcessingFilter</code> 接口的实现类了。他的实现类有很多，例如：</p>
+<ul>
+<li><code>UsernamePasswordAuthenticationFilter</code> ：最常见的实现类，用于表单登录</li>
+<li><code>OAuth2LoginAuthenticationFilter</code> ：处理基于 OAuth2 登录的认证请求</li>
+</ul>
+<h2 id="接口">接口</h2>
+<p>实现类内部的操作包含了认证的全部流程，其主要涉及的组件接口如下：</p>
+<h3 id="数据封装：">数据封装：</h3>
+<ul>
+<li><code>Authentication</code> ：承载了认证请求和认证结果的数据。</li>
+<li><code>UserDetails</code> ：用户的核心信息载体（用户名、密码、权限、账户是否过期/锁定等）。</li>
+</ul>
+<h3 id="工具服务组件：">工具服务组件：</h3>
+<ul>
+<li><code>AuthenticationManager</code> ：认证调度器，接收 <code>Authentication</code> 请求并分派给合适的 <code>AuthenticationProvider</code>。</li>
+<li><code>AuthenticationProvider</code> ：执行具体认证逻辑（如用户名密码校验）。常见实现是 <code>DaoAuthenticationProvider</code>。</li>
+<li><code>UserDetailsService</code> ：按用户名加载用户信息，返回 <code>UserDetails</code>。</li>
+<li><code>PasswordEncoder</code> ：用于密码的加密与匹配校验。</li>
+<li><code>AuthenticationSuccessHandler</code> / <code>AuthenticationFailureHandler</code> ：登录成功或失败后的处理器（比如跳转页面、返回 JSON）。</li>
+<li><code>AuthenticationEntryPoint</code> ：未登录时访问受保护资源的入口处理（比如返回 401）。</li>
+</ul>
+<h2 id="典型流程">典型流程</h2>
+<pre class="line-numbers language-none"><code class="language-none">请求进入 Spring Security FilterChain
+|
+└── AbstractAuthenticationProcessingFilter.doFilter()
+    |
+    ├── attemptAuthentication(request, response)
+    |    |
+    |    └── 调用 AuthenticationManager.authenticate(authenticationToken)
+    |         |
+    |         ├── 遍历所有 AuthenticationProvider
+    |         |    |
+    |         |    ├── 如果 provider.supports(token)
+    |         |    |     └── 调用 provider.authenticate(token)
+    |         |    |          |
+    |         |    |          ├── AbstractUserDetailsAuthenticationProvider
+    |         |    |          |     |
+    |         |    |          |     ├── retrieveUser(username, token)
+    |         |    |          |     |     └── 调用 UserDetailsService.loadUserByUsername()
+    |         |    |          |     |           └── 返回 UserDetails(包含用户名、密码、权限等)
+    |         |    |          |     |
+    |         |    |          |     ├── additionalAuthenticationChecks(UserDetails, token)
+    |         |    |          |     |     └── 比对密码(PasswordEncoder.matches())
+    |         |    |          |     |
+    |         |    |          |     └── 返回 Authentication(认证成功的对象)
+    |         |    |
+    |         |    └── 如果认证失败，抛出 AuthenticationException
+    |         |
+    |         └── 如果所有 provider 都不能认证，抛出 ProviderNotFoundException
+    |
+    ├── 如果认证成功
+    |    ├── 将 Authentication 放入 SecurityContextHolder
+    |    └── 调用 successfulAuthentication()
+    |         └── 继续执行过滤器链
+    |
+    └── 如果认证失败
+         └── 调用 unsuccessfulAuthentication()
+              └── 返回错误响应 (如 401 Unauthorized)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>（以 <code>UsernamePasswordAuthenticationFilter</code> 为例）</p>
+<ol>
+<li>
+<p>接收请求</p>
+<ul>
+<li>从 <code>HttpServletRequest</code> 里拿到用户名、密码。</li>
+<li>封装成 <code>UsernamePasswordAuthenticationToken</code>（一个实现了 <code>Authentication</code> 的对象，代表“待认证的凭证”）。</li>
+</ul>
+</li>
+<li>
+<p>调用认证管理器</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token class-name">Authentication</span> authResult <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getAuthenticationManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                                <span class="token punctuation">.</span><span class="token function">authenticate</span><span class="token punctuation">(</span>authRequest<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<ul>
+<li>这里会进入 <code>AuthenticationManager</code>，通常是 <code>ProviderManager</code>。</li>
+</ul>
+</li>
+<li>
+<p>Manager → Provider</p>
+<ul>
+<li><code>ProviderManager</code> 遍历 <code>AuthenticationProvider</code>，找到能处理 <code>UsernamePasswordAuthenticationToken</code> 的（一般是 <code>DaoAuthenticationProvider</code>）。</li>
+</ul>
+</li>
+<li>
+<p>Provider → Service + Encoder</p>
+<ul>
+<li><code>DaoAuthenticationProvider</code> 调用 <code>UserDetailsService.loadUserByUsername()</code> 查询用户信息。</li>
+<li>拿到 <code>UserDetails</code>，再用 <code>PasswordEncoder.matches()</code> 校验密码。</li>
+</ul>
+</li>
+<li>
+<p>结果回传</p>
+<ul>
+<li>成功 → 返回一个带有用户信息和权限的 <code>Authentication</code>（<code>authenticated=true</code>）。</li>
+<li>失败 → 抛异常，被 Filter 捕获后交给 <code>AuthenticationFailureHandler</code>。</li>
+</ul>
+</li>
+<li>
+<p>Filter 收尾</p>
+<ul>
+<li>成功 → 调用 <code>successfulAuthentication()</code>，把认证信息放入 <code>SecurityContextHolder</code>。</li>
+<li>失败 → 调用 <code>unsuccessfulAuthentication()</code>，返回错误信息。</li>
+</ul>
+</li>
+</ol>
+<h2 id="JWT处理示例">JWT处理示例</h2>
+<p>jwt由于其认证等复杂过程都基于jwt的工具函数，通常已经包装完整，因此，如果采用jwt的工具函数，就很难再对整个认证过程进行像以上 <code>Provider</code> 等等的划分，因此，建议直接继承 <code>OncePerRequestFilter</code> ，构建一个基于jwt的过滤器，在过滤器中完成 jwt 的验证，处理，解析等完整流程，并将验证之后的数据存入上下文，达到和原本运行完 <code>UsernamePasswordAuthenticationFilter</code> 之后的一致结果。</p>
+<p>示例：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">JwtAuthFilter</span> <span class="token keyword">extends</span> <span class="token class-name">OncePerRequestFilter</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">JwtCoreUtil</span> jwtCoreUtil<span class="token punctuation">;</span> <span class="token comment">// 你封装的 JWT 工具类</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">LocalTokenBlacklistService</span> tokenBlacklistService<span class="token punctuation">;</span> <span class="token comment">// 可选黑名单</span>
+
+    <span class="token keyword">public</span> <span class="token class-name">JwtAuthFilter</span><span class="token punctuation">(</span><span class="token class-name">JwtCoreUtil</span> jwtCoreUtil<span class="token punctuation">,</span> <span class="token class-name">LocalTokenBlacklistService</span> tokenBlacklistService<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>jwtCoreUtil <span class="token operator">=</span> jwtCoreUtil<span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>tokenBlacklistService <span class="token operator">=</span> tokenBlacklistService<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">doFilterInternal</span><span class="token punctuation">(</span><span class="token class-name">HttpServletRequest</span> request<span class="token punctuation">,</span>
+                                    <span class="token class-name">HttpServletResponse</span> response<span class="token punctuation">,</span>
+                                    <span class="token class-name">FilterChain</span> chain<span class="token punctuation">)</span>
+            <span class="token keyword">throws</span> <span class="token class-name">IOException</span><span class="token punctuation">,</span> <span class="token class-name">ServletException</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token class-name">String</span> token <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token string">"Authorization"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token class-name">StringUtils</span><span class="token punctuation">.</span><span class="token function">hasText</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span> <span class="token operator">||</span> <span class="token operator">!</span>token<span class="token punctuation">.</span><span class="token function">startsWith</span><span class="token punctuation">(</span><span class="token string">"Bearer "</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            chain<span class="token punctuation">.</span><span class="token function">doFilter</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 没有 token 就直接放行，让后续访问控制处理</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        token <span class="token operator">=</span> token<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 去掉 "Bearer " 前缀</span>
+
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// 黑名单检查</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>tokenBlacklistService <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> tokenBlacklistService<span class="token punctuation">.</span><span class="token function">isBlacklisted</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token function">sendError</span><span class="token punctuation">(</span>response<span class="token punctuation">,</span> <span class="token string">"Token revoked"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">return</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token class-name">Claims</span> claims <span class="token operator">=</span> jwtCoreUtil<span class="token punctuation">.</span><span class="token function">parseToken</span><span class="token punctuation">(</span>token<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 解析 JWT</span>
+            <span class="token function">validateClaims</span><span class="token punctuation">(</span>claims<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 创建 Authentication 并放入 SecurityContext</span>
+            <span class="token class-name">Authentication</span> auth <span class="token operator">=</span> <span class="token function">createAuthentication</span><span class="token punctuation">(</span>claims<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">SecurityContextHolder</span><span class="token punctuation">.</span><span class="token function">getContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setAuthentication</span><span class="token punctuation">(</span>auth<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            chain<span class="token punctuation">.</span><span class="token function">doFilter</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ExpiredJwtException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">sendError</span><span class="token punctuation">(</span>response<span class="token punctuation">,</span> <span class="token string">"Token expired"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">JwtException</span> <span class="token operator">|</span> <span class="token class-name">IllegalArgumentException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">sendError</span><span class="token punctuation">(</span>response<span class="token punctuation">,</span> <span class="token string">"Invalid token"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> ex<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">sendError</span><span class="token punctuation">(</span>response<span class="token punctuation">,</span> ex<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 验证 JWT 必要字段</span>
+    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">validateClaims</span><span class="token punctuation">(</span><span class="token class-name">Claims</span> claims<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>claims<span class="token punctuation">.</span><span class="token function">getSubject</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">IllegalArgumentException</span><span class="token punctuation">(</span><span class="token string">"Missing subject"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token comment">// 可按需校验 roles / tenantId / email 等</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 构造 Authentication</span>
+    <span class="token keyword">protected</span> <span class="token class-name">Authentication</span> <span class="token function">createAuthentication</span><span class="token punctuation">(</span><span class="token class-name">Claims</span> claims<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">String</span> username <span class="token operator">=</span> claims<span class="token punctuation">.</span><span class="token function">getSubject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> roles <span class="token operator">=</span> claims<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"roles"</span><span class="token punctuation">,</span> <span class="token class-name">List</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">GrantedAuthority</span><span class="token punctuation">></span></span> authorities <span class="token operator">=</span> <span class="token class-name">Optional</span><span class="token punctuation">.</span><span class="token function">ofNullable</span><span class="token punctuation">(</span>roles<span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token class-name">Collections</span><span class="token punctuation">.</span><span class="token function">emptyList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span><span class="token class-name">Objects</span><span class="token operator">::</span><span class="token function">nonNull</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>r <span class="token operator">-></span> <span class="token keyword">new</span> <span class="token class-name">SimpleGrantedAuthority</span><span class="token punctuation">(</span><span class="token string">"ROLE_"</span> <span class="token operator">+</span> r<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 也可以在 principal 中封装 email / tenantId / userId</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">UsernamePasswordAuthenticationToken</span><span class="token punctuation">(</span>username<span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">,</span> authorities<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 统一返回错误</span>
+    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">sendError</span><span class="token punctuation">(</span><span class="token class-name">HttpServletResponse</span> response<span class="token punctuation">,</span> <span class="token class-name">String</span> message<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">IOException</span> <span class="token punctuation">&#123;</span>
+        response<span class="token punctuation">.</span><span class="token function">setContentType</span><span class="token punctuation">(</span><span class="token class-name">MediaType</span><span class="token punctuation">.</span><span class="token constant">APPLICATION_JSON_VALUE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">setStatus</span><span class="token punctuation">(</span><span class="token class-name">HttpServletResponse</span><span class="token punctuation">.</span><span class="token constant">SC_UNAUTHORIZED</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">getWriter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">write</span><span class="token punctuation">(</span><span class="token string">"&#123;\\"</span>code\\"<span class="token operator">:</span><span class="token number">401</span><span class="token punctuation">,</span>\\"message\\"<span class="token operator">:</span>\\"<span class="token string">" + message + "</span>\\"<span class="token punctuation">&#125;</span>"<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">protected</span> <span class="token keyword">boolean</span> <span class="token function">shouldNotFilter</span><span class="token punctuation">(</span><span class="token class-name">HttpServletRequest</span> request<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">String</span> path <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">getRequestURI</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 例：公共路径不验证</span>
+        <span class="token keyword">return</span> path<span class="token punctuation">.</span><span class="token function">startsWith</span><span class="token punctuation">(</span><span class="token string">"/public/"</span><span class="token punctuation">)</span> <span class="token operator">||</span> path<span class="token punctuation">.</span><span class="token function">startsWith</span><span class="token punctuation">(</span><span class="token string">"/login"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="数据的存储与加载">数据的存储与加载</h2>
+<h3 id="SecurityContextHolder">SecurityContextHolder</h3>
+<pre class="line-numbers language-none"><code class="language-none">SecurityContextHolder
+└── SecurityContext (接口)
+    └── Authentication (接口)
+        ├── Principal (Object)       &#x2F;&#x2F; 当前用户对象，一般是 UserDetails 或自定义用户
+        ├── Credentials (Object)     &#x2F;&#x2F; 认证凭证，如密码或 token
+        ├── Authorities (Collection&lt;GrantedAuthority&gt;)  &#x2F;&#x2F; 权限列表
+        └── isAuthenticated (boolean) &#x2F;&#x2F; 是否认证通过<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><code>SecurityContextHolder</code> 是 Spring Security 的全局上下文容器，用于在认证链中传递用户和权限信息，保证数据线程安全。</p>
+<ul>
+<li>认证链开始时：从请求中提取必要的凭证（如 JWT token、用户名密码）。验证凭证有效性，将基本的用户信息载入 <code>Principal</code>，并设置 <code>isAuthenticated=false</code>。</li>
+<li>认证链结束时：完成完整验证（如查数据库加载用户详情、权限列表）。更新 <code>Authentication</code> 对象，设置 <code>isAuthenticated=true</code>，权限信息（Authorities）也完整载入。</li>
+</ul>
+<p>载入后的访问：</p>
+<ul>
+<li>业务逻辑访问时：Controller 或 Service 层可通过 <code>SecurityContextHolder.getContext().getAuthentication()</code> 获取当前用户。可直接读取 <code>Principal</code>、权限列表以及认证状态。</li>
+</ul>
+<h3 id="AuthenticationPrincipal">@AuthenticationPrincipal</h3>
+<p>直接将当前认证用户对象注入到 Controller 方法参数中，避免手动从 <code>SecurityContextHolder</code> 获取。</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/me"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">me</span><span class="token punctuation">(</span><span class="token annotation punctuation">@AuthenticationPrincipal</span> <span class="token class-name">MyUser</span> user<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> user<span class="token punctuation">.</span><span class="token function">getEmail</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>权限管理</h1>
+<p>权限管理的依据依旧在 <code>Authentication</code> 接口实现类的存储中，他有一个 <code>Authorities</code> 的成员数据，是一个 <code>Collection&lt;GrantedAuthority&gt;</code> 的权限列表，只需要在构建的时候载入角色该有的权限即可。</p>
+<p>作为用户而言，通常可能有多个权限级别，例如读权限，写权限。因此这是一个序列而并不是一个类似角色的单个值。</p>
+<h2 id="授权概述">授权概述</h2>
+<p>在 Spring Security 中，授权（Authorization）主要有 <strong>三类</strong>方式，根据粒度和应用场景划分：</p>
+<table>
+<thead>
+<tr>
+<th>授权方式</th>
+<th>粒度</th>
+<th>实现方式</th>
+<th>核心组件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL / 请求级</td>
+<td>粗</td>
+<td><code>HttpSecurity</code> + Filter</td>
+<td><code>FilterSecurityInterceptor</code></td>
+</tr>
+<tr>
+<td>方法级</td>
+<td>细</td>
+<td>注解 + AOP</td>
+<td><code>MethodSecurityInterceptor</code></td>
+</tr>
+<tr>
+<td>表达式 / 策略级</td>
+<td>动态</td>
+<td>SpEL + 自定义策略</td>
+<td><code>PermissionEvaluator</code>、<code>AccessDecisionManager</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="授权的核心接口">授权的核心接口</h2>
+<pre class="line-numbers language-none"><code class="language-none">AccessDecisionManager<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>决策者，决定某个请求是否允许访问。</p>
+<p>常见实现：</p>
+<ul>
+<li><code>AffirmativeBased</code>（一个允许即可通过）</li>
+<li><code>ConsensusBased</code>（多数投票）</li>
+<li><code>UnanimousBased</code>（全票通过）</li>
+</ul>
+<pre class="line-numbers language-none"><code class="language-none">AccessDecisionVoter<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>投票者，单独判断是否允许访问。</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token keyword">int</span> <span class="token function">vote</span><span class="token punctuation">(</span><span class="token class-name">Authentication</span> authentication<span class="token punctuation">,</span> <span class="token class-name">Object</span> object<span class="token punctuation">,</span> <span class="token class-name">Collection</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">ConfigAttribute</span><span class="token punctuation">></span></span> attributes<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>返回 <code>ACCESS_GRANTED</code> / <code>ACCESS_DENIED</code> / <code>ACCESS_ABSTAIN</code></p>
+<pre class="line-numbers language-none"><code class="language-none">SecurityMetadataSource<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>提供安全元数据（URL / 方法 → 需要权限）。</p>
+<p>例如：<code>FilterInvocationSecurityMetadataSource</code>（URL 授权）</p>
+<pre class="line-numbers language-none"><code class="language-none">FilterSecurityInterceptor<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>Spring Security Filter 链中的最后一个 Filter，用于做最终的授权判断。</p>
+<p>流程：</p>
+<ul>
+<li>获取 <code>SecurityMetadataSource</code> 配置的资源权限</li>
+<li>调用 <code>AccessDecisionManager</code> 做决策</li>
+<li>决策成功 → 放行</li>
+<li>决策失败 → 抛出 <code>AccessDeniedException</code></li>
+</ul>
+<h2 id="URL级别控制">URL级别控制</h2>
+<pre class="line-numbers language-none"><code class="language-none">请求进入 SecurityFilterChain
+|
+└── FilterSecurityInterceptor.doFilter()
+     |
+     ├── 调用 SecurityMetadataSource.getAttributes(request)
+     |     └── 获取该 URL 需要的权限列表
+     |
+     ├── 调用 AccessDecisionManager.decide(authentication, request, attributes)
+     |     |
+     |     ├── 遍历 AccessDecisionVoter
+     |     ├── 投票决定是否允许访问
+     |     └── 返回允许或抛异常
+     |
+     ├── 如果允许
+     |     └── chain.doFilter(request, response) 继续执行
+     |
+     └── 如果拒绝
+           └── AccessDeniedHandler 处理（返回 403 或自定义页面）<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="实现">实现</h3>
+<p>使用 <code>HttpSecurity</code> 进行静态 URL 控制</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Configuration</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">SecurityConfig</span> <span class="token punctuation">&#123;</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> <span class="token class-name">SecurityFilterChain</span> <span class="token function">securityFilterChain</span><span class="token punctuation">(</span><span class="token class-name">HttpSecurity</span> http<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+        http
+            <span class="token comment">// URL 权限配置</span>
+            <span class="token punctuation">.</span><span class="token function">authorizeHttpRequests</span><span class="token punctuation">(</span>auth <span class="token operator">-></span> auth
+                <span class="token punctuation">.</span><span class="token function">requestMatchers</span><span class="token punctuation">(</span><span class="token string">"/admin/**"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">hasRole</span><span class="token punctuation">(</span><span class="token string">"ADMIN"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">requestMatchers</span><span class="token punctuation">(</span><span class="token string">"/user/**"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">hasAnyRole</span><span class="token punctuation">(</span><span class="token string">"USER"</span><span class="token punctuation">,</span> <span class="token string">"ADMIN"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">anyRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">authenticated</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>
+            <span class="token comment">// 登录配置</span>
+            <span class="token punctuation">.</span><span class="token function">formLogin</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token punctuation">.</span><span class="token function">and</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token comment">// 注销配置</span>
+            <span class="token punctuation">.</span><span class="token function">logout</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">return</span> http<span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="方法级别控制">方法级别控制</h2>
+<pre class="line-numbers language-none"><code class="language-none">请求调用方法
+|
+└── MethodSecurityInterceptor.invoke()
+     |
+     ├── 调用 SecurityMetadataSource.getAttributes(method)
+     |     └── 获取该方法需要的权限元数据（角色 &#x2F; 表达式）
+     |
+     ├── 获取 Authentication（当前用户身份 + 角色&#x2F;权限）
+     |
+     ├── 调用 AccessDecisionManager.decide(authentication, method, attributes)
+     |     |
+     |     ├── 遍历 AccessDecisionVoter
+     |     ├── 投票决定是否允许访问
+     |     └── 返回允许或抛 AccessDeniedException
+     |
+     ├── 如果允许
+     |     └── 执行目标方法
+     |
+     └── 如果拒绝
+           └── 抛 AccessDeniedException<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="实现-2">实现</h3>
+<ul>
+<li><code>@PreAuthorize</code></li>
+</ul>
+<p>功能：方法调用前进行权限检查，可以使用表达式，例如 <code>hasRole('ROLE')</code>、<code>hasAuthority('AUTH')</code>、SpEL 表达式等。</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@PreAuthorize</span><span class="token punctuation">(</span><span class="token string">"hasRole('ADMIN')"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">deleteUser</span><span class="token punctuation">(</span><span class="token class-name">Long</span> id<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 只有 ADMIN 角色能执行</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>@PostAuthorize</code></li>
+</ul>
+<p>功能：方法调用后进行权限检查，可以访问方法返回值 (<code>returnObject</code>)。适合根据返回内容控制权限。</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@PostAuthorize</span><span class="token punctuation">(</span><span class="token string">"returnObject.owner == authentication.name"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token class-name">User</span> <span class="token function">getUser</span><span class="token punctuation">(</span><span class="token class-name">Long</span> id<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 方法执行后，会检查返回的 User 是否属于当前用户</span>
+    <span class="token keyword">return</span> userService<span class="token punctuation">.</span><span class="token function">findById</span><span class="token punctuation">(</span>id<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>@PreFilter</code></li>
+</ul>
+<p><strong>功能</strong>：方法调用前过滤集合或数组参数，只保留满足条件的元素。</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@PreFilter</span><span class="token punctuation">(</span><span class="token string">"filterObject.owner == authentication.name"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">processUsers</span><span class="token punctuation">(</span><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">User</span><span class="token punctuation">></span></span> users<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 只处理属于当前用户的 User 对象</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>@PostFilter</code></li>
+</ul>
+<p><strong>功能</strong>：方法调用后过滤集合或数组返回值，只保留满足条件的元素。</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@PostFilter</span><span class="token punctuation">(</span><span class="token string">"filterObject.owner == authentication.name"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">User</span><span class="token punctuation">></span></span> <span class="token function">listUsers</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// 返回列表时，只保留属于当前用户的对象</span>
+    <span class="token keyword">return</span> userService<span class="token punctuation">.</span><span class="token function">findAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="原理">原理</h3>
+<p>以 <code>@PreAuthorize(&quot;hasRole('ADMIN')&quot;)</code> 为例：</p>
+<p>切面拦截：</p>
+<ul>
+<li><code>PreInvocationAuthorizationAdviceVoter</code> 或 <code>MethodSecurityInterceptor</code> 拦截方法调用</li>
+<li>从方法上的注解解析出 <code>ConfigAttribute</code>（Spring 内部会生成一个 <code>RoleConfigAttribute</code>）</li>
+</ul>
+<p>AccessDecisionManager 执行：</p>
+<ul>
+<li>默认是 <code>AffirmativeBased</code>：只要有一个 voter 投 <code>ACCESS_GRANTED</code> 就允许</li>
+<li>将当前 <code>Authentication</code>（JWT 解析后放在 SecurityContextHolder 的对象）和方法上解析出的角色 <code>ConfigAttribute</code> 一起传入</li>
+</ul>
+<p>投票逻辑（RoleVoter）：</p>
+<ul>
+<li><code>RoleVoter</code> 会把 <code>ConfigAttribute</code> 的角色（如 <code>&quot;ROLE_ADMIN&quot;</code>) 和 <code>Authentication.getAuthorities()</code> 里的权限比对</li>
+<li>投票规则：如果 <code>authentication.getAuthorities()</code> 中包含 <code>ConfigAttribute</code>，投 <code>ACCESS_GRANTED</code> 否则投 <code>ACCESS_DENIED</code> 或 <code>ABSTAIN</code>（视 <code>Voter</code> 类型而定）</li>
+<li>默认 <code>RoleVoter</code> 会自动加 <code>&quot;ROLE_&quot;</code> 前缀，所以你的 JWT 权限要加 <code>ROLE_</code> 前缀才能生效</li>
+</ul>
+<h2 id="表达式-策略的权限控制">表达式 / 策略的权限控制</h2>
+<pre class="line-numbers language-none"><code class="language-none">权限判断请求
+|
+└── AccessDecisionManager.decide(authentication, resource, attributes)
+     |
+     ├── 遍历 AccessDecisionVoter 列表
+     |     |
+     |     ├── ExpressionVoter
+     |     |     └── 使用表达式解析器解析权限表达式（如 @PreAuthorize、hasRole、hasAuthority）
+     |     |           ├─ 解析表达式
+     |     |           ├─ 对比当前用户 Authentication 的权限 &#x2F; 角色
+     |     |           └─ 投票：允许 &#x2F; 拒绝 &#x2F; 弃权
+     |     |
+     |     ├── RoleVoter
+     |     |     └── 判断用户角色是否匹配资源角色要求
+     |     |
+     |     └── CustomVoter
+     |           └── 自定义策略逻辑判断（如业务条件、用户属性、时间约束等）
+     |
+     ├── 汇总投票结果
+     |     ├─ 多数投票或一致通过 → 允许访问
+     |     └─ 否则 → 拒绝访问
+     |
+     └── 返回决策结果
+           ├─ 允许 → 放行请求 &#x2F; 执行方法
+           └─ 拒绝 → 抛 AccessDeniedException 或交给 AccessDeniedHandler 处理<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="实现-3">实现</h3>
+<p>例子：</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token annotation punctuation">@Service</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">UserService</span> <span class="token punctuation">&#123;</span>
+
+    <span class="token annotation punctuation">@PreAuthorize</span><span class="token punctuation">(</span><span class="token string">"hasRole('ADMIN') or #userId == principal.id"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">updateUser</span><span class="token punctuation">(</span><span class="token class-name">Long</span> userId<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 只有管理员或操作自己信息的用户可以调用</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@PreAuthorize</span><span class="token punctuation">(</span><span class="token string">"isAuthenticated()"</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">viewProfile</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token comment">// 只要登录用户就可以访问</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="原理-2">原理</h3>
+<p>表达式权限控制：用 SpEL 表达式 判断用户是否有访问权限，灵活且可组合。</p>
+<ul>
+<li>典型场景：方法级或 URL 级权限控制</li>
+<li>核心接口：<code>AccessDecisionManager</code> + <code>Voter</code> 模型</li>
+</ul>
+<p>策略级权限控制：底层用 AccessDecisionManager 聚合多个 Voter 的投票结果来决策。</p>
+<p>Voter 类型举例：</p>
+<ul>
+<li>RoleVoter：检查用户角色（<code>hasRole('ADMIN')</code>）</li>
+<li>AuthenticatedVoter：检查用户是否已认证（<code>isAuthenticated()</code>）</li>
+<li>PreInvocationAuthorizationAdviceVoter：处理表达式注解（<code>@PreAuthorize</code> / <code>@PostAuthorize</code>）</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/08/22/Spring%20AOP%20%E5%AD%A6%E4%B9%A0/">Spring AOP 学习</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/Spring/" rel="tag">Spring</a><a class="-none-link" href="/tags/java/" rel="tag">java</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/10/20/Spring%20Security%20%E5%AD%A6%E4%B9%A0/">Spring Security 学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/22/Spring%20AOP%20%E5%AD%A6%E4%B9%A0/">Spring AOP 学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/21/Spring%20Boot%20%E5%88%9D%E8%AF%86/">Spring Boot 初识</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/18/computer-network-note12/">计算机网络笔记12——链路层重点</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/16/computer-network-note11/">计算机网络笔记11——网络层重点</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/15/computer-network-note10/">计算机网络笔记10——传输层重点</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 10px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 14.29px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
