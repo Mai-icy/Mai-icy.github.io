@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>OAuth2.0 客户端+授权端 实践设计 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="OAuth2.0 客户端+授权端 实践设计"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>OAuth2.0 客户端+授权端 实践设计</h2>
+            <div class="post-meta">
+                <time class="date">2025.11.01</time>
+            
+                <span class="category"><a class="category-link" href="/categories/java/">java</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="背景与目标">背景与目标</h2>
+<p>在 ModelEngine 三合一部署架构中，非北向接口的鉴权由 OMS 负责：</p>
+<ul>
+<li>前端请求经 OMS Nginx 转发至 OMS Gateway，在此完成用户身份校验，后续请求再流转至相关服务。</li>
+<li><code>app-platform</code> 在现有非北向接口调用链中不参与鉴权，也无需感知鉴权逻辑。</li>
+</ul>
+<p>现有需求需要单独部署 <code>app-platform</code>，因此在缺乏 OMS 鉴权的场景下，<code>app-platform</code> 的非北向接口需要新增用户鉴权机制。</p>
+<p>由于 model engine 官网（后续称为 <code>website</code>）已有完整的用户鉴权和用户管理体系，本次方案目标是让 <code>app-platform</code> 的非北向接口复用 <code>website</code> 的鉴权，实现统一用户体系和单点登录体验。</p>
+<h3 id="功能目标：">功能目标：</h3>
+<ul>
+<li>在无 OMS 环境下保证 <code>app-platform</code> 非北向接口具备安全鉴权。</li>
+<li>复用 <code>website</code> 现有用户体系，实现单点登录（SSO）。</li>
+<li>保证用户体验：不同登录状态下自动跳转、无需重复授权。</li>
+<li>保证安全性：认证过程安全可靠，支持 token 校验、过期处理。</li>
+<li>客户端在跳转登陆完成后应当回到跳转前页面。</li>
+</ul>
+<h3 id="增强目标：">增强目标：</h3>
+<ul>
+<li>本次鉴权功能新增为 可选功能，默认不开启，不影响原有 OMS 鉴权逻辑。</li>
+<li>鉴权功能可以通过配置或者插件开关，便于未来单独部署 <code>app-platform</code> 时灵活启用或禁用。</li>
+</ul>
+<h2 id="需求说明">需求说明</h2>
+<h3 id="用户场景与期望行为">用户场景与期望行为</h3>
+<table>
+<thead>
+<tr>
+<th>用户当前状态</th>
+<th>期望行为</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>未登录 app-platform未登录 website</td>
+<td>访问 app-platform 时，跳转 website 登录 → 登录完成后自动跳回 app-platform 并完成验证</td>
+<td>第一次登录流程</td>
+</tr>
+<tr>
+<td>未登录 app-platform已登录 website</td>
+<td>访问 app-platform 时，自动跳转 website 完成免密登录 → 自动跳回 app-platform 并进入登录状态</td>
+<td>单点登录</td>
+</tr>
+<tr>
+<td>已登录 app-platform</td>
+<td>访问 app-platform 时直接通过验证，无需再次授权</td>
+<td>保持会话</td>
+</tr>
+</tbody>
+</table>
+<h2 id="方案选择">方案选择</h2>
+<h3 id="方案一：独立会话管理（单Token有效期长）">方案一：独立会话管理（单Token有效期长）</h3>
+<p>描述：<code>website</code> 只提供授权，<code>app-platform</code> 自行管理有效期。</p>
+<ul>
+<li>特点：
+<ul>
+<li>用户体验佳 → app-platform 可提供登录/登出按钮，用户在平台内操作顺畅。</li>
+<li>从 website 跳转到 app-platform 时，可自动进行登录，无需再次操作。</li>
+</ul>
+</li>
+<li>缺点：一致性较弱 → token 与本地 session 可能不完全同步，登出或过期时存在滞后。</li>
+</ul>
+<h3 id="方案二：集中式会话管理">方案二：集中式会话管理</h3>
+<p>描述：website 不仅颁发 token，还管理会话有效期，app-platform 每次请求都校验 token 或调用 introspect。</p>
+<ul>
+<li>特点：一致性强 → token 或 session 过期即失效。</li>
+<li>缺点：用户体验略逊 → 每次请求可能涉及远程校验，增加延迟。</li>
+</ul>
+<h3 id="方案三：短期-token-本地-session-缓存">方案三：短期 token + 本地 session 缓存</h3>
+<p>描述：website 颁发短期 token（如 5~10 分钟），app-platform filter 本地生成 session 并缓存 token。</p>
+<ul>
+<li>特点：用户体验佳 → 大部分请求可直接使用本地 session。</li>
+<li>缺点：一致性折中 → token 与 session 可能短时间不一致。</li>
+<li>可选优化：token 快过期时 filter 自动刷新 token。</li>
+</ul>
+<h3 id="方案四：双-token（access-token-refresh-token）">方案四：双 token（access token + refresh token）</h3>
+<p>描述：website 颁发短期 access token + 长期 refresh token，app-platform 使用 access token 调用接口，过期后自动用 refresh token 刷新。</p>
+<ul>
+<li>特点：用户体验佳，一致性较高。</li>
+<li>缺点：实现复杂，需要安全存储 refresh token 并处理刷新逻辑。</li>
+</ul>
+<h2 id="总体设计">总体设计</h2>
+<h3 id="短期落地（快速上线）：双-token">短期落地（快速上线）：双 token</h3>
+<ul>
+<li>使用 OAuth2 标准 flow，access token 5–15 分钟有效，refresh token 7–30 天。</li>
+<li>app-platform 本地存储 refresh token（仅服务器端，HttpOnly），自动刷新。</li>
+<li>兼顾用户体验和安全一致性，实现复杂度适中。</li>
+</ul>
+<h3 id="长期演进（多系统、跨域-SSO-统一化）：跨域-SSO-OIDC">长期演进（多系统、跨域 SSO 统一化）：跨域 SSO / OIDC</h3>
+<ul>
+<li>搭建统一身份提供商（如 Keycloak、Auth0、Spring Authorization Server）。</li>
+<li>使用 OIDC session cookie + access token，实现真正的单点登录与单点登出。</li>
+<li>部署难度相对高，但这是业界主流。</li>
+</ul>
+<h2 id="技术选型">技术选型</h2>
+<ul>
+<li>自建认证中心：Keycloak 或者 Spring Authorization Server</li>
+<li>Java 应用客户端：Nimbus OAuth 2.0 SDK + OpenID Connect SDK</li>
+</ul>
+<p>Spring Authorization Server 支持 OAuth2 / OpenID Connect 标准流程（服务器端）：</p>
+<ul>
+<li>Authorization Code Flow（授权码模式）</li>
+<li>Client Credentials Flow（客户端凭证模式）</li>
+<li>Refresh Token Flow（刷新 token 模式）</li>
+</ul>
+<p>Nimbus OAuth 2.0 SDK + OpenID Connect SDK 支持标准流程（客户端构建请求、解析响应、验证 JWT 的工具）：</p>
+<ul>
+<li>Authorization Code Flow（授权码模式）</li>
+<li>Client Credentials Flow（客户端凭证模式）</li>
+<li>Refresh Token Flow（刷新 token 模式）</li>
+</ul>
+<h2 id="详细内容（双token）">详细内容（双token）</h2>
+<h3 id="后端">后端</h3>
+<p>授权端主要实现内容：</p>
+<ul>
+<li>website 需要实现 OAuth2 授权端，允许app-platform申请access-token和 refresh-token 资源</li>
+<li>website 使用非对称加密给 app-platform 签发access-token和 refresh-token</li>
+<li>website 需要实现提供给 app-platform 进行refresh token的接口</li>
+</ul>
+<p>客户端主要实现内容：</p>
+<ul>
+<li>app-platform 需要实现 OAuth2 客户端，进行完整的资源申请</li>
+<li>app-platform 需要自行存储和对应 refresh-token 的使用（access-token过期后自动申请）</li>
+<li>app-platform 需要能使用 website 的公钥进行对 access-token 的自行解析</li>
+</ul>
+<p>需要自行实现内容：</p>
+<p>website 业务逻辑：</p>
+<ul>
+<li>生成密钥对：私钥签发 JWT，公钥给资源服务器验证。</li>
+<li>用户认证：用现有 Spring Security Filter 验证用户登录。</li>
+<li>颁发 token：登录成功后发 access token（JWT）+ refresh token，access token 用私钥签名。</li>
+<li>资源接口校验：访问接口时，用公钥验证 access token。</li>
+</ul>
+<p>客户端逻辑（Filter）：</p>
+<ul>
+<li>token endpoint 调用（获取 access-token / refresh-token）</li>
+<li>存储 refresh-token</li>
+<li>过期后自动刷新 access-token</li>
+<li>用公钥解析 JWT claims 并映射到你的业务上下文</li>
+</ul>
+<h3 id="前端">前端</h3>
+<ul>
+<li>website 实现 授权url 连接按钮事件完成跳转的登录页面</li>
+<li>app-platform 实现登入，登出按钮</li>
+</ul>
+<h3 id="双Token方案流程图">双Token方案流程图</h3>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">sequenceDiagram</span>
+    <span class="token keyword">participant</span> User as 用户
+    <span class="token keyword">participant</span> Client as app-platform
+    <span class="token keyword">participant</span> AuthServer as website
+
+    User<span class="token arrow operator">->></span>Client<span class="token operator">:</span> 访问客户端应用
+    Client<span class="token arrow operator">->></span>AuthServer<span class="token operator">:</span> 重定向用户到授权页面\\response_type=code<span class="token operator">&amp;</span>client_id=xxx<span class="token operator">&amp;</span>redirect_uri=yyy
+    AuthServer<span class="token arrow operator">-->></span>User<span class="token operator">:</span> 显示登录页面
+    User<span class="token arrow operator">->></span>AuthServer<span class="token operator">:</span> 提交用户名和密码
+    AuthServer<span class="token arrow operator">-->></span>User<span class="token operator">:</span> 登录成功页面（包含授权码code）
+    User<span class="token arrow operator">->></span>Client<span class="token operator">:</span> 浏览器重定向返回 code
+
+    Client<span class="token arrow operator">->></span>AuthServer<span class="token operator">:</span> POST /token grant_type=authorization_code code=xxx redirect_uri=yyy
+    AuthServer<span class="token arrow operator">-->></span>Client<span class="token operator">:</span> 返回 access_token + refresh_token
+		Client<span class="token arrow operator">->></span>Client<span class="token operator">:</span> 用公钥解析 access_token 获取 username 直到过期
+		
+    Client<span class="token arrow operator">->></span>AuthServer<span class="token operator">:</span> POST /token grant_type=refresh_token refresh_token=xxxx
+    AuthServer<span class="token arrow operator">-->></span>Client<span class="token operator">:</span> 返回新的 access_token（可选新的 refresh_token）
+    Client<span class="token arrow operator">->></span>Client<span class="token operator">:</span> 用公钥解析 access_token 获取 username<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="app-platfrom-后端">app-platfrom 后端</h3>
+<p>Filter行为：</p>
+<p>无token时，不操作，给予登录按钮（从官网跳转时重定向到授权URL）</p>
+<p>在读到过期token时，重定向至授权URL</p>
+<p>读到有效token时，解读username置入上下文</p>
+<p><code>/callback</code> 接口：</p>
+<p>接受param参数，</p>
+<p>借助SDK完成请求操作得到access-token</p>
+<p>set-cookies(access-token)</p>
+<p><code>/login</code> 接口</p>
+<p>直接重定向至授权URL</p>
+<p><code>/logout</code> 接口</p>
+<p>清空携带的access-token</p>
+<h1>编码阶段</h1>
+<h2 id="授权端">授权端</h2>
+<p>服务器端主要以Spring Authorization Server实现 他只需要进行对应的导入和相应的配置文件就可以自动启动OAuth的接口例如</p>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 该配置类用于管理 OAuth 服务的授权服务器
+ *
+ * @author Maiicy
+ * @since 2025-09-19
+ */</span>
+<span class="token annotation punctuation">@Configuration</span>
+<span class="token annotation punctuation">@EnableWebSecurity</span>
+<span class="token annotation punctuation">@RequiredArgsConstructor</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AuthorizationServerConfig</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">JwtCoreUtil</span> jwtCoreUtil<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">LocalTokenBlacklistService</span> tokenBlacklistService<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">AuthorizationServerProperties</span> properties<span class="token punctuation">;</span> <span class="token comment">// 注入配置类</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">AuthorizationJwtConfig</span> jwtConfig<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">AuthService</span> authService<span class="token punctuation">;</span>
+
+    <span class="token comment">/**
+     * 核心：应用 SAS 默认的授权服务器安全策略
+     */</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token annotation punctuation">@Order</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token class-name">SecurityFilterChain</span> <span class="token function">authServerSecurityFilterChain</span><span class="token punctuation">(</span><span class="token class-name">HttpSecurity</span> http<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">OAuth2AuthorizationServerConfiguration</span><span class="token punctuation">.</span><span class="token function">applyDefaultSecurity</span><span class="token punctuation">(</span>http<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        http<span class="token punctuation">.</span><span class="token function">formLogin</span><span class="token punctuation">(</span><span class="token class-name">AbstractHttpConfigurer</span><span class="token operator">::</span><span class="token function">disable</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">csrf</span><span class="token punctuation">(</span><span class="token class-name">AbstractHttpConfigurer</span><span class="token operator">::</span><span class="token function">disable</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">httpBasic</span><span class="token punctuation">(</span><span class="token class-name">AbstractHttpConfigurer</span><span class="token operator">::</span><span class="token function">disable</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">JwtAuthFilter</span> jwtAuthFilter <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JwtAuthFilter</span><span class="token punctuation">(</span>jwtCoreUtil<span class="token punctuation">,</span> authService<span class="token punctuation">,</span> tokenBlacklistService<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 只有在 AbstractPreAuthenticatedProcessingFilter 之前才能保证在 EndPointFilter 之前</span>
+        <span class="token comment">// 参考：&lt;https://stackoverflow.com/questions/46801064/add-filter-before-oauth2authenticationprocessingfilter></span>
+        http<span class="token punctuation">.</span><span class="token function">addFilterBefore</span><span class="token punctuation">(</span>jwtAuthFilter<span class="token punctuation">,</span> <span class="token class-name">AbstractPreAuthenticatedProcessingFilter</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> http<span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 注册客户端
+     */</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> <span class="token class-name">RegisteredClientRepository</span> <span class="token function">registeredClientRepository</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">RegisteredClient</span><span class="token punctuation">></span></span> clients <span class="token operator">=</span> properties<span class="token punctuation">.</span><span class="token function">getClients</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>clientProps <span class="token operator">-></span> <span class="token class-name">RegisteredClient</span><span class="token punctuation">.</span><span class="token function">withId</span><span class="token punctuation">(</span><span class="token constant">UUID</span><span class="token punctuation">.</span><span class="token function">randomUUID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">clientId</span><span class="token punctuation">(</span>clientProps<span class="token punctuation">.</span><span class="token function">getId</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">clientSecret</span><span class="token punctuation">(</span>clientProps<span class="token punctuation">.</span><span class="token function">getSecret</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">redirectUri</span><span class="token punctuation">(</span>clientProps<span class="token punctuation">.</span><span class="token function">getRedirectUri</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">scopes</span><span class="token punctuation">(</span>scopes <span class="token operator">-></span> scopes<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span>clientProps<span class="token punctuation">.</span><span class="token function">getScopes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">authorizationGrantType</span><span class="token punctuation">(</span><span class="token class-name">AuthorizationGrantType</span><span class="token punctuation">.</span><span class="token constant">AUTHORIZATION_CODE</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">authorizationGrantType</span><span class="token punctuation">(</span><span class="token class-name">AuthorizationGrantType</span><span class="token punctuation">.</span><span class="token constant">REFRESH_TOKEN</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">tokenSettings</span><span class="token punctuation">(</span><span class="token class-name">TokenSettings</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                                <span class="token punctuation">.</span><span class="token function">accessTokenTimeToLive</span><span class="token punctuation">(</span><span class="token class-name">Duration</span><span class="token punctuation">.</span><span class="token function">ofSeconds</span><span class="token punctuation">(</span>properties<span class="token punctuation">.</span><span class="token function">getToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getAccessTokenTtl</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                                <span class="token punctuation">.</span><span class="token function">refreshTokenTimeToLive</span><span class="token punctuation">(</span><span class="token class-name">Duration</span><span class="token punctuation">.</span><span class="token function">ofSeconds</span><span class="token punctuation">(</span>properties<span class="token punctuation">.</span><span class="token function">getToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getRefreshTokenTtl</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">InMemoryRegisteredClientRepository</span><span class="token punctuation">(</span>clients<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 生成 JWK（RSA 公私钥）供 SAS 签发 JWT 使用
+     */</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> <span class="token class-name">JWKSource</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">SecurityContext</span><span class="token punctuation">></span></span> <span class="token function">jwkSource</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">KeyPair</span> keyPair <span class="token operator">=</span> jwtConfig<span class="token punctuation">.</span><span class="token function">jwtKeyPair</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">RSAPublicKey</span> publicKey <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">RSAPublicKey</span><span class="token punctuation">)</span> keyPair<span class="token punctuation">.</span><span class="token function">getPublic</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">RSAPrivateKey</span> privateKey <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">RSAPrivateKey</span><span class="token punctuation">)</span> keyPair<span class="token punctuation">.</span><span class="token function">getPrivate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">RSAKey</span> rsaKey <span class="token operator">=</span>
+                <span class="token keyword">new</span> <span class="token class-name">RSAKey<span class="token punctuation">.</span>Builder</span><span class="token punctuation">(</span>publicKey<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">privateKey</span><span class="token punctuation">(</span>privateKey<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">keyID</span><span class="token punctuation">(</span><span class="token constant">UUID</span><span class="token punctuation">.</span><span class="token function">randomUUID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">JWKSet</span> jwkSet <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">JWKSet</span><span class="token punctuation">(</span>rsaKey<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span> <span class="token class-name">ImmutableJWKSet</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>jwkSet<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 授权服务器元数据配置
+     */</span>
+    <span class="token annotation punctuation">@Bean</span>
+    <span class="token keyword">public</span> <span class="token class-name">AuthorizationServerSettings</span> <span class="token function">authorizationServerSettings</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token class-name">AuthorizationServerSettings</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">issuer</span><span class="token punctuation">(</span>properties<span class="token punctuation">.</span><span class="token function">getIssuer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="客户端">客户端</h2>
+<p>客户端需要编码Filter以及Handler</p>
+<h3 id="Filter（主要负责登陆校验）">Filter（主要负责登陆校验）</h3>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 全局 HTTP 过滤器，用于验证请求中的 JWT，并根据结果执行后续请求或返回 401。
+ * 支持 JWK 缓存、自动刷新、验证失败回退及旧密钥清理。
+ *
+ * @author Maiicy
+ * @since 2025-09-22
+ */</span>
+<span class="token annotation punctuation">@Component</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">OAuthJwtFilter</span> <span class="token keyword">implements</span> <span class="token class-name">HttpServerFilter</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">Logger</span> log <span class="token operator">=</span> <span class="token class-name">Logger</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token class-name">OAuthJwtFilter</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">String</span> <span class="token constant">TOKEN_KEY</span> <span class="token operator">=</span> <span class="token string">"access-token"</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">String</span> <span class="token constant">FILTER_ENABLE_VALUE</span> <span class="token operator">=</span> <span class="token string">"enable"</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">String</span> <span class="token constant">JWKS_PATH</span> <span class="token operator">=</span> <span class="token string">"/oauth2/jwks"</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">static</span> <span class="token class-name">String</span> <span class="token constant">REDIRECT_PATH</span> <span class="token operator">=</span> <span class="token string">"/v1/api/auth/redirect?redirect_uri="</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">long</span> <span class="token constant">JWKS_CACHE_MS</span> <span class="token operator">=</span> <span class="token number">24</span> <span class="token operator">*</span> <span class="token number">60</span> <span class="token operator">*</span> <span class="token number">60</span> <span class="token operator">*</span> <span class="token number">1000L</span><span class="token punctuation">;</span> <span class="token comment">// 24小时刷新</span>
+    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token keyword">long</span> <span class="token constant">JWKS_KEY_MAX_AGE</span> <span class="token operator">=</span> <span class="token number">2L</span> <span class="token operator">*</span> <span class="token number">24</span> <span class="token operator">*</span> <span class="token number">60</span> <span class="token operator">*</span> <span class="token number">60</span> <span class="token operator">*</span> <span class="token number">1000</span><span class="token punctuation">;</span> <span class="token comment">// 2天旧密钥保留</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">URL</span> jwksURL<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">String</span> loginBridgeUrlPrefix<span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token keyword">boolean</span> enableFilter<span class="token punctuation">;</span>
+
+    <span class="token comment">// 缓存 JWK 集合</span>
+    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">CopyOnWriteArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">CachedJwk</span><span class="token punctuation">></span></span> cachedJwks <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CopyOnWriteArrayList</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">private</span> <span class="token keyword">volatile</span> <span class="token keyword">long</span> lastJwkLoadTime <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">private</span> <span class="token keyword">record</span> <span class="token class-name">CachedJwk</span><span class="token punctuation">(</span><span class="token class-name">JWK</span> jwk<span class="token punctuation">,</span> <span class="token keyword">long</span> loadTime<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+
+    <span class="token class-name">OAuthJwtFilter</span><span class="token punctuation">(</span><span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"$&#123;oauth.oauth-endpoint&#125;"</span><span class="token punctuation">)</span> <span class="token class-name">String</span> oauthEndpoint<span class="token punctuation">,</span>
+            <span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"$&#123;oauth.client-api-endpoint&#125;"</span><span class="token punctuation">)</span> <span class="token class-name">String</span> apiEndpoint<span class="token punctuation">,</span>
+            <span class="token annotation punctuation">@Value</span><span class="token punctuation">(</span><span class="token string">"$&#123;filter.oauth2-filter&#125;"</span><span class="token punctuation">)</span> <span class="token class-name">String</span> oauthFilterEnabled<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>enableFilter <span class="token operator">=</span> <span class="token class-name">StringUtils</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>oauthFilterEnabled<span class="token punctuation">,</span> <span class="token constant">FILTER_ENABLE_VALUE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">this</span><span class="token punctuation">.</span>loginBridgeUrlPrefix <span class="token operator">=</span> apiEndpoint <span class="token operator">+</span> <span class="token constant">REDIRECT_PATH</span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">this</span><span class="token punctuation">.</span>jwksURL <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">URL</span><span class="token punctuation">(</span>oauthEndpoint <span class="token operator">+</span> <span class="token constant">JWKS_PATH</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">MalformedURLException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">RuntimeException</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token class-name">String</span> <span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token string">"OAuthJwtFilter"</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">int</span> <span class="token function">priority</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Order</span><span class="token punctuation">.</span><span class="token constant">HIGH</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">matchPatterns</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Collections</span><span class="token punctuation">.</span><span class="token function">singletonList</span><span class="token punctuation">(</span><span class="token string">"/**"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> <span class="token function">mismatchPatterns</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token string">"/api/app/v1/**"</span><span class="token punctuation">,</span>
+                <span class="token string">"/fit/check/**"</span><span class="token punctuation">,</span>
+                <span class="token string">"/v1/api/auth/callback"</span><span class="token punctuation">,</span>
+                <span class="token string">"/v1/api/auth/login"</span><span class="token punctuation">,</span>
+                <span class="token string">"/v1/api/auth/redirect"</span><span class="token punctuation">,</span>
+                <span class="token string">"/v1/api/auth/refresh-token"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">doFilter</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerRequest</span> request<span class="token punctuation">,</span> <span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">,</span>
+            <span class="token class-name">HttpServerFilterChain</span> chain<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token keyword">this</span><span class="token punctuation">.</span>enableFilter<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+            chain<span class="token punctuation">.</span><span class="token function">doFilter</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">String</span> accessToken <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">cookies</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">all</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>cookie <span class="token operator">-></span> <span class="token constant">TOKEN_KEY</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>cookie<span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">findFirst</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token class-name">Cookie</span><span class="token operator">::</span><span class="token function">value</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>accessToken <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">sendUnAuthResponse</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">String</span> username <span class="token operator">=</span> <span class="token function">parseTokenSubject</span><span class="token punctuation">(</span>accessToken<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>username <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">sendUnAuthResponse</span><span class="token punctuation">(</span>response<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">UserContext</span> operationContext <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">UserContext</span><span class="token punctuation">(</span>username<span class="token punctuation">,</span>
+                <span class="token class-name">HttpRequestUtils</span><span class="token punctuation">.</span><span class="token function">getUserIp</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token class-name">HttpRequestUtils</span><span class="token punctuation">.</span><span class="token function">getAcceptLanguages</span><span class="token punctuation">(</span>request<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">UserContextHolder</span><span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>operationContext<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> chain<span class="token punctuation">.</span><span class="token function">doFilter</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> response<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@Override</span>
+    <span class="token keyword">public</span> <span class="token class-name">Scope</span> <span class="token function">scope</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token class-name">Scope</span><span class="token punctuation">.</span><span class="token constant">GLOBAL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 解析 JWT 并验证签名及过期时间。
+     *
+     * @param jwtString 待验证的 JWT 字符串
+     * @return 验证成功返回 token 的 subject（用户名），否则返回 null
+     */</span>
+    <span class="token class-name">String</span> <span class="token function">parseTokenSubject</span><span class="token punctuation">(</span><span class="token class-name">String</span> jwtString<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">SignedJWT</span> signedJWT <span class="token operator">=</span> <span class="token class-name">SignedJWT</span><span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>jwtString<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">Date</span> exp <span class="token operator">=</span> signedJWT<span class="token punctuation">.</span><span class="token function">getJWTClaimsSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getExpirationTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>exp <span class="token operator">==</span> <span class="token keyword">null</span> <span class="token operator">||</span> exp<span class="token punctuation">.</span><span class="token function">before</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token class-name">String</span> kid <span class="token operator">=</span> signedJWT<span class="token punctuation">.</span><span class="token function">getHeader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getKeyID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 定期刷新 JWK</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span> lastJwkLoadTime <span class="token operator">></span> <span class="token constant">JWKS_CACHE_MS</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token function">refreshJwkSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token comment">// 尝试验证</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">verifyWithCachedJwks</span><span class="token punctuation">(</span>signedJWT<span class="token punctuation">,</span> kid<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">return</span> signedJWT<span class="token punctuation">.</span><span class="token function">getJWTClaimsSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getSubject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token comment">// 验证失败，回退刷新一次</span>
+            <span class="token function">refreshJwkSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">verifyWithCachedJwks</span><span class="token punctuation">(</span>signedJWT<span class="token punctuation">,</span> kid<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">return</span> signedJWT<span class="token punctuation">.</span><span class="token function">getJWTClaimsSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getSubject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">ParseException</span> <span class="token operator">|</span> <span class="token class-name">JOSEException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            log<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"JWT parse or verify failed: &#123;&#125;"</span><span class="token punctuation">,</span> e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 用本地缓存的 JWK 验证 JWT。
+     */</span>
+    <span class="token keyword">boolean</span> <span class="token function">verifyWithCachedJwks</span><span class="token punctuation">(</span><span class="token class-name">SignedJWT</span> signedJWT<span class="token punctuation">,</span> <span class="token class-name">String</span> kid<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">JOSEException</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">long</span> now <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">CachedJwk</span><span class="token punctuation">></span></span> activeKeys <span class="token operator">=</span> cachedJwks<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>c <span class="token operator">-></span> now <span class="token operator">-</span> c<span class="token punctuation">.</span>loadTime <span class="token operator">&lt;=</span> <span class="token constant">JWKS_KEY_MAX_AGE</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">CachedJwk</span> cached <span class="token operator">:</span> activeKeys<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">JWK</span> jwk <span class="token operator">=</span> cached<span class="token punctuation">.</span>jwk<span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token string">"RSA"</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>jwk<span class="token punctuation">.</span><span class="token function">getKeyType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>kid <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>kid<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>jwk<span class="token punctuation">.</span><span class="token function">getKeyID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">continue</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+
+            <span class="token class-name">RSAPublicKey</span> publicKey <span class="token operator">=</span> jwk<span class="token punctuation">.</span><span class="token function">toRSAKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toRSAPublicKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token class-name">JWSVerifier</span> verifier <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RSASSAVerifier</span><span class="token punctuation">(</span>publicKey<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">if</span> <span class="token punctuation">(</span>signedJWT<span class="token punctuation">.</span><span class="token function">verify</span><span class="token punctuation">(</span>verifier<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 刷新远程 JWK，并合并到本地缓存，同时清理过期旧密钥。
+     */</span>
+    <span class="token keyword">private</span> <span class="token keyword">synchronized</span> <span class="token keyword">void</span> <span class="token function">refreshJwkSet</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">JWKSet</span> newSet <span class="token operator">=</span> <span class="token class-name">JWKSet</span><span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span>jwksURL<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">long</span> now <span class="token operator">=</span> <span class="token class-name">System</span><span class="token punctuation">.</span><span class="token function">currentTimeMillis</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 清理过期旧密钥</span>
+            cachedJwks<span class="token punctuation">.</span><span class="token function">removeIf</span><span class="token punctuation">(</span>c <span class="token operator">-></span> now <span class="token operator">-</span> c<span class="token punctuation">.</span>loadTime <span class="token operator">></span> <span class="token constant">JWKS_KEY_MAX_AGE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+            <span class="token comment">// 添加新密钥（去重 kid）</span>
+            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token constant">JWK</span> jwk <span class="token operator">:</span> newSet<span class="token punctuation">.</span><span class="token function">getKeys</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token keyword">boolean</span> exists <span class="token operator">=</span> cachedJwks<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">anyMatch</span><span class="token punctuation">(</span>c <span class="token operator">-></span> c<span class="token punctuation">.</span>jwk<span class="token punctuation">.</span><span class="token function">getKeyID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>jwk<span class="token punctuation">.</span><span class="token function">getKeyID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>exists<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                    cachedJwks<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">CachedJwk</span><span class="token punctuation">(</span>jwk<span class="token punctuation">,</span> now<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token punctuation">&#125;</span>
+            <span class="token punctuation">&#125;</span>
+
+            lastJwkLoadTime <span class="token operator">=</span> now<span class="token punctuation">;</span>
+
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">IOException</span> <span class="token operator">|</span> <span class="token class-name">ParseException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            log<span class="token punctuation">.</span><span class="token function">warn</span><span class="token punctuation">(</span><span class="token string">"Failed to refresh JWKS: &#123;&#125;"</span><span class="token punctuation">,</span> e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 返回 401 未授权响应，并在 header 中添加跳转授权前缀。
+     *
+     * @param response 当前 HTTP 响应对象
+     */</span>
+    <span class="token keyword">void</span> <span class="token function">sendUnAuthResponse</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">401</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"fit-redirect-to-prefix"</span><span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>loginBridgeUrlPrefix<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="OAuth客户端接口">OAuth客户端接口</h3>
+<pre class="line-numbers language-java" data-language="java"><code class="language-java"><span class="token comment">/**
+ * 用户认证控制器（OAuth2）。
+ * 提供登录、注销和回调处理接口，实现基于 OAuth2 的认证流程，
+ * 并将 Access Token 设置到 HttpOnly Cookie 中。
+ *
+ * @author Maiicy
+ * @since 2025-09-22
+ */</span>
+<span class="token annotation punctuation">@Component</span>
+<span class="token annotation punctuation">@Validated</span>
+<span class="token annotation punctuation">@RequestMapping</span><span class="token punctuation">(</span>path <span class="token operator">=</span> <span class="token string">"v1/api/auth"</span><span class="token punctuation">,</span> group <span class="token operator">=</span> <span class="token string">"用户认证相关（OAuth）"</span><span class="token punctuation">)</span>
+<span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">AuthController</span> <span class="token punctuation">&#123;</span>
+		<span class="token comment">/** 略部分代码 **/</span>
+
+    <span class="token comment">/**
+     * 处理 OAuth2 回调请求。
+     * &lt;p>
+     * 接收授权服务器返回的重定向请求，解析 Authorization Code，
+     * 使用该 Code 向 Token Endpoint 请求 Access Token，然后将其设置到 HttpOnly Cookie 中，
+     * 最后重定向到首页。
+     *
+     * @param request 当前的 HTTP 请求对象，包含查询参数和请求信息
+     * @param response 当前的 HTTP 响应对象，用于写入 Set-Cookie 和重定向头
+     * @throws Exception 解析 URI、发送 Token 请求或处理响应时可能抛出的异常
+     */</span>
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/callback"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@ResponseStatus</span><span class="token punctuation">(</span><span class="token class-name">HttpResponseStatus</span><span class="token punctuation">.</span><span class="token constant">MOVED_PERMANENTLY</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">handleCallback</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerRequest</span> request<span class="token punctuation">,</span> <span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">String</span> scheme <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">isSecure</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token string">"https"</span> <span class="token operator">:</span> <span class="token string">"http"</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> host <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">host</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> path <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">path</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> query <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">queries</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">queryString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> fullUrl <span class="token operator">=</span> scheme <span class="token operator">+</span> <span class="token string">"://"</span> <span class="token operator">+</span> host <span class="token operator">+</span> path <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token operator">!</span>query<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token string">"?"</span> <span class="token operator">+</span> query <span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">URI</span> callbackURI <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">URI</span><span class="token punctuation">(</span>fullUrl<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">AuthorizationResponse</span> authResp <span class="token operator">=</span> <span class="token class-name">AuthorizationResponse</span><span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>callbackURI<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>authResp<span class="token punctuation">.</span><span class="token function">indicatesSuccess</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// throw new BadRequestException("Authorization failed: invalid response.");</span>
+            response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token class-name">AuthorizationSuccessResponse</span> successResponse <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">AuthorizationSuccessResponse</span><span class="token punctuation">)</span> authResp<span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>successResponse<span class="token punctuation">.</span><span class="token function">getAuthorizationCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// throw new BadRequestException("Authorization code is missing.");</span>
+            response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">AuthorizationCode</span> code <span class="token operator">=</span> successResponse<span class="token punctuation">.</span><span class="token function">getAuthorizationCode</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">AuthorizationGrant</span> codeGrant <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AuthorizationCodeGrant</span><span class="token punctuation">(</span>code<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">TokenRequest</span> tokenRequest <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">TokenRequest<span class="token punctuation">.</span>Builder</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>tokenEndpoint<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>clientAuth<span class="token punctuation">,</span> codeGrant<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">HTTPResponse</span> httpResponse <span class="token operator">=</span> tokenRequest<span class="token punctuation">.</span><span class="token function">toHTTPRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">TokenResponse</span> tokenResponse <span class="token operator">=</span> <span class="token class-name">TokenResponse</span><span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>httpResponse<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>tokenResponse<span class="token punctuation">.</span><span class="token function">indicatesSuccess</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">Tokens</span> tokens <span class="token operator">=</span> tokenResponse<span class="token punctuation">.</span><span class="token function">toSuccessResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getTokens</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> accessToken <span class="token operator">=</span> tokens<span class="token punctuation">.</span><span class="token function">getAccessToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> refreshToken <span class="token operator">=</span> tokens<span class="token punctuation">.</span><span class="token function">getRefreshToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">Cookie</span> cookie1 <span class="token operator">=</span>
+                <span class="token class-name">Cookie</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token string">"access-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span>accessToken<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">httpOnly</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">secure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">path</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">Cookie</span> cookie2 <span class="token operator">=</span> <span class="token class-name">Cookie</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token string">"refresh-token"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span>refreshToken<span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">httpOnly</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">secure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">path</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 3.5.4 版本之后应当添加   .sameSite("None")</span>
+
+        <span class="token comment">// 3.5.4 版本之前 response 内写 cookie 框架还暂时不会把他改为 Set-Cookie, 因此暂时先手动写入响应头，等新版fit-framework后修改</span>
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"Set-Cookie"</span><span class="token punctuation">,</span> <span class="token function">toSetCookieHeaderValue</span><span class="token punctuation">(</span>cookie1<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"Set-Cookie"</span><span class="token punctuation">,</span> <span class="token function">toSetCookieHeaderValue</span><span class="token punctuation">(</span>cookie2<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">String</span> redirectUrl <span class="token operator">=</span> <span class="token function">decryptState</span><span class="token punctuation">(</span>authResp<span class="token punctuation">.</span><span class="token function">getState</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"Location"</span><span class="token punctuation">,</span> redirectUrl<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">JOSEException</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"Location"</span><span class="token punctuation">,</span> <span class="token string">"/"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/redirect"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@ResponseStatus</span><span class="token punctuation">(</span><span class="token class-name">HttpResponseStatus</span><span class="token punctuation">.</span><span class="token constant">FOUND</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">handleRedirect</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">,</span> <span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span><span class="token string">"redirect_uri"</span><span class="token punctuation">)</span> <span class="token class-name">String</span> url<span class="token punctuation">)</span>
+            <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+
+        <span class="token class-name">URI</span> target <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">URI</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">boolean</span> sameHost <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">.</span><span class="token function">getHost</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>target<span class="token punctuation">.</span><span class="token function">getHost</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> sameScheme <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">.</span><span class="token function">getScheme</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">equalsIgnoreCase</span><span class="token punctuation">(</span>target<span class="token punctuation">.</span><span class="token function">getScheme</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">boolean</span> samePort <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">.</span><span class="token function">getPort</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span>
+                <span class="token operator">?</span> <span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">.</span><span class="token function">toURL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDefaultPort</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token operator">:</span> <span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">.</span><span class="token function">getPort</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token punctuation">(</span>target<span class="token punctuation">.</span><span class="token function">getPort</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span>
+                <span class="token operator">?</span> target<span class="token punctuation">.</span><span class="token function">toURL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDefaultPort</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token operator">:</span> target<span class="token punctuation">.</span><span class="token function">getPort</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>sameHost <span class="token operator">&amp;&amp;</span> sameScheme <span class="token operator">&amp;&amp;</span> samePort<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// throw new BadRequestException("Redirect URI must be same-domain as registered redirectUri");</span>
+            response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">String</span> state <span class="token operator">=</span> <span class="token function">encryptState</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">AuthorizationRequest</span> authRequest <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AuthorizationRequest<span class="token punctuation">.</span>Builder</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ResponseType</span><span class="token punctuation">(</span><span class="token class-name">ResponseType<span class="token punctuation">.</span>Value</span><span class="token punctuation">.</span><span class="token constant">CODE</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token keyword">this</span><span class="token punctuation">.</span>clientId<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">scope</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Scope</span><span class="token punctuation">(</span><span class="token string">"read"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">state</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">State</span><span class="token punctuation">(</span>state<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">redirectionURI</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>redirectUri<span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">endpointURI</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>loginEndpoint<span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"Location"</span><span class="token punctuation">,</span> authRequest<span class="token punctuation">.</span><span class="token function">toURI</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/refresh-token"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@ResponseStatus</span><span class="token punctuation">(</span><span class="token class-name">HttpResponseStatus</span><span class="token punctuation">.</span><span class="token constant">OK</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">handleRefreshToken</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerRequest</span> request<span class="token punctuation">,</span> <span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">)</span>
+            <span class="token keyword">throws</span> <span class="token class-name">Exception</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">cookies</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"refresh-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token class-name">String</span> refreshToken <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">cookies</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"refresh-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">RefreshTokenGrant</span> refreshGrant <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RefreshTokenGrant</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">RefreshToken</span><span class="token punctuation">(</span>refreshToken<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">TokenRequest</span> tokenRequest <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">TokenRequest<span class="token punctuation">.</span>Builder</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>tokenEndpoint<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>clientAuth<span class="token punctuation">,</span> refreshGrant<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">HTTPResponse</span> httpResponse <span class="token operator">=</span> tokenRequest<span class="token punctuation">.</span><span class="token function">toHTTPRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">TokenResponse</span> tokenResponse <span class="token operator">=</span> <span class="token class-name">TokenResponse</span><span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span>httpResponse<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>tokenResponse<span class="token punctuation">.</span><span class="token function">indicatesSuccess</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token comment">// throw new BadRequestException("Failed to refresh access token");</span>
+            response<span class="token punctuation">.</span><span class="token function">statusCode</span><span class="token punctuation">(</span><span class="token number">400</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">return</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+
+        <span class="token class-name">AccessTokenResponse</span> successResponse <span class="token operator">=</span> tokenResponse<span class="token punctuation">.</span><span class="token function">toSuccessResponse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">AccessToken</span> newAccessToken <span class="token operator">=</span> successResponse<span class="token punctuation">.</span><span class="token function">getTokens</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getAccessToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">String</span> accessToken <span class="token operator">=</span> newAccessToken<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token class-name">Cookie</span> cookie <span class="token operator">=</span>
+                <span class="token class-name">Cookie</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token string">"access-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span>accessToken<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">httpOnly</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">secure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">path</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"Set-Cookie"</span><span class="token punctuation">,</span> <span class="token function">toSetCookieHeaderValue</span><span class="token punctuation">(</span>cookie<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 处理登录请求。
+     * &lt;p>
+     * 返回 401 Unauthorized 状态，并在自定义响应头中指明 OAuth2 授权端点。
+     * 前端可根据该头信息发起 OAuth2 授权流程。
+     *
+     * @param response 当前的 HTTP 响应对象，用于写入状态码和自定义跳转头
+     */</span>
+    <span class="token annotation punctuation">@PostMapping</span><span class="token punctuation">(</span><span class="token string">"/login"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@ResponseStatus</span><span class="token punctuation">(</span><span class="token class-name">HttpResponseStatus</span><span class="token punctuation">.</span><span class="token constant">UNAUTHORIZED</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">handleLogin</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"fit-redirect-to-prefix"</span><span class="token punctuation">,</span> loginBridgeUrlPrefix<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">/**
+     * 处理注销请求。
+     * &lt;p>
+     * 清除客户端的 Access Token Cookie，将其 Max-Age 设置为 0。
+     *
+     * @param response 当前的 HTTP 响应对象，用于写入 Set-Cookie 头
+     */</span>
+    <span class="token annotation punctuation">@PostMapping</span><span class="token punctuation">(</span><span class="token string">"/logout"</span><span class="token punctuation">)</span>
+    <span class="token annotation punctuation">@ResponseStatus</span><span class="token punctuation">(</span><span class="token class-name">HttpResponseStatus</span><span class="token punctuation">.</span><span class="token constant">OK</span><span class="token punctuation">)</span>
+    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">handleLogout</span><span class="token punctuation">(</span><span class="token class-name">HttpClassicServerRequest</span> request<span class="token punctuation">,</span> <span class="token class-name">HttpClassicServerResponse</span> response<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token class-name">Cookie</span> cookie1 <span class="token operator">=</span>
+                <span class="token class-name">Cookie</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token string">"access-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">httpOnly</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">secure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">path</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">maxAge</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token class-name">Cookie</span> cookie2 <span class="token operator">=</span> <span class="token class-name">Cookie</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token string">"refresh-token"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">httpOnly</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">secure</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">path</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">maxAge</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+                <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"Set-Cookie"</span><span class="token punctuation">,</span> <span class="token function">toSetCookieHeaderValue</span><span class="token punctuation">(</span>cookie1<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        response<span class="token punctuation">.</span><span class="token function">headers</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token string">"Set-Cookie"</span><span class="token punctuation">,</span> <span class="token function">toSetCookieHeaderValue</span><span class="token punctuation">(</span>cookie2<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>request<span class="token punctuation">.</span><span class="token function">cookies</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"refresh-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">isPresent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token class-name">String</span> refreshTokenValue <span class="token operator">=</span> request<span class="token punctuation">.</span><span class="token function">cookies</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"refresh-token"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">value</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+                <span class="token class-name">RefreshToken</span> refreshToken <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">RefreshToken</span><span class="token punctuation">(</span>refreshTokenValue<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                <span class="token class-name">TokenRevocationRequest</span> revocationRequest <span class="token operator">=</span>
+                        <span class="token keyword">new</span> <span class="token class-name">TokenRevocationRequest</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>revokeEndpoint<span class="token punctuation">,</span> <span class="token keyword">this</span><span class="token punctuation">.</span>clientAuth<span class="token punctuation">,</span> refreshToken<span class="token punctuation">)</span><span class="token punctuation">;</span>
+                revocationRequest<span class="token punctuation">.</span><span class="token function">toHTTPRequest</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+                <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span><span class="token function">getMessage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token punctuation">&#125;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>功能拓展（单点登出 + 跳回原URL）</h1>
+<h2 id="单点登出">单点登出</h2>
+<p>将SAS的签发存储改为数据库存储，建立其使用的表（官方文档中提供）</p>
+<p>后定制清除所有 Refresh-Token 的方法给登出Handler调用即可。</p>
+<p>客户端会在 access-token 过期之后自动申请更新，如果refresh被改为无效就完成登出。</p>
+<h2 id="跳回原URL">跳回原URL</h2>
+<p>在OAuth2 中跳回原URL的信息都是存储在state</p>
+<p>项目是前后端分离的：</p>
+<ul>
+<li>state因为涉及加密，因此应该交给后端</li>
+<li>但原URL的信息只有前端拥有</li>
+</ul>
+<p>因此设计 <code>/redirect</code> 接口，在前端要跳转的时候，将当前的URL信息发送给后端接口，后端接口进行安全验证后，加密成为state进行OAuth2的传输。</p>
+<p>state会在callback接口进行传回，因此直接再解密进行跳转即可。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/10/20/Spring%20Security%20%E5%AD%A6%E4%B9%A0/">Spring Security 学习</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/OAuth2-0/" rel="tag">OAuth2.0</a><a class="-none-link" href="/tags/Spring-Boot/" rel="tag">Spring Boot</a><a class="-none-link" href="/tags/java/" rel="tag">java</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/11/01/OAuth2.0%20%E5%AE%A2%E6%88%B7%E7%AB%AF+%E6%8E%88%E6%9D%83%E7%AB%AF%20%E5%AE%9E%E8%B7%B5%E8%AE%BE%E8%AE%A1/">OAuth2.0 客户端+授权端 实践设计</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/10/20/Spring%20Security%20%E5%AD%A6%E4%B9%A0/">Spring Security 学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/22/Spring%20AOP%20%E5%AD%A6%E4%B9%A0/">Spring AOP 学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/21/Spring%20Boot%20%E5%88%9D%E8%AF%86/">Spring Boot 初识</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/18/computer-network-note12/">计算机网络笔记12——链路层重点</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/06/16/computer-network-note11/">计算机网络笔记11——网络层重点</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 10px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 11.43px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 15.71px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
