@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>操作系统笔记——存储器管理 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="操作系统笔记——存储器管理"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>操作系统笔记——存储器管理</h2>
+            <div class="post-meta">
+                <time class="date">2025.12.05</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>连续存储器管理方式</h1>
+<h2 id="固定分区方式（Fixed-Partitioning）">固定分区方式（Fixed Partitioning）</h2>
+<p>固定分区方式是最早的内存管理方法之一。其核心思想是：</p>
+<p>在系统启动时将内存划分为若干大小固定的分区，每个分区只装入一个作业。</p>
+<h3 id="特点">特点</h3>
+<ul>
+<li>实现简单：系统只需管理少量固定的分区表。</li>
+<li>分区大小固定：分区大小在系统启动时确定，运行时不能改变。</li>
+</ul>
+<h3 id="缺点">缺点</h3>
+<ol>
+<li>
+<p>内部碎片（Internal Fragmentation）严重：</p>
+<p>进程大小小于分区大小 → 分区剩余空间无法利用。</p>
+</li>
+<li>
+<p>灵活性差：不同作业大小不匹配时，可能导致大作业无法进入系统。</p>
+</li>
+<li>
+<p>分区数量有限：可能造成 多道程序并发度低。</p>
+</li>
+</ol>
+<h2 id="可变分区方式（Variable-Partitioning）">可变分区方式（Variable Partitioning）</h2>
+<p>可变分区方式按需分配内存：</p>
+<p>每次装入作业时，根据作业大小动态划分分区，不预先固定分区数量与大小。</p>
+<h3 id="特点-2">特点</h3>
+<ul>
+<li>无内部碎片：分区大小和作业匹配。</li>
+<li>存在外部碎片（External Fragmentation）：随着进程装入与退出，不连续的空闲空间逐渐增多。</li>
+<li>可通过 内存紧凑（Compaction） 解决外部碎片，但代价高，需要移动进程。</li>
+</ul>
+<h2 id="可变分区分配算法">可变分区分配算法</h2>
+<h3 id="1-首次适应算法（First-Fit）">1. 首次适应算法（First Fit）</h3>
+<p>思想：从空闲区链表 头开始 查找，遇到第一个能满足作业大小的空闲块就分配。</p>
+<p>优点：简单高效，查找速度快。空闲区链表通常按地址升序排列，易于维护。</p>
+<p>缺点：低地址端容易变得零碎，产生大量小外部碎片。</p>
+<h3 id="2-最佳适应算法（Best-Fit）">2. 最佳适应算法（Best Fit）</h3>
+<p>思想：扫描所有空闲区，选择 大小最接近、但又能容纳作业 的分区进行分配。</p>
+<p>优点：最大程度利用空间，减少大空闲块被切碎的可能性。</p>
+<p>缺点：查找整个空闲区列表，开销大。容易产生 大量非常小的外部碎片，长期效果并不好。</p>
+<h3 id="3-最坏适应算法（Worst-Fit）">3. 最坏适应算法（Worst Fit）</h3>
+<p>思想：选择 最大的空闲区 分配。</p>
+<p>优点：避免产生很多小碎片，留下较大的剩余空间。</p>
+<p>缺点：常常把最大内存块切得过碎，使内存缺乏大块空间。</p>
+<h2 id="回收算法">回收算法</h2>
+<p>将被释放的分区插入空闲区链表中，并与相邻空闲区进行必要的合并。</p>
+<p>假设释放区为 <code>R</code>，空闲区按地址升序排列。</p>
+<p>需要检查四种情况：</p>
+<ol>
+<li>
+<p>R 的前后都没有空闲区相邻</p>
+<p>→ 单独作为一个新的空闲块插入链表。</p>
+</li>
+<li>
+<p>R 与前一个空闲区相邻（前合并）</p>
+<p>→ 合并成一个更大的空闲块。</p>
+</li>
+<li>
+<p>R 与后一个空闲区相邻（后合并）</p>
+<p>→ 合并成一个更大的空闲块。</p>
+</li>
+<li>
+<p>R 同时与前后两个空闲区相邻（前后合并）</p>
+<p>→ 三者合并成一个大空闲块。</p>
+</li>
+</ol>
+<h1>页式存储管理方式</h1>
+<h2 id="基本思想">基本思想</h2>
+<p>将 进程的逻辑地址空间 分成固定大小的 页（Page），将 物理内存 划分成大小相同的 页帧（Frame）。</p>
+<p>进程运行时，将其页装入任意空闲页帧中，由 页表（Page Table） 实现逻辑地址到物理地址的转换。</p>
+<h2 id="特点-3">特点</h2>
+<p>将外部碎片转化为内部碎片，允许 非连续分配，利于多道程序提高内存利用率</p>
+<h2 id="地址结构">地址结构</h2>
+<p>逻辑地址通常分为两部分：</p>
+<pre class="line-numbers language-none"><code class="language-none">| 页号 (p) | 页内偏移 (d) |<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>地址转换过程：</p>
+<pre class="line-numbers language-none"><code class="language-none">物理地址 &#x3D; 页表[p] + d<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="支持机制">支持机制</h2>
+<ul>
+<li>页表（Page Table）：程序内的逻辑页号通过页表得以得到实际物理地址进行读取。</li>
+<li>快表 TLB（Translation Lookaside Buffer）：增加页表的小型高速缓存，命中就直接用，不命中就读页表（页表的访问会明显慢于快表，但是页表的容量可以明显大于快表）</li>
+<li>多级页表：解决单级页表过大的问题，</li>
+</ul>
+<h1>分段存储管理方式</h1>
+<h2 id="基本思想-2">基本思想</h2>
+<p>依据 程序的逻辑结构（代码段、数据段、栈段），将进程划分为多个 长度不等的段（Segment），使用 段表（Segment Table） 做逻辑地址到物理地址的映射。</p>
+<h2 id="特点-4">特点</h2>
+<ul>
+<li>分段根据逻辑结构划分，长度不固定</li>
+<li>程序员可见，易于实现 共享、保护</li>
+<li>不存在内部碎片</li>
+<li>存在外部碎片（段大小可变）</li>
+</ul>
+<hr>
+<h2 id="地址结构-2">地址结构</h2>
+<p>逻辑地址由两部分组成：</p>
+<pre class="line-numbers language-none"><code class="language-none">| 段号 (s) | 段内偏移 (d) |<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>地址转换：</p>
+<pre class="line-numbers language-none"><code class="language-none">物理地址 &#x3D; 段表[s].base + d<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>段表项内容：</p>
+<pre class="line-numbers language-none"><code class="language-none">base：段的起始物理地址
+limit：段长，用于越界检查<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>段式管理天然支持越界保护（检查 d &lt; limit）。</p>
+<h1>段页式存储管理方式</h1>
+<h2 id="基本思想-3">基本思想</h2>
+<p>结合 段式的逻辑性 和 页式的物理管理优势：</p>
+<ol>
+<li>先按逻辑结构划分为段</li>
+<li>每段内部再分页</li>
+<li>每段都有自己的 页表</li>
+</ol>
+<h2 id="地址结构-3">地址结构</h2>
+<p>逻辑地址由三部分组成：</p>
+<pre class="line-numbers language-none"><code class="language-none">| 段号 (s) | 页号 (p) | 页内偏移 (d) |<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>地址转换过程：</p>
+<pre class="line-numbers language-none"><code class="language-none">段表[s] 得到段的页表基地址
+段内页表[p] 得到物理页帧号
+物理地址 &#x3D; 页帧号 + d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h2 id="特点-5">特点</h2>
+<ul>
+<li>结合两种方式优势
+<ul>
+<li>分段：逻辑清晰、易于共享与保护</li>
+<li>分页：无外部碎片、支持离散分配</li>
+</ul>
+</li>
+<li>段间独立，段内分页，使得段大小灵活，不受页大小限制</li>
+<li>地址转换开销较大
+<ul>
+<li>可使用 TLB + 段表缓存加速</li>
+</ul>
+</li>
+</ul>
+<h1>虚拟存储系统</h1>
+<p>用页表机制把部分不在内存的数据暂存在磁盘，并在需要时自动加载，使得外部存储能作为内存的补充。</p>
+<p>抖动（系统颠簸）：频繁将页面换出换入（加载卸载），导致执行受到严重影响</p>
+<h1>页面置换算法</h1>
+<p>内存的大小是有限的，使用磁盘去拓展，当反复访问同一个页面时，将页面存储到内存之后反复读取，会比反复从磁盘中加载快很多。</p>
+<p>可以理解为：主存作为CPU交互外存的缓存，访问一个页面时先查看是否在主存中缓存，如果没有再读取外存。</p>
+<p>页面置换有以下概念：</p>
+<ul>
+<li>缺页：访问的页面不在内存中，需要从磁盘加载</li>
+<li>淘汰：选择某个已在内存的页面替换出去</li>
+</ul>
+<p>主存通常都只有一定的大小，需要找到一个算法能让淘汰合理运行，使得缺页的次数越少越好。</p>
+<h2 id="理论最优：最佳置换算法（OPT）（-）">理论最优：最佳置换算法（OPT）（*）</h2>
+<p>最佳置换算法的前提是：操作系统提前知道将来所有页面的访问序列。</p>
+<p>因此最佳置换算法一般无法用于系统设计，通常用于比较其他置换算法的性能如何，作为参考答案的最优解。</p>
+<h3 id="工作原理">工作原理</h3>
+<p>当发生缺页中断，需要淘汰某个页面时，选择将来最长时间内不会被访问的页面进行替换。</p>
+<h3 id="淘汰行为">淘汰行为</h3>
+<p>（拥有访问序列LIST）</p>
+<ul>
+<li>当需要淘汰一个页面时，对主存里的每个页面都进行检查起下次在未来访问序列中的位置。</li>
+<li>谁的位置最靠后，就淘汰谁。</li>
+</ul>
+<h2 id="先入先出置换算法（FIFO）">先入先出置换算法（FIFO）</h2>
+<h3 id="工作原理-2">工作原理</h3>
+<p>FIFO 是最简单的页面置换算法之一，当发生缺页中断且内存已满时，淘汰最早进入内存的页面</p>
+<h3 id="淘汰行为-2">淘汰行为</h3>
+<p>系统通过一个队列维护页面进入内存的顺序：</p>
+<ul>
+<li>页面进入内存时加入队尾。</li>
+<li>内存满时，从队头取出页面进行淘汰。</li>
+</ul>
+<h2 id="Least-Recently-Used-算法-LRU">Least Recently Used 算法  (LRU)</h2>
+<h3 id="工作原理-3">工作原理</h3>
+<p>LRU 根据 页面最近访问时间 来判断淘汰对象。每次页面被访问时，更新其最近使用时间或移动到链表/栈顶。当发生缺页且内存满时，淘汰 最久未被访问的页面。</p>
+<h3 id="淘汰行为-3">淘汰行为</h3>
+<ul>
+<li>系统维护一个访问顺序或时间戳（栈或链表）。</li>
+<li>内存满时，从末尾或时间最早的页面中选择淘汰。</li>
+</ul>
+<p>优点：比 FIFO 更符合实际访问规律，缺页率通常更低。</p>
+<p>缺点：实现稍复杂，需要维护访问记录。</p>
+<h2 id="Least-Frequently-Used-算法（LFU）">Least Frequently Used 算法（LFU）</h2>
+<h3 id="工作原理-4">工作原理</h3>
+<p>LFU 根据 <strong>页面被访问的次数</strong> 来判断淘汰对象。每次页面被访问时，对其访问计数器加 1。当发生缺页且内存满时，淘汰 <strong>访问次数最少的页面</strong>。</p>
+<h3 id="淘汰行为-4">淘汰行为</h3>
+<ul>
+<li>系统为每个页面维护访问计数。</li>
+<li>内存满时，选择计数最小的页面进行淘汰。</li>
+</ul>
+<p>优点：对经常访问的页面友好。</p>
+<p>缺点：长期不再访问的老页面可能长期占用内存，需要额外机制（如计数衰减）。</p>
+<h2 id="时钟置换算法（CLOCK）">时钟置换算法（CLOCK）</h2>
+<h3 id="工作原理-5">工作原理</h3>
+<p>CLOCK 是对 FIFO 的改进，模拟一个 <strong>循环队列/时钟</strong>。每个页面有一个 <strong>使用位（use bit）</strong>，表示是否被访问过。页面访问时，将使用位置为 1。</p>
+<h3 id="淘汰行为-5">淘汰行为</h3>
+<ul>
+<li>内存满时，指针顺时针扫描页面。</li>
+<li>遇到 使用位为 0 的页面，将其淘汰。</li>
+<li>遇到 使用位为 1 的页面，将其清零并继续扫描下一个页面。</li>
+</ul>
+<p>优点：实现简单，近似 LRU 的性能，开销比 LRU 小。</p>
+<h2 id="改进的-CLOCK-算法（Enhanced-CLOCK-二次机会）">改进的 CLOCK 算法（Enhanced CLOCK / 二次机会）</h2>
+<h3 id="背景">背景</h3>
+<ul>
+<li>普通 CLOCK 只使用 使用位（use bit），不能区分页面是否被修改。</li>
+<li>如果淘汰一个脏页（被修改过的页面），需要先写回磁盘，开销大。</li>
+<li>改进算法同时考虑 使用位和修改位，减少磁盘写入次数。</li>
+</ul>
+<h3 id="工作原理-6">工作原理</h3>
+<ul>
+<li>每个页面有两个标志位：
+<ol>
+<li>使用位（U bit / R bit）：表示页面最近是否被访问过。</li>
+<li>修改位（M bit / dirty bit）：表示页面内容是否被修改。</li>
+</ol>
+</li>
+<li>优先淘汰既 不常用又干净 的页面。</li>
+</ul>
+<h3 id="淘汰行为-6">淘汰行为</h3>
+<ul>
+<li>当需要淘汰页面时，按以下顺序扫描（优先级低到高淘汰）：
+<ol>
+<li>U=0, M=0 → 未被使用且未修改，直接淘汰（最佳选择）。</li>
+<li>U=0, M=1 → 未被使用但已修改，淘汰前写回磁盘。</li>
+<li>U=1, M=0 → 最近被访问过但未修改，将 U 清零，给它“二次机会”。</li>
+<li>U=1, M=1 → 最近被访问过且已修改，将 U 清零，继续扫描。</li>
+</ol>
+</li>
+<li>指针顺时针移动，直到找到符合淘汰条件的页面。</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/11/25/Spring%20Authorization%20Server%20%E5%A4%8D%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%20Filter/">Spring Authorization Server 复用自定义 Filter</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/12/05/operating-system-note-memory/">操作系统笔记——存储器管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/11/25/Spring%20Authorization%20Server%20%E5%A4%8D%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%20Filter/">Spring Authorization Server 复用自定义 Filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/11/01/OAuth2.0%20%E5%AE%A2%E6%88%B7%E7%AB%AF+%E6%8E%88%E6%9D%83%E7%AB%AF%20%E5%AE%9E%E8%B7%B5%E8%AE%BE%E8%AE%A1/">OAuth2.0 客户端+授权端 实践设计</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/10/20/Spring%20Security%20%E5%AD%A6%E4%B9%A0/">Spring Security 学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/22/Spring%20AOP%20%E5%AD%A6%E4%B9%A0/">Spring AOP 学习</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/08/21/Spring%20Boot%20%E5%88%9D%E8%AF%86/">Spring Boot 初识</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 10px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
