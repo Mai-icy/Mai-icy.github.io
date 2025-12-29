@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>MiniOB 项目结构——SQL板块 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="MiniOB 项目结构——SQL板块"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>MiniOB 项目结构——SQL板块</h2>
+            <div class="post-meta">
+                <time class="date">2025.12.30</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>从SQL执行流程解析sql相关结构</h1>
+<p>我们先来确定数据库交互的角色：</p>
+<ul>
+<li>Client：发送sql语句的用户</li>
+<li>Server：处理sql语句的服务器内核</li>
+</ul>
+<h2 id="Communicator">Communicator</h2>
+<p>在明确了数据库交互中的 Client 与 Server 角色之后，需要一个中间层来负责二者之间的通信。</p>
+<p>在 miniob 中，这一职责由 Communicator 承担。</p>
+<h3 id="Communicator-的定位">Communicator 的定位</h3>
+<p>Communicator 是数据库服务器中负责“网络通信与协议适配”的组件，其核心任务是：</p>
+<ul>
+<li>从客户端接收原始请求数据；</li>
+<li>按照指定通信协议解析请求；</li>
+<li>将解析后的请求封装为服务器内部可处理的事件；</li>
+<li>在 SQL 执行完成后，将结果重新编码并发送回客户端。</li>
+</ul>
+<p>在执行流程中的位置：</p>
+<p>在一次完整的 SQL 请求中，Communicator 的位置大致如下：</p>
+<pre class="line-numbers language-none"><code class="language-none">Client
+  ↓
+Communicator（read_event）
+  ↓
+SQL 执行流程
+  ↓
+Communicator（write_result）
+  ↓
+Client<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>也就是说，Communicator 是 Server 的入口和出口，而中间的 SQL 处理逻辑并不关心请求是从哪里来的，也不关心结果如何被发送。</p>
+<h3 id="核心接口">核心接口</h3>
+<p>在 Server 侧，<code>Communicator</code> 向上层暴露了一组稳定接口，用于完成一次完整的请求–响应交互。</p>
+<ol>
+<li><code>read_event</code> ：从 Client 读取一次请求，并解析为内部可处理的事件对象。</li>
+</ol>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">Communicator</span><span class="token double-colon punctuation">::</span><span class="token function">read_event</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span><span class="token operator">&amp;</span>event<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<ol>
+<li><code>write_result</code> ：将 SQL 执行结果写回 Client。</li>
+</ol>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">Communicator</span><span class="token double-colon punctuation">::</span><span class="token function">write_result</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span>event<span class="token punctuation">,</span> <span class="token keyword">bool</span> <span class="token operator">&amp;</span>need_disconnect<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="SessionEvent">SessionEvent</h2>
+<p>对于一次sql的处理，我们通常会产生很多很多数据。例如SQL的纯文本信息，转化成结构树的结构信息，处理成功还是失败的错误信息，因此我们需要封装一个载体来存储这些数据来贯彻全流程</p>
+<p><code>SessionEvent</code> 用于描述一次完整的客户端 SQL 请求，是数据库内核中贯穿通信层与执行层的核心上下文对象。它封装了请求来源（<code>Communicator</code>）、会话信息（<code>Session</code>）、原始 SQL 语句以及执行结果与调试信息，使得 SQL 在解析、优化、执行和结果返回的各个阶段都能够围绕同一份请求状态进行处理，从而实现通信逻辑与执行逻辑的解耦。</p>
+<h2 id="请求处理">请求处理</h2>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">RC SqlTaskHandler<span class="token operator">::</span><span class="token function">handle_event</span><span class="token punctuation">(</span>Communicator <span class="token operator">*</span>communicator<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  SessionEvent <span class="token operator">*</span>event <span class="token operator">=</span> nullptr<span class="token punctuation">;</span>
+  <span class="token comment">// 从客户端连接中读取一个请求事件</span>
+  RC rc <span class="token operator">=</span> communicator<span class="token operator">-></span><span class="token function">read_event</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>  <span class="token comment">// 读取失败则直接返回错误码</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>nullptr <span class="token operator">==</span> event<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> RC<span class="token operator">::</span>SUCCESS<span class="token punctuation">;</span> <span class="token comment">// 没有事件则认为处理成功</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token comment">// 会话阶段处理（例如更新会话状态、准备执行环境等）</span>
+  session_stage_<span class="token punctuation">.</span><span class="token function">handle_request2</span><span class="token punctuation">(</span>event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 封装 SQL 执行事件（从请求事件中提取 SQL）</span>
+  SQLStageEvent <span class="token function">sql_event</span><span class="token punctuation">(</span>event<span class="token punctuation">,</span> event<span class="token operator">-></span><span class="token function">query</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 执行 SQL 处理</span>
+  rc <span class="token operator">=</span> <span class="token function">handle_sql</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to handle sql. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// 如果 SQL 执行失败，设置返回码到 SQLResult 里</span>
+    event<span class="token operator">-></span><span class="token function">sql_result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">set_return_code</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  bool need_disconnect <span class="token operator">=</span> false<span class="token punctuation">;</span>
+
+  <span class="token comment">// 将 SQL 执行结果写回客户端，同时确定是否需要断开连接</span>
+  rc <span class="token operator">=</span> communicator<span class="token operator">-></span><span class="token function">write_result</span><span class="token punctuation">(</span>event<span class="token punctuation">,</span> need_disconnect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">LOG_INFO</span><span class="token punctuation">(</span><span class="token string">"write result return %s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 清理 session 当前请求状态（结束本次 SQL 请求）</span>
+  event<span class="token operator">-></span><span class="token function">session</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">set_current_request</span><span class="token punctuation">(</span>nullptr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Session<span class="token operator">::</span><span class="token function">set_current_session</span><span class="token punctuation">(</span>nullptr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// 释放当前事件资源</span>
+  delete event<span class="token punctuation">;</span>
+
+  <span class="token comment">// 如需断开连接则返回内部错误，外层将根据返回值执行断连操作</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>need_disconnect<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> RC<span class="token operator">::</span>INTERNAL<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">return</span> RC<span class="token operator">::</span>SUCCESS<span class="token punctuation">;</span> <span class="token comment">// 正常处理成功</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>SQL的接受和处理——handle_sql</h1>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token comment">/**
+ * 处理一个SQL语句经历这几个阶段。
+ * 虽然看起来流程比较多，但是对于大多数SQL来说，更多的可以关注parse和executor阶段。
+ * 通常只有select、delete等带有查询条件的语句才需要进入optimize。
+ * 对于DDL语句，比如create table、create index等，没有对应的查询计划，可以直接搜索
+ * create_table_executor、create_index_executor来看具体的执行代码。
+ * select、delete等DML语句，会产生一些执行计划，如果感觉繁琐，可以跳过optimize直接看
+ * execute_stage中的执行，通过explain语句看需要哪些operator，然后找对应的operator来
+ * 调试或者看代码执行过程即可。
+ */</span>
+RC SqlTaskHandler<span class="token operator">::</span><span class="token function">handle_sql</span><span class="token punctuation">(</span>SQLStageEvent <span class="token operator">*</span>sql_event<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token comment">//查询缓存阶段</span>
+  RC rc <span class="token operator">=</span> query_cache_stage_<span class="token punctuation">.</span><span class="token function">handle_request</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to do query cache. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token comment">/**
+    * 解析阶段
+    *
+  对SQL语句进行词法分析和语法分析
+  将SQL文本转换为抽象语法树(AST)
+  识别SQL语句类型和结构
+   */</span>
+  rc <span class="token operator">=</span> parse_stage_<span class="token punctuation">.</span><span class="token function">handle_request</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to do parse. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token comment">/**
+    * 解析绑定阶段
+    *
+  验证表名、字段名是否存在
+  检查数据类型是否匹配
+  将语法树中的标识符与数据库对象进行绑定
+  */</span>
+  rc <span class="token operator">=</span> resolve_stage_<span class="token punctuation">.</span><span class="token function">handle_request</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to do resolve. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token comment">//优化阶段</span>
+  rc <span class="token operator">=</span> optimize_stage_<span class="token punctuation">.</span><span class="token function">handle_request</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">!=</span> RC<span class="token operator">::</span>UNIMPLEMENTED <span class="token operator">&amp;&amp;</span> rc <span class="token operator">!=</span> RC<span class="token operator">::</span>SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to do optimize. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token comment">//执行阶段</span>
+  rc <span class="token operator">=</span> execute_stage_<span class="token punctuation">.</span><span class="token function">handle_request</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to do execute. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每个阶段都有各自的Stage，作为工具类一样被使用，作为一个黑盒处理输入输出，将sql_event传入，将结果设置在sql_event之中。</p>
+<h2 id="语法解析-词法解析">语法解析/词法解析</h2>
+<p>纯sql字符串 → 字符串的语法树结构</p>
+<p>词法解析和语法解析使用了第三方库：Flex + Bison</p>
+<p>核心逻辑借助了 <code>.y</code> (Bison 语法文件) 以及 <code>.l</code> (Flex 词法文件)</p>
+<p>词法文件规定了哪些字符串能够正常读取例如：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token punctuation">&#123;</span>DIGIT<span class="token punctuation">&#125;</span><span class="token operator">+</span>                           yylval<span class="token operator">-></span>number<span class="token operator">=</span><span class="token function">atoi</span><span class="token punctuation">(</span>yytext<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">RETURN_TOKEN</span><span class="token punctuation">(</span>NUMBER<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#123;</span>DIGIT<span class="token punctuation">&#125;</span><span class="token operator">+</span><span class="token punctuation">&#123;</span>DOT<span class="token punctuation">&#125;</span><span class="token punctuation">&#123;</span>DIGIT<span class="token punctuation">&#125;</span><span class="token operator">+</span>              yylval<span class="token operator">-></span>floats<span class="token operator">=</span><span class="token punctuation">(</span><span class="token keyword">float</span><span class="token punctuation">)</span><span class="token punctuation">(</span><span class="token function">atof</span><span class="token punctuation">(</span>yytext<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token function">RETURN_TOKEN</span><span class="token punctuation">(</span>FLOAT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token string">";"</span>                                     <span class="token function">RETURN_TOKEN</span><span class="token punctuation">(</span>SEMICOLON<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#123;</span>DOT<span class="token punctuation">&#125;</span>                                   <span class="token function">RETURN_TOKEN</span><span class="token punctuation">(</span>DOT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+EXIT                                    <span class="token function">RETURN_TOKEN</span><span class="token punctuation">(</span>EXIT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+HELP                                    <span class="token function">RETURN_TOKEN</span><span class="token punctuation">(</span>HELP<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>语法文件规定了上述的所有词法如何解析成对象，例如：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">select_stmt<span class="token operator">:</span>        <span class="token comment">/*  select 语句的语法解析  */</span>
+    SELECT expression_list FROM from_node from_list where group_by_opt having_opt opt_order_by opt_limit
+    <span class="token punctuation">&#123;</span>
+      $$ <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">ParsedSqlNode</span><span class="token punctuation">(</span>SCF_SELECT<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">2</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>expressions<span class="token punctuation">.</span><span class="token function">swap</span><span class="token punctuation">(</span><span class="token operator">*</span>$<span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">delete</span> $<span class="token number">2</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">5</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>relations<span class="token punctuation">.</span><span class="token function">swap</span><span class="token punctuation">(</span><span class="token operator">*</span>$<span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">delete</span> $<span class="token number">5</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+
+      $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>relations<span class="token punctuation">.</span><span class="token function">push_back</span><span class="token punctuation">(</span><span class="token operator">*</span>$<span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      std<span class="token double-colon punctuation">::</span><span class="token function">reverse</span><span class="token punctuation">(</span>$$<span class="token operator">-></span>selection<span class="token punctuation">.</span>relations<span class="token punctuation">.</span><span class="token function">begin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>relations<span class="token punctuation">.</span><span class="token function">end</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">delete</span> $<span class="token number">4</span><span class="token punctuation">;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">6</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>conditions <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span><span class="token generic-function"><span class="token function">unique_ptr</span><span class="token generic class-name"><span class="token operator">&lt;</span>Expression<span class="token operator">></span></span></span><span class="token punctuation">(</span>$<span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">7</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>group_by<span class="token punctuation">.</span><span class="token function">swap</span><span class="token punctuation">(</span><span class="token operator">*</span>$<span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">delete</span> $<span class="token number">7</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">8</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>having_conditions <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span><span class="token generic-function"><span class="token function">unique_ptr</span><span class="token generic class-name"><span class="token operator">&lt;</span>Expression<span class="token operator">></span></span></span><span class="token punctuation">(</span>$<span class="token number">8</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">9</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>order_by<span class="token punctuation">.</span><span class="token function">swap</span><span class="token punctuation">(</span><span class="token operator">*</span>$<span class="token number">9</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">delete</span> $<span class="token number">9</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>$<span class="token number">10</span> <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        $$<span class="token operator">-></span>selection<span class="token punctuation">.</span>limit <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token generic-function"><span class="token function">make_unique</span><span class="token generic class-name"><span class="token operator">&lt;</span>LimitSqlNode<span class="token operator">></span></span></span><span class="token punctuation">(</span><span class="token operator">*</span>$<span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">delete</span> $<span class="token number">10</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>通过读取内容构造出 <code>ParsedSqlNode</code> 其定义均存放在 <code>sql/parser/parse_defs.h</code></p>
+<p>其中包含了期望解析后的所有结构。例如：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">SelectSqlNode</span>
+<span class="token punctuation">&#123;</span>
+  vector<span class="token operator">&lt;</span>unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">>></span> expressions<span class="token punctuation">;</span>        <span class="token comment">///&lt; 查询的表达式</span>
+  std<span class="token double-colon punctuation">::</span>vector<span class="token operator">&lt;</span>InnerJoinSqlNode<span class="token operator">></span>  relations<span class="token punctuation">;</span>          <span class="token comment">///&lt; 查询的表</span>
+  unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">></span>         conditions<span class="token punctuation">;</span>         <span class="token comment">///&lt; 查询条件，使用AND串联起来多个条件</span>
+  vector<span class="token operator">&lt;</span>unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">>></span> group_by<span class="token punctuation">;</span>           <span class="token comment">///&lt; group by clause</span>
+  unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">></span>         having_conditions<span class="token punctuation">;</span>
+  vector<span class="token operator">&lt;</span>OrderBySqlNode<span class="token operator">></span>         order_by<span class="token punctuation">;</span>
+  unique_ptr<span class="token operator">&lt;</span>LimitSqlNode<span class="token operator">></span>       limit<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>因此解析阶段其行为即：读取SQL字符串，将字符串进行解析得到<code>ParsedSqlNode</code> 对象，将对象置入event。</p>
+<p>其中这个阶段只涉及字符串的处理，值的合理性等，不考虑这个表是否存在，因此解析后类内的属性例如 表名，通常是 <code>string</code> 而并不是已经绑定的 <code>Table *</code> 。</p>
+<h2 id="解析绑定阶段">解析绑定阶段</h2>
+<p>字符串的语法树结构 → 解析后的Stmt结构体</p>
+<p>当前我们已经拥有对应的结构来容纳各个字符串，也确定了每个字符串其意义，下一步就是绑定字符串：将表名绑定到表对象，字段名绑定到对应column等等。（不存在即返回不存在错误）</p>
+<p>解析后的对象如下：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">/**
+ * @brief Stmt for Statement
+ * @ingroup Statement
+ * @details SQL解析后的语句，再进一步解析成Stmt，使用内部的数据结构来表示。
+ * 比如table_name，解析成具体的 Table对象，attr/field name解析成Field对象。
+ */</span>
+<span class="token keyword">class</span> <span class="token class-name">Stmt</span>
+<span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">Stmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>          <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> <span class="token operator">~</span><span class="token function">Stmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">virtual</span> StmtType <span class="token function">type</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token keyword">static</span> RC <span class="token function">create_stmt</span><span class="token punctuation">(</span>Db <span class="token operator">*</span>db<span class="token punctuation">,</span> ParsedSqlNode <span class="token operator">&amp;</span>sql_node<span class="token punctuation">,</span> Stmt <span class="token operator">*</span><span class="token operator">&amp;</span>stmt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">private</span><span class="token operator">:</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每种语句都有自己的Stmt，例如update语句</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token comment">/**
+ * @brief 更新语句
+ * @ingroup Statement
+ */</span>
+<span class="token keyword">class</span> <span class="token class-name">UpdateStmt</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">Stmt</span></span>
+<span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">UpdateStmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token operator">~</span><span class="token function">UpdateStmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token keyword">nullptr</span> <span class="token operator">!=</span> filter_stmt_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">delete</span> filter_stmt_<span class="token punctuation">;</span>
+      filter_stmt_ <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+  StmtType <span class="token function">type</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token keyword">override</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> StmtType<span class="token double-colon punctuation">::</span>UPDATE<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token keyword">static</span> RC <span class="token function">create</span><span class="token punctuation">(</span>Db <span class="token operator">*</span>db<span class="token punctuation">,</span> UpdateSqlNode <span class="token operator">&amp;</span>update_sql<span class="token punctuation">,</span> Stmt <span class="token operator">*</span><span class="token operator">&amp;</span>stmt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">public</span><span class="token operator">:</span>
+  Table                       <span class="token operator">*</span><span class="token function">table</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> table_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  FilterStmt                  <span class="token operator">*</span><span class="token function">filter_stmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> filter_stmt_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  vector<span class="token operator">&lt;</span>pair<span class="token operator">&lt;</span><span class="token keyword">const</span> FieldMeta<span class="token operator">*</span><span class="token punctuation">,</span> unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">>></span><span class="token operator">></span> <span class="token operator">&amp;</span><span class="token function">kv_list</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> kv_list_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+<span class="token keyword">private</span><span class="token operator">:</span>
+  Table                       <span class="token operator">*</span>table_       <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  vector<span class="token operator">&lt;</span>pair<span class="token operator">&lt;</span><span class="token keyword">const</span> FieldMeta<span class="token operator">*</span><span class="token punctuation">,</span> unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">>></span><span class="token operator">></span> kv_list_<span class="token punctuation">;</span>
+  FilterStmt                  <span class="token operator">*</span>filter_stmt_ <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>根据语句特征进行拓展继承，例如update，需要表名，列值对，where条件，并且这里并不再是字符串类型，对于列名，通过绑定变为FieldMeta。</p>
+<p>对于Expression需要说明：</p>
+<p>Expression是一个树形结构，运算符例如加减乘除，或者聚合等等复杂都是一个节点分治，多元运算就有多个子Expression。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">enum</span> <span class="token keyword">class</span> <span class="token class-name">ExprType</span>
+<span class="token punctuation">&#123;</span>
+  NONE<span class="token punctuation">,</span>
+  STAR<span class="token punctuation">,</span>                 <span class="token comment">///&lt; 星号，表示所有字段</span>
+  UNBOUND_FIELD<span class="token punctuation">,</span>        <span class="token comment">///&lt; 未绑定的字段，需要在resolver阶段解析为FieldExpr</span>
+  UNBOUND_AGGREGATION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 未绑定的聚合函数，需要在resolver阶段解析为AggregateExpr</span>
+
+  FIELD<span class="token punctuation">,</span>        <span class="token comment">///&lt; 字段。在实际执行时，根据行数据内容提取对应字段的值</span>
+  VALUE<span class="token punctuation">,</span>        <span class="token comment">///&lt; 常量值</span>
+  CAST<span class="token punctuation">,</span>         <span class="token comment">///&lt; 需要做类型转换的表达式</span>
+  COMPARISON<span class="token punctuation">,</span>   <span class="token comment">///&lt; 需要做比较的表达式</span>
+  CONJUNCTION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 多个表达式使用同一种关系(AND或OR)来联结</span>
+  ARITHMETIC<span class="token punctuation">,</span>   <span class="token comment">///&lt; 算术运算</span>
+  AGGREGATION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 聚合运算</span>
+  SYSFUNCTION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 函数（length、round、date_format）</span>
+  SUBQUERY<span class="token punctuation">,</span>     <span class="token comment">///&lt; 子查询</span>
+  EXPRLIST<span class="token punctuation">,</span>     <span class="token comment">///&lt; 表达式集合</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这是所有的表达式类型。由于表达式的复杂性，因此其在语法解析的时候就会被使用，语法解析时，其Field类型均为 <code>UNBOUND_FIELD</code> 即只包含字符串的未绑定对象。</p>
+<p>在绑定阶段需要将所有Expression中的 UNBOUND 表达式进行绑定，可以对树形结构进行遍历处理。</p>
+<p>在这个阶段之后，所有的Expression 中就不再有 UNBOUND 对象了。</p>
+<p>再像 <code>FilterStmt</code> ，where条件被很多语句都有使用，并且通常包含Expression对象，经常被复用因此提取出来作为一个完整的Stmt简化代码。</p>
+<p>Stage关键代码：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">ParsedSqlNode <span class="token operator">*</span>sql_node <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">sql_node</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+Stmt          <span class="token operator">*</span>stmt     <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+
+rc <span class="token operator">=</span> <span class="token class-name">Stmt</span><span class="token double-colon punctuation">::</span><span class="token function">create_stmt</span><span class="token punctuation">(</span>db<span class="token punctuation">,</span> <span class="token operator">*</span>sql_node<span class="token punctuation">,</span> stmt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">!=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS <span class="token operator">&amp;&amp;</span> rc <span class="token operator">!=</span> RC<span class="token double-colon punctuation">::</span>UNIMPLEMENTED<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token function">LOG_WARN</span><span class="token punctuation">(</span><span class="token string">"failed to create stmt. rc=%d:%s"</span><span class="token punctuation">,</span> rc<span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  sql_result<span class="token operator">-></span><span class="token function">set_return_code</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+sql_event<span class="token operator">-></span><span class="token function">set_stmt</span><span class="token punctuation">(</span>stmt<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>父类的 <code>create_stmt</code> 通过判断 <code>StmtType</code> 进行多态的调用。</p>
+<p>通过处理后，得到了当前sql语句绑定对象后的数据结构。</p>
+<h2 id="优化阶段（生成计划节点，逻辑优化）">优化阶段（生成计划节点，逻辑优化）</h2>
+<p>当语义分析（Analyze）完成后，系统根据 SQL Stmt 生成一个初始的逻辑执行计划树。计划树采用火山模型（Volcano Model）描述执行算子之间的数据流关系，以迭代器接口（<code>open-next-close</code>）为核心抽象。</p>
+<p>每个计划节点（Plan）代表一个“逻辑操作”（Logical Operator），例如：</p>
+<ul>
+<li>Scan计划（表扫描）</li>
+<li>Filter计划（选择谓词）</li>
+<li>Join计划（连接操作）</li>
+<li>Project计划（字段选择）</li>
+<li>GroupAgg计划（分组聚合）</li>
+<li>Sort计划（排序）</li>
+<li>Limit计划（限制输出）</li>
+</ul>
+<h3 id="典型逻辑计划示例">典型逻辑计划示例</h3>
+<p>SQL:</p>
+<pre class="line-numbers language-none"><code class="language-none">SELECT name FROM customers WHERE age &gt; 30;<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>初始（未优化）逻辑计划树：</p>
+<pre class="line-numbers language-none"><code class="language-none">Project[name]
+    │
+    ▼
+Filter[age &gt; 30]
+    │
+    ▼
+SeqScan[customers]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>或者对于稍微复杂一点的，多个JOIN ON 条件，就会形成树状结构。</p>
+<h3 id="常见逻辑优化策略">常见逻辑优化策略</h3>
+<p>优化器对逻辑计划进行变换以提升性能，主要包括：</p>
+<ol>
+<li>
+<p>谓词下推（Predicate Pushdown）</p>
+<p>将 WHERE 条件尽量靠近数据源，以减少上层数据处理量</p>
+</li>
+<li>
+<p>投影下推（Projection Pushdown）</p>
+<p>去除不必要字段，减少列数据传输</p>
+</li>
+<li>
+<p>连接顺序优化（Join Order Optimization）</p>
+<p>使用基于贪心或代价模型评估连接顺序，例如启发式规则：</p>
+<ul>
+<li>小表/高选择性过滤优先参与连接</li>
+<li>依据统计信息选择左深树</li>
+</ul>
+</li>
+<li>
+<p>消除冗余子表达式（CSE）</p>
+<p>避免重复计算表达式或子查询</p>
+</li>
+<li>
+<p>简化谓词表达式</p>
+<p>如合并范围条件、消除永真与永假条件</p>
+</li>
+</ol>
+<p>逻辑计划节点不包含任何执行代码，其主要是火山模型的数据载体，其包含了所有物理计划执行的关键数据。</p>
+<p>根据优化后，再转化成物理计划，物理计划节点类有完整的Next，open，close的函数定义，可以用于执行。物理计划树也就是最后运行的火山模型。</p>
+<h3 id="DDL语句的处理">DDL语句的处理</h3>
+<p>对于DDL语句，例如删除表，建表，都是不需要优化的，因此此处会直接返回 <code>RC::UNIMPLEMENTED</code> 也就是为什么判断条件多一个判断是否是 <code>RC::UNIMPLEMENTED</code> 。</p>
+<h2 id="执行阶段">执行阶段</h2>
+<p>执行阶段的输入是可运行的火山模型物理计划树，只需要获取最顶上的schema，再对上面进行open和next执行。但在miniob中，执行阶段直接执行DDL语句但不直接执行DML语句：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">ExecuteStage</span><span class="token double-colon punctuation">::</span><span class="token function">handle_request</span><span class="token punctuation">(</span>SQLStageEvent <span class="token operator">*</span>sql_event<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  RC rc <span class="token operator">=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+  <span class="token keyword">const</span> unique_ptr<span class="token operator">&lt;</span>PhysicalOperator<span class="token operator">></span> <span class="token operator">&amp;</span>physical_operator <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">physical_operator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  
+  <span class="token comment">// DDL 语句 physical_operator 是 null，会跳过</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>physical_operator <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+	  <span class="token comment">// DDL 语句分支</span>
+    <span class="token keyword">return</span> <span class="token function">handle_request_with_physical_operator</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  
+  <span class="token comment">// DDL 语句分支，只有DDL会执行这里</span>
+  SessionEvent <span class="token operator">*</span>session_event <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">session_event</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Stmt <span class="token operator">*</span>stmt <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">stmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>stmt <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// DDL 语句核心段</span>
+    CommandExecutor command_executor<span class="token punctuation">;</span>
+    rc <span class="token operator">=</span> command_executor<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    session_event<span class="token operator">-></span><span class="token function">sql_result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">set_return_code</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>INTERNAL<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="DDL语句的执行">DDL语句的执行</h3>
+<p>每个DDL都不依赖计划树和火山模型进行处理，因此miniob隔离出 <code>executor</code> 来负责DDL语句的执行，例如：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">CreateTableExecutor</span><span class="token double-colon punctuation">::</span><span class="token function">execute</span><span class="token punctuation">(</span>SQLStageEvent <span class="token operator">*</span>sql_event<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  Stmt    <span class="token operator">*</span>stmt    <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">stmt</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Session <span class="token operator">*</span>session <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">session_event</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">session</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">ASSERT</span><span class="token punctuation">(</span>stmt<span class="token operator">-></span><span class="token function">type</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> StmtType<span class="token double-colon punctuation">::</span>CREATE_TABLE<span class="token punctuation">,</span>
+      <span class="token string">"create table executor can not run this command: %d"</span><span class="token punctuation">,</span>
+      <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>stmt<span class="token operator">-></span><span class="token function">type</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  CreateTableStmt <span class="token operator">*</span>create_table_stmt <span class="token operator">=</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span>CreateTableStmt <span class="token operator">*</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>stmt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>table_name <span class="token operator">=</span> create_table_stmt<span class="token operator">-></span><span class="token function">table_name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  RC rc <span class="token operator">=</span> session<span class="token operator">-></span><span class="token function">get_current_db</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">create_table</span><span class="token punctuation">(</span>table_name<span class="token punctuation">,</span> create_table_stmt<span class="token operator">-></span><span class="token function">attr_infos</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> create_table_stmt<span class="token operator">-></span><span class="token function">primary_keys</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> create_table_stmt<span class="token operator">-></span><span class="token function">storage_format</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每个DDL语句都有自己的Executor，execute直接提取event中的Stmt数据，进行直接处理。</p>
+<p>DDL的语句执行依赖 <code>CommandExecutor</code> ，会直接在上面标记的 <code>rc = command_executor.execute(sql_event);</code> 中判断Stmt的类型找到对应的Executor直接执行。</p>
+<h3 id="DML语句预准备">DML语句预准备</h3>
+<p>DML语句进入以下函数</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">ExecuteStage</span><span class="token double-colon punctuation">::</span><span class="token function">handle_request_with_physical_operator</span><span class="token punctuation">(</span>SQLStageEvent <span class="token operator">*</span>sql_event<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token comment">// DML 语句核心段</span>
+  RC rc <span class="token operator">=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+  unique_ptr<span class="token operator">&lt;</span>PhysicalOperator<span class="token operator">></span> <span class="token operator">&amp;</span>physical_operator <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">physical_operator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">ASSERT</span><span class="token punctuation">(</span>physical_operator <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">,</span> <span class="token string">"physical operator should not be null"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  SqlResult <span class="token operator">*</span>sql_result <span class="token operator">=</span> sql_event<span class="token operator">-></span><span class="token function">session_event</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">sql_result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  sql_result<span class="token operator">-></span><span class="token function">set_operator</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>physical_operator<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>可以看到，其只是将operator设置到了SqlResult当中，并没有执行（见以下补充）</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token class-name">SqlResult</span><span class="token double-colon punctuation">::</span><span class="token function">set_operator</span><span class="token punctuation">(</span>unique_ptr<span class="token operator">&lt;</span>PhysicalOperator<span class="token operator">></span> oper<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token function">ASSERT</span><span class="token punctuation">(</span>operator_ <span class="token operator">==</span> <span class="token keyword">nullptr</span><span class="token punctuation">,</span> <span class="token string">"current operator is not null. Result is not closed?"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  operator_ <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>oper<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  operator_<span class="token operator">-></span><span class="token function">tuple_schema</span><span class="token punctuation">(</span>tuple_schema_<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>而仅仅只是设置了tuple_schema，因此运行时错误无法在这里被捕捉。</p>
+<h2 id="结果输出阶段">结果输出阶段</h2>
+<p>在 <code>handle_sql</code> 之后有以下的代码</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">rc <span class="token operator">=</span> <span class="token function">handle_sql</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>sql_event<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token function">LOG_TRACE</span><span class="token punctuation">(</span><span class="token string">"failed to handle sql. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  event<span class="token operator">-></span><span class="token function">sql_result</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">set_return_code</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token keyword">bool</span> need_disconnect <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
+
+rc <span class="token operator">=</span> communicator<span class="token operator">-></span><span class="token function">write_result</span><span class="token punctuation">(</span>event<span class="token punctuation">,</span> need_disconnect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">LOG_INFO</span><span class="token punctuation">(</span><span class="token string">"write result return %s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+event<span class="token operator">-></span><span class="token function">session</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">-></span><span class="token function">set_current_request</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token class-name">Session</span><span class="token double-colon punctuation">::</span><span class="token function">set_current_session</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">delete</span> event<span class="token punctuation">;</span>
+
+<span class="token keyword">if</span> <span class="token punctuation">(</span>need_disconnect<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>INTERNAL<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+<span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>对于结果的输出可能有多种不同的输出方式，其均交给不同的 <code>communicator</code> 自己的执行来决定。</p>
+<p>例如此处：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">PlainCommunicator</span><span class="token double-colon punctuation">::</span><span class="token function">write_tuple_result</span><span class="token punctuation">(</span>SqlResult <span class="token operator">*</span>sql_result<span class="token punctuation">)</span>
+<span class="token punctuation">&#123;</span>
+  RC rc <span class="token operator">=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+  Tuple <span class="token operator">*</span>tuple <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+  <span class="token keyword">while</span> <span class="token punctuation">(</span>RC<span class="token double-colon punctuation">::</span>SUCCESS <span class="token operator">==</span> <span class="token punctuation">(</span>rc <span class="token operator">=</span> sql_result<span class="token operator">-></span><span class="token function">next_tuple</span><span class="token punctuation">(</span>tuple<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">assert</span><span class="token punctuation">(</span>tuple <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">int</span> cell_num <span class="token operator">=</span> tuple<span class="token operator">-></span><span class="token function">cell_num</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> cell_num<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>i <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>delim <span class="token operator">=</span> <span class="token string">" | "</span><span class="token punctuation">;</span>
+
+        rc <span class="token operator">=</span> writer_<span class="token operator">-></span><span class="token function">writen</span><span class="token punctuation">(</span>delim<span class="token punctuation">,</span> <span class="token function">strlen</span><span class="token punctuation">(</span>delim<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+          <span class="token function">LOG_WARN</span><span class="token punctuation">(</span><span class="token string">"failed to send data to client. err=%s"</span><span class="token punctuation">,</span> <span class="token function">strerror</span><span class="token punctuation">(</span>errno<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          sql_result<span class="token operator">-></span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span>
+
+      Value value<span class="token punctuation">;</span>
+      rc <span class="token operator">=</span> tuple<span class="token operator">-></span><span class="token function">cell_at</span><span class="token punctuation">(</span>i<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">!=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">LOG_WARN</span><span class="token punctuation">(</span><span class="token string">"failed to get tuple cell value. rc=%s"</span><span class="token punctuation">,</span> <span class="token function">strrc</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        sql_result<span class="token operator">-></span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+
+      string cell_str <span class="token operator">=</span> value<span class="token punctuation">.</span><span class="token function">to_string</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+      rc <span class="token operator">=</span> writer_<span class="token operator">-></span><span class="token function">writen</span><span class="token punctuation">(</span>cell_str<span class="token punctuation">.</span><span class="token function">data</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> cell_str<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">LOG_WARN</span><span class="token punctuation">(</span><span class="token string">"failed to send data to client. err=%s"</span><span class="token punctuation">,</span> <span class="token function">strerror</span><span class="token punctuation">(</span>errno<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        sql_result<span class="token operator">-></span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">char</span> newline <span class="token operator">=</span> <span class="token char">'\\n'</span><span class="token punctuation">;</span>
+
+    rc <span class="token operator">=</span> writer_<span class="token operator">-></span><span class="token function">writen</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>newline<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">OB_FAIL</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token function">LOG_WARN</span><span class="token punctuation">(</span><span class="token string">"failed to send data to client. err=%s"</span><span class="token punctuation">,</span> <span class="token function">strerror</span><span class="token punctuation">(</span>errno<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      sql_result<span class="token operator">-></span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+  <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">==</span> RC<span class="token double-colon punctuation">::</span>RECORD_EOF<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    rc <span class="token operator">=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  sql_result<span class="token operator">-></span><span class="token function">set_return_code</span><span class="token punctuation">(</span>rc<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其获取物理计划执行后，将结果以Tuple的载体获取，再将数据按文本提取，以 | 作为分隔符，将其输出。</p>
+<p>至此SQL执行全流程完毕， <code>communicator</code> 自己将自己的数据输出，其中在 <code>SELECT</code> 遇到问题时，应该立即清除所有的缓冲区文本，将 FAILURE 写入输出流。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">SqlResult</span><span class="token punctuation">;</span>
+
+<span class="token comment">/**
+ * @brief 与客户端进行通讯
+ * @ingroup Communicator
+ * @details 使用简单的文本通讯协议，每个消息使用'\\0'结尾
+ */</span>
+<span class="token keyword">class</span> <span class="token class-name">PlainCommunicator</span> <span class="token operator">:</span> <span class="token base-clause"><span class="token keyword">public</span> <span class="token class-name">Communicator</span></span>
+<span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">PlainCommunicator</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> <span class="token operator">~</span><span class="token function">PlainCommunicator</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+
+  RC <span class="token function">read_event</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span><span class="token operator">&amp;</span>event<span class="token punctuation">)</span> <span class="token keyword">override</span><span class="token punctuation">;</span>
+  RC <span class="token function">write_result</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span>event<span class="token punctuation">,</span> <span class="token keyword">bool</span> <span class="token operator">&amp;</span>need_disconnect<span class="token punctuation">)</span> <span class="token keyword">override</span><span class="token punctuation">;</span>
+
+<span class="token keyword">private</span><span class="token operator">:</span>
+  RC <span class="token function">write_state</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span>event<span class="token punctuation">,</span> <span class="token keyword">bool</span> <span class="token operator">&amp;</span>need_disconnect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  RC <span class="token function">write_debug</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span>event<span class="token punctuation">,</span> <span class="token keyword">bool</span> <span class="token operator">&amp;</span>need_disconnect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  RC <span class="token function">write_result_internal</span><span class="token punctuation">(</span>SessionEvent <span class="token operator">*</span>event<span class="token punctuation">,</span> <span class="token keyword">bool</span> <span class="token operator">&amp;</span>need_disconnect<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  RC <span class="token function">write_tuple_result</span><span class="token punctuation">(</span>SqlResult <span class="token operator">*</span>sql_result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  RC <span class="token function">write_chunk_result</span><span class="token punctuation">(</span>SqlResult <span class="token operator">*</span>sql_result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token keyword">protected</span><span class="token operator">:</span>
+  vector<span class="token operator">&lt;</span><span class="token keyword">char</span><span class="token operator">></span> send_message_delimiter_<span class="token punctuation">;</span>  <span class="token comment">///&lt; 发送消息分隔符</span>
+  vector<span class="token operator">&lt;</span><span class="token keyword">char</span><span class="token operator">></span> debug_message_prefix_<span class="token punctuation">;</span>    <span class="token comment">///&lt; 调试信息前缀</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以上是一个PlainCommunicator 的示例。其核心逻辑如下：</p>
+<h3 id="函数整体功能概述">函数整体功能概述</h3>
+<p><code>PlainCommunicator::write_result</code> 用于将 SQL 执行结果通过网络 writer 发送给客户端，并在需要时断开连接。其内部主要流程：</p>
+<ol>
+<li>调用 <code>write_result_internal</code> 来输出真正的查询结果（表头、数据、状态信息等）</li>
+<li>如果仍然不需要断开连接，则尝试发送 Debug 信息</li>
+<li>再发送消息分隔符（send_message_delimiter）</li>
+<li>最后执行 flush 将缓存数据推送出去</li>
+</ol>
+<p>只有在任何阶段出现错误时才会标记 <code>need_disconnect = true</code> 并提前返回。</p>
+<h3 id="核心逻辑-write-result-internal-的详细解析">核心逻辑 <code>write_result_internal</code> 的详细解析</h3>
+<p>该函数接收 <code>SessionEvent</code>，对其中的 <code>SqlResult</code> 进行解析与发送。</p>
+<p>主要流程如下：</p>
+<ol>
+<li>
+<p>初始化 <code>need_disconnect = true</code></p>
+<p>默认认为通讯一次即结束，只有成功处理并发送完毕才会重置为 false</p>
+</li>
+<li>
+<p>获取 SQL 执行结果 <code>SqlResult *sql_result = event-&gt;sql_result()</code></p>
+</li>
+<li>
+<p>若 SQL 执行失败或没有可执行算子（非 SELECT，如 INSERT / DELETE）</p>
+<p>直接调用 <code>write_state</code> 返回状态信息，结束通讯</p>
+<p>即：这类语句一般没有行与列，不需要返回 tuple</p>
+</li>
+<li>
+<p>尝试 <code>sql_result-&gt;open()</code> 执行算子准备阶段</p>
+<p>如果失败则关闭 result 并返回状态信息</p>
+</li>
+<li>
+<p>输出表头</p>
+<p>遍历 <code>schema.cell_num()</code> 获取各列 alias</p>
+<p>用 <code>&quot; | &quot;</code> 分隔，最后添加一个换行符</p>
+</li>
+<li>
+<p>根据执行模式发送结果数据：</p>
+<ul>
+<li>若为 Chunk 模式：调用 <code>write_chunk_result</code></li>
+<li>否则调用 <code>write_tuple_result</code></li>
+</ul>
+</li>
+<li>
+<p>如果输出数据失败</p>
+<p>清空 writer、关闭 result、返回状态信息</p>
+</li>
+<li>
+<p>如果 <code>cell_num == 0</code>（例如 INSERT/DELETE）</p>
+<p>表示没有输出数据</p>
+<p>→ 写状态信息并返回</p>
+</li>
+<li>
+<p>如果成功输出结果则：</p>
+<ul>
+<li>设置 <code>need_disconnect = false</code>（客户端可继续发送请求）</li>
+<li>关闭 result 并返回成功状态码</li>
+</ul>
+</li>
+</ol>
+<h2 id="总结流程图">总结流程图</h2>
+<pre class="line-numbers language-none"><code class="language-none">write_result
+ ├─ write_result_internal
+ │   ├─ 若失败或非 SELECT → write_state → need_disconnect &#x3D;true
+ │   ├─ 输出列头
+ │   ├─ 输出 tuple&#x2F;chunk 结果
+ │   ├─ 若 cell_num &#x3D;&#x3D;0 → write_state → need_disconnect &#x3D;true
+ │   ├─ 成功 → need_disconnect &#x3D;false
+ │   └─return rc
+ ├─write_debug (若不需要断开)
+ ├─ 写入消息分隔符
+ ├─ flush
+ └─return rc<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2025/12/23/OS-mmap%E5%92%8C%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4/">操作系统笔记——mmap 和进程的地址空间</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/MiniOB/" rel="tag">MiniOB</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2025/12/30/MiniOB-note-sql/">MiniOB 项目结构——SQL板块</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/23/OS-mmap%E5%92%8C%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4/">操作系统笔记——mmap 和进程的地址空间</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/18/OS-%E7%A8%8B%E5%BA%8F%E4%B8%8E%E8%BF%9B%E7%A8%8B&%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86API/">操作系统笔记——程序与进程&进程管理API</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/05/OS-%E5%AD%98%E5%82%A8%E5%99%A8%E7%AE%A1%E7%90%86/">操作系统笔记——存储器管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/11/25/Spring%20Authorization%20Server%20%E5%A4%8D%E7%94%A8%E8%87%AA%E5%AE%9A%E4%B9%89%20Filter/">Spring Authorization Server 复用自定义 Filter</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/11/01/OAuth2.0%20%E5%AE%A2%E6%88%B7%E7%AB%AF+%E6%8E%88%E6%9D%83%E7%AB%AF%20%E5%AE%9E%E8%B7%B5%E8%AE%BE%E8%AE%A1/">OAuth2.0 客户端+授权端 实践设计</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 10px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 12.86px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2025 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
