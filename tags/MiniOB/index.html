@@ -61,14 +61,13 @@
             <a href="/2025/12/30/MiniOB-note-sql/">MiniOB 项目结构——SQL板块</a>
         </h2>
     
-        <p>从SQL执行流程解析sql相关结构
-我们先来确定数据库交互的角色：
+        <p>整体概要
+MiniOB主要执行逻辑
+整个 SQL 请求的处理分为三个主要阶段：语法解析、语义绑定与执行调度。具体流程如下：
 
-Client：发送sql语句的用户
-Server：处理sql语句的服务器内核
 
-Communicator
-在明确了数据库交互...</p>
+解析阶段
+客户端传入的 SQL 文本首先由语法解析器处理，生成抽象...</p>
     
         <div class="post-meta">
             <time class="date">2025.12.30</time>

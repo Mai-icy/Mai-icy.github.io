@@ -61,7 +61,69 @@
         </section>
         <article class="post-content">
         
-            <h1>从SQL执行流程解析sql相关结构</h1>
+            <h1>整体概要</h1>
+<p>MiniOB主要执行逻辑</p>
+<p>整个 SQL 请求的处理分为三个主要阶段：语法解析、语义绑定与执行调度。具体流程如下：</p>
+<ol>
+<li>
+<p>解析阶段</p>
+<p>客户端传入的 SQL 文本首先由语法解析器处理，生成抽象语法表示 <code>ParsedSql</code>。</p>
+</li>
+<li>
+<p>语义绑定阶段</p>
+<p>解析结果经过语义检查和元数据绑定，构建出可执行的语句对象 <code>Stmt</code>，该对象明确了引用的表、列、类型等信息。</p>
+</li>
+<li>
+<p>执行调度阶段</p>
+<p>根据语句类型选择不同的执行路径：</p>
+<ul>
+<li>
+<p>DDL 语句（如 CREATE / DROP）</p>
+<p>直接进入执行环节，无需查询优化器介入。</p>
+<p>调用控制器（Commander）分发至对应的 Executor 完成操作。</p>
+</li>
+<li>
+<p>DML 语句（如 SELECT / INSERT / UPDATE / DELETE）</p>
+<p>需要经过优化器处理：</p>
+<ol>
+<li>
+<p>基于 <code>Stmt</code> 构建逻辑计划树</p>
+</li>
+<li>
+<p>执行逻辑优化（例如谓词下推、投影下推等）</p>
+</li>
+<li>
+<p>转换为物理执行计划</p>
+<p>采用火山模型的迭代器接口组织执行算子</p>
+</li>
+</ol>
+<p>优化后的执行器在 <code>SqlResult</code> 上产出结果数据，最终由通信模块 <code>Communicator</code> 按协议格式化并返回客户端。</p>
+</li>
+</ul>
+</li>
+</ol>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">flowchart</span> TD
+    A<span class="token text string">[SQL文本输入]</span> <span class="token arrow operator">--></span> B<span class="token text string">[语法解析 ParsedSql]</span>
+    B <span class="token arrow operator">--></span> C<span class="token text string">[语义绑定构建 Stmt]</span>
+
+    C <span class="token arrow operator">--></span> D<span class="token text string">&#123;语句类型?&#125;</span>
+
+    D <span class="token arrow operator">--></span> E<span class="token text string">[DDL]</span>
+    D <span class="token arrow operator">--></span> F<span class="token text string">[DML]</span>
+
+    <span class="token comment">%% DDL 流程</span>
+    E <span class="token arrow operator">--></span> G<span class="token text string">[Commander 直接派发执行器]</span>
+    G <span class="token arrow operator">--></span> H<span class="token text string">[执行元数据操作 返回状态信息]</span>
+    H <span class="token arrow operator">--></span> I<span class="token text string">[Communicator 返回处理结果]</span>
+
+    <span class="token comment">%% DML 流程</span>
+    F <span class="token arrow operator">--></span> J<span class="token text string">[构建逻辑计划树]</span>
+    J <span class="token arrow operator">--></span> K<span class="token text string">[逻辑优化 谓词/投影下推等]</span>
+    K <span class="token arrow operator">--></span> L<span class="token text string">[转换为物理计划 火山模型算子]</span>
+    L <span class="token arrow operator">--></span> M<span class="token text string">[执行数据算子 输出至 SqlResult]</span>
+    M <span class="token arrow operator">--></span> N<span class="token text string">[Communicator 格式化结果]</span>
+    N <span class="token arrow operator">--></span> O<span class="token text string">[返回结果至客户端]</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>从SQL执行流程解析sql相关结构 源码解析</h1>
 <p>我们先来确定数据库交互的角色：</p>
 <ul>
 <li>Client：发送sql语句的用户</li>
