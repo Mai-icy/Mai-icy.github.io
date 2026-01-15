@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>操作系统笔记——进程管理 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="操作系统笔记——进程管理"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>操作系统笔记——进程管理</h2>
+            <div class="post-meta">
+                <time class="date">2026.01.15</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>进程基本概念</h1>
+<h2 id="程序（Program）-vs-进程（Process）-vs-线程（Thread）">程序（Program） vs 进程（Process） vs 线程（Thread）</h2>
+<ul>
+<li>程序：是状态机的静态描述，是一组指令的有序集合</li>
+<li>进程：是整个程序动态运行起来的状态机，有四个性质</li>
+<li>线程：进程状态机中最小的独立执行控制流，是被调度的基本单元</li>
+</ul>
+<p>进程包含了程序，数据（栈），PCB</p>
+<h2 id="进程的特点">进程的特点</h2>
+<ul>
+<li>并发性：多个进程在同一时间段内交替执行，是操作系统资源复用能力的体现。</li>
+<li>动态性：进程是程序的执行过程，具有从创建到终止的完整生命周期。</li>
+<li>独立性：每个进程拥有独立的资源和地址空间，一个进程的运行不影响其他进程。</li>
+<li>异步性：由于调度和资源竞争，进程的执行速度不可预测，推进顺序不确定。</li>
+</ul>
+<h2 id="进程状态及转换">进程状态及转换</h2>
+<p>三种基本主要状态：就绪态，运行态，堵塞态</p>
+<ul>
+<li>就绪态：被调度或分派 跳转 运行态</li>
+<li>运行态：时间片用完回到 就绪态，遇到I/O等的等待事件，进入堵塞态</li>
+<li>堵塞态：等待事件完成进入就绪态</li>
+</ul>
+<p>扩展到五种状态就是多一个创建态和终止态</p>
+<ul>
+<li>创建态：创建完成进程进入就绪态</li>
+<li>终止态：运行完毕进入终止态</li>
+</ul>
+<h2 id="PCB（Process-Control-Block）">PCB（Process Control Block）</h2>
+<p>操作系统要管理上千个进程，为每个进程保存一些元数据，存储元数据的就是PCB</p>
+<p>其描述进程的元数据信息，PCB 是进程的所有控制信息集合，是操作系统管理进程的元数据结构。</p>
+<p>PCB 是进程存在的唯一标志，操作系统通过 PCB 来管理进程。</p>
+<p>PCB 基本包含以下 5 类信息：</p>
+<ul>
+<li>进程标识信息（PID）：唯一标识：进程号 PID，父进程号 PPID，用户 ID 等</li>
+<li>处理机状态信息：保存进程被中断时的 CPU 现场，如 PC、各类寄存器、PSW。</li>
+<li>进程调度信息：行进程状态（就绪/运/阻塞），调度优先级，时间片信息，等待队列指针</li>
+<li>进程控制信息：进程使用的资源，打开的文件列表，消息队列/信号量等 IPC 信息，运行时间统计，进程间关系（父子进程）</li>
+<li>内存管理信息：页表基址，段表，代码段/数据段所在地址</li>
+</ul>
+<h1>进程控制</h1>
+<p>详情见 博客（程序与进程&amp;进程管理API）</p>
+<h1>进程同步</h1>
+<h2 id="基本概念">基本概念</h2>
+<ul>
+<li>临界资源：一次只允许<strong>一个进程</strong>使用的资源，例如：打印机，共享数据结构，全局变量</li>
+<li>临界区：进程中访问临界资源的那一段代码。</li>
+</ul>
+<h2 id="同步机制四条准则">同步机制四条准则</h2>
+<ul>
+<li>空闲让进：资源空闲,允许一个立即进入</li>
+<li>忙则等待：资源被访问，其他进程必须等待</li>
+<li>有限等待：保证等待访问的进程能在有限时间内进入</li>
+<li>让权等待：不能进入临界区的进程应立即释放 CPU</li>
+</ul>
+<h2 id="进程互斥问题">进程互斥问题</h2>
+<p>进程互斥问题是操作系统中并发控制的一个基本问题，指的是：当多个进程（或线程）并发执行，并且需要访问同一临界资源时，必须保证在任意时刻只有一个进程进入临界区进行访问，否则会导致数据不一致或系统错误。</p>
+<h2 id="利用硬件方法-解决进程互斥问题">利用硬件方法 解决进程互斥问题</h2>
+<h3 id="禁止中断">禁止中断</h3>
+<p>原理：</p>
+<ul>
+<li>进程进入临界区前 关闭中断</li>
+<li>离开临界区后 打开中断</li>
+<li>由于单核 CPU 在关中断期间不会发生进程切换，因此可保证互斥</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>不适用于多处理机，只能用于单处理机系统</li>
+<li>影响系统响应性，增加风险</li>
+</ul>
+<h3 id="TSL（TAS-Test-and-Set）指令实现互斥">TSL（TAS Test-and-Set）指令实现互斥</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool <span class="token function">TSL</span><span class="token punctuation">(</span>bool <span class="token operator">*</span>lock<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  bool old <span class="token operator">=</span> <span class="token operator">*</span>lock<span class="token punctuation">;</span>  <span class="token comment">// 测试</span>
+  <span class="token operator">*</span>lock <span class="token operator">=</span> true<span class="token punctuation">;</span>      <span class="token comment">// 上锁</span>
+  <span class="token keyword">return</span> old<span class="token punctuation">;</span>        <span class="token comment">// 返回旧值</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>原理：</p>
+<ul>
+<li>通过一些手段将TSL函数原子化：早期主要依赖“内存总线封锁”，现代 CPU 多依赖“缓存一致性协议 + 缓存行锁定”。</li>
+<li>使用方式： <code>while (TestAndSet(&amp;lock)) ;</code></li>
+</ul>
+<p>缺点：会产生忙等待，不保证公平性，可能发生饥饿。</p>
+<p>没有实现让权等待：“当进程因请求资源而不能继续执行时，应立即释放处理器（让出 CPU），而不是占用 CPU 等待。”</p>
+<p>TSL并没有堵塞，而是反复持续运行循环，即自旋等待（忙等待）</p>
+<h3 id="SWAP-指令实现互斥">SWAP 指令实现互斥</h3>
+<p>SWAP（Exchange）指令是一条硬件原子指令，用于原子地交换两个变量的值。</p>
+<p>原理：</p>
+<ul>
+<li>SWAP函数本身就是原子的，和TSL类似。</li>
+<li>使用方式：</li>
+</ul>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">do</span> <span class="token punctuation">&#123;</span>
+    key <span class="token operator">=</span> true<span class="token punctuation">;</span>
+    <span class="token function">SWAP</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>lock<span class="token punctuation">,</span> <span class="token operator">&amp;</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> <span class="token keyword">while</span> <span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点：仍然是忙等待，仍然违背让权等待原则。</p>
+<h2 id="利用软件方法-解决进程互斥问题">利用软件方法 解决进程互斥问题</h2>
+<h3 id="严格轮换法（Strict-Alternation）">严格轮换法（Strict Alternation）</h3>
+<p>原理：</p>
+<ul>
+<li>用一个共享变量 <code>turn</code></li>
+<li>规定进程轮流进入临界区</li>
+</ul>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">int</span> turn <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span class="token comment">// 0：P0，1：P1</span>
+
+<span class="token comment">// P0</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>turn <span class="token operator">!=</span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">;</span>
+<span class="token comment">/* 临界区 */</span>
+turn <span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span>
+
+<span class="token comment">// P1</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>turn <span class="token operator">!=</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">;</span>
+<span class="token comment">/* 临界区 */</span>
+turn <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点：仍然是忙等待，仍然违背让权等待原则。</p>
+<h3 id="标志法（Flag-Interested-Variables）">标志法（Flag / Interested Variables）</h3>
+<p>原理：</p>
+<ul>
+<li>每个进程用一个标志表示“是否想进入临界区”</li>
+</ul>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool flag<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>false<span class="token punctuation">,</span>false<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Pi</span>
+flag<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span>true<span class="token punctuation">;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>flag<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">;</span>
+<span class="token comment">/* 临界区 */</span>
+flag<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span>false<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点：可能发生死锁，不保证互斥的正确推进，设置布尔值并非原子操作，违背忙则等待，让权等待。</p>
+<h3 id="Peterson算法">Peterson算法</h3>
+<p>原理：</p>
+<ul>
+<li>结合<strong>标志法</strong>与<strong>严格轮换法</strong></li>
+<li>用 <code>flag[i]</code> 表示进程是否想进入临界区</li>
+<li>用 <code>turn</code> 表示在竞争时<strong>让谁优先</strong></li>
+<li>通过“<strong>先声明意愿，再主动让权</strong>”避免死锁并保证公平</li>
+</ul>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">bool flag<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>false<span class="token punctuation">,</span>false<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> turn <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Pi (i = 0 or 1, j = 1 - i)</span>
+flag<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span>true<span class="token punctuation">;</span><span class="token comment">// 表示 Pi 想进入临界区</span>
+turn <span class="token operator">=</span> j<span class="token punctuation">;</span><span class="token comment">// 主动让对方优先</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>flag<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">&amp;&amp;</span> turn <span class="token operator">==</span> j<span class="token punctuation">)</span> <span class="token punctuation">;</span>
+<span class="token comment">/* 临界区 */</span>
+flag<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span>false<span class="token punctuation">;</span><span class="token comment">// Pi 离开临界区</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点：</p>
+<ul>
+<li>仍然是忙等待（自旋等待，占用 CPU）</li>
+<li>违背让权等待原则（等待时不阻塞而是循环检查）</li>
+<li>只适用于两个进程</li>
+<li>对内存可见性和顺序一致性有假设（现代多核需内存屏障）</li>
+</ul>
+<h3 id="面包店算法（Bakery-Algorithm）">面包店算法（Bakery Algorithm）</h3>
+<p>原理：</p>
+<ul>
+<li>由 Lamport 提出</li>
+<li>模拟“面包店取号排队”的思想</li>
+<li>进程进入临界区前先取一个递增的号码</li>
+<li>号码小的优先进入，若号码相同则按进程号比较</li>
+<li>适用于多个进程的互斥问题</li>
+</ul>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">define</span> <span class="token macro-name">N</span><span class="token comment">// 进程数</span></span>
+
+bool choosing<span class="token punctuation">[</span>N<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span>false<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span class="token comment">// 是否正在取号</span>
+<span class="token keyword">int</span> number<span class="token punctuation">[</span>N<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span class="token comment">// 进程的号牌，0 表示未取号</span>
+
+<span class="token comment">// Pi</span>
+choosing<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span>true<span class="token punctuation">;</span>
+number<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span><span class="token number">1</span> <span class="token operator">+</span> <span class="token function">max</span><span class="token punctuation">(</span>number<span class="token punctuation">[</span><span class="token number">0.</span><span class="token punctuation">.</span>N<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+choosing<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span>false<span class="token punctuation">;</span>
+
+<span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> j <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> N<span class="token punctuation">;</span> j<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>choosing<span class="token punctuation">[</span>j<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token punctuation">;</span><span class="token comment">// 等待 Pj 取号完成</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>number<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">!=</span><span class="token number">0</span> <span class="token operator">&amp;&amp;</span>
+          <span class="token punctuation">(</span>number<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">&lt;</span> number<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">||</span>
+          <span class="token punctuation">(</span>number<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">==</span> number<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">&amp;&amp;</span> j <span class="token operator">&lt;</span> i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span>
+
+<span class="token comment">/* 临界区 */</span>
+
+number<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span class="token comment">// 离开临界区，放弃号牌</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点：</p>
+<ul>
+<li>忙等待（自旋等待，占用 CPU）</li>
+<li>违背让权等待原则</li>
+<li>取号和比较过程开销较大</li>
+<li>对共享变量的读写频繁，效率较低</li>
+</ul>
+<h2 id="利用锁机制">利用锁机制</h2>
+<p>原理：</p>
+<ul>
+<li>使用一个共享的<strong>锁变量</strong>表示临界资源的占用情况</li>
+<li>进入临界区前必须<strong>先获取锁</strong></li>
+<li>退出临界区时<strong>释放锁</strong></li>
+</ul>
+<h2 id="信号量机制">信号量机制</h2>
+<p>原理：</p>
+<ul>
+<li>由 <strong>Dijkstra</strong> 提出</li>
+<li>用一个整型变量表示可用资源数</li>
+<li>通过两个原子操作实现同步与互斥：
+<ul>
+<li><code>P()</code>（wait）</li>
+<li><code>V()</code>（signal）</li>
+</ul>
+</li>
+<li>当资源不可用时，进程阻塞等待</li>
+</ul>
+<h3 id="PV函数">PV函数</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">P</span><span class="token punctuation">(</span>S<span class="token punctuation">)</span><span class="token operator">:</span>
+    S <span class="token operator">=</span> S <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>S <span class="token operator">&lt;</span> <span class="token number">0</span><span class="token punctuation">)</span>  <span class="token comment">// 无资源，进程进入阻塞队列</span>
+        <span class="token function">block</span><span class="token punctuation">(</span>this_process<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+<span class="token function">V</span><span class="token punctuation">(</span>S<span class="token punctuation">)</span><span class="token operator">:</span>
+    S <span class="token operator">=</span> S <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>S <span class="token operator">&lt;=</span> <span class="token number">0</span><span class="token punctuation">)</span>
+        <span class="token function">wakeup</span><span class="token punctuation">(</span>one_process<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 唤醒堵塞队列中的一个线程</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>使用方法：</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">semaphore S <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>   <span class="token comment">// 互斥信号量</span>
+<span class="token comment">// Pi</span>
+<span class="token function">P</span><span class="token punctuation">(</span>S<span class="token punctuation">)</span><span class="token punctuation">;</span>              <span class="token comment">// 申请资源，若 S &lt; 0 则阻塞</span>
+<span class="token comment">/* 临界区 */</span>
+<span class="token function">V</span><span class="token punctuation">(</span>S<span class="token punctuation">)</span><span class="token punctuation">;</span>              <span class="token comment">// 释放资源，唤醒等待进程</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>缺点：可能发生死锁</p>
+<h3 id="利用前驱图完成信号量设计">利用前驱图完成信号量设计</h3>
+<pre class="line-numbers language-mermaid" data-language="mermaid"><code class="language-mermaid"><span class="token keyword">flowchart</span> TB
+    S1 <span class="token arrow operator">--></span><span class="token label property">|a|</span> S2
+    S1 <span class="token arrow operator">--></span><span class="token label property">|b|</span> S3
+
+    S2 <span class="token arrow operator">--></span><span class="token label property">|c|</span> S4
+    S2 <span class="token arrow operator">--></span><span class="token label property">|d|</span> S5
+
+    S3 <span class="token arrow operator">--></span><span class="token label property">|e|</span> S6
+    S4 <span class="token arrow operator">--></span><span class="token label property">|f|</span> S6
+    S5 <span class="token arrow operator">--></span><span class="token label property">|g|</span> S6<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>设计信号量 abcdefg</p>
+<ul>
+<li>S1：{ S1, V(a), V(b) }</li>
+<li>S2：{ P(a), S2, V©, V(d) }</li>
+<li>S3：{ P(b), S3, V(e) }</li>
+<li>S4：{ P©, S4, V(f) }</li>
+<li>S5：{ P(d), S5, V(g) }</li>
+<li>S6：{ P(e), P(f), P(g), S6 }</li>
+</ul>
+<p>每个状态“P 所有前驱信号，V 所有后继信号”，即可严格实现图中的并发与同步关系。</p>
+<h1>经典进程同步问题</h1>
+<h2 id="进程关系分析方法">进程关系分析方法</h2>
+<p>一共有两种约束，互斥约束和同步约束。</p>
+<p>互斥约束需要考虑：是否有共享的资源，对于共享资源互斥</p>
+<p>同步约束需要考虑：是否有先后的关系，某个操作必须在某个之后，通常和 full 满了，empty 空了 有关</p>
+<h2 id="生产者-消费者问题">生产者-消费者问题</h2>
+<h3 id="问题描述">问题描述</h3>
+<p>系统中存在两类并发进程：生产者进程和消费者进程。生产者进程负责生成数据（产品），并将其放入一个共享的有限缓冲区；消费者进程从该缓冲区中取出数据并进行处理。缓冲区的容量是有限的。</p>
+<h3 id="进程关系分析">进程关系分析</h3>
+<ul>
+<li>
+<p>互斥约束</p>
+<p>由于缓冲区是共享资源，任意时刻只允许一个进程对缓冲区进行操作，以防止数据不一致。</p>
+</li>
+<li>
+<p>同步约束</p>
+<ul>
+<li>当缓冲区已满时，生产者必须等待；</li>
+<li>当缓冲区为空时，消费者必须等待。</li>
+</ul>
+</li>
+</ul>
+<p>因此设计信号量三个：Mutex队列锁，Full满信号，empty空信号</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">semaphore mutex <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>   <span class="token comment">// 互斥信号量，保护缓冲区</span>
+semaphore empty <span class="token operator">=</span> N<span class="token punctuation">;</span>   <span class="token comment">// 空缓冲区数量</span>
+semaphore full  <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>   <span class="token comment">// 满缓冲区数量</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="生产者进程（Producer）">生产者进程（Producer）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Producer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">produce_item</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>     <span class="token comment">// 生产产品</span>
+
+        <span class="token function">P</span><span class="token punctuation">(</span>empty<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// 等待空缓冲区</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// 进入临界区</span>
+
+        <span class="token function">put_item_into_buffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// 离开临界区</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>full<span class="token punctuation">)</span><span class="token punctuation">;</span>            <span class="token comment">// 增加产品数量</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="消费者进程（Consumer）">消费者进程（Consumer）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Consumer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>full<span class="token punctuation">)</span><span class="token punctuation">;</span>            <span class="token comment">// 等待产品</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// 进入临界区</span>
+
+        <span class="token function">get_item_from_buffer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// 离开临界区</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>empty<span class="token punctuation">)</span><span class="token punctuation">;</span>           <span class="token comment">// 增加空缓冲区数量</span>
+
+        <span class="token function">consume_item</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>     <span class="token comment">// 消费产品</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="哲学家进餐问题">哲学家进餐问题</h2>
+<h3 id="问题描述-2">问题描述</h3>
+<p>哲学家进餐问题是由 Dijkstra 提出的一个经典并发同步与资源分配问题。</p>
+<p>系统中有 5 位哲学家 围坐在一张圆桌旁，相邻的两位哲学家之间放置一根筷子，共 5 根筷子。哲学家的行为在以下两种状态之间反复交替：</p>
+<ul>
+<li>思考（Thinking）</li>
+<li>进餐（Eating）</li>
+</ul>
+<p>每位哲学家在进餐时，必须同时拿起左右两根筷子；思考时不需要筷子。</p>
+<h3 id="进程关系分析-2">进程关系分析</h3>
+<ul>
+<li>
+<p>互斥约束</p>
+<p>每根筷子都是一种共享资源，同一时刻只能被一个哲学家占用，因此对筷子的访问必须满足互斥条件。</p>
+</li>
+<li>
+<p>同步约束</p>
+<ul>
+<li>若哲学家未能同时获得左右两根筷子，则必须等待；</li>
+</ul>
+</li>
+<li>
+<p>潜在问题</p>
+<p>若所有哲学家同时先拿起左边的筷子，再等待右边的筷子，则会形成循环等待，从而导致死锁。</p>
+</li>
+</ul>
+<h3 id="信号量设计">信号量设计</h3>
+<p>为避免死锁，引入一个额外的信号量，限制最多只有 N−1N-1N−1 位哲学家同时尝试拿筷子，从而破坏循环等待条件。</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">semaphore room <span class="token operator">=</span><span class="token number">4</span><span class="token punctuation">;</span> <span class="token comment">// 最多允许 4 位哲学家进入竞争</span>
+semaphore chopstick<span class="token punctuation">[</span><span class="token number">5</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span> <span class="token comment">// 每根筷子一个互斥信号量</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<h3 id="哲学家进程（Philosopher-i）">哲学家进程（Philosopher i）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Philosopher</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">think</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 思考</span>
+
+        <span class="token function">P</span><span class="token punctuation">(</span>room<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 进入餐厅，限制并发数量</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>chopstick<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 拿左筷子</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>chopstick<span class="token punctuation">[</span><span class="token punctuation">(</span>i <span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">%</span><span class="token number">5</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 拿右筷子</span>
+
+        <span class="token function">eat</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 进餐</span>
+
+        <span class="token function">V</span><span class="token punctuation">(</span>chopstick<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 放下左筷子</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>chopstick<span class="token punctuation">[</span><span class="token punctuation">(</span>i <span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">%</span><span class="token number">5</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 放下右筷子</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>room<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 离开餐厅</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="读者–写者问题">读者–写者问题</h2>
+<h3 id="问题描述-3">问题描述</h3>
+<p>系统中存在两类并发进程：</p>
+<ul>
+<li>读者进程（Reader）：只读取共享数据，不修改数据；</li>
+<li>写者进程（Writer）：对共享数据进行写操作。</li>
+</ul>
+<p>共享数据在同一时刻允许多个读者同时读取，但写者必须独占共享数据。即：</p>
+<ul>
+<li>读–读：允许并发</li>
+<li>读–写：互斥</li>
+<li>写–写：互斥</li>
+</ul>
+<h3 id="进程关系分析-3">进程关系分析</h3>
+<ul>
+<li>互斥约束
+<ul>
+<li>写者在写共享数据时，必须独占资源；</li>
+<li>任意时刻不能同时存在写者和其他读者或写者。</li>
+</ul>
+</li>
+<li>同步约束
+<ul>
+<li>当有写者正在写时，后续读者必须等待；</li>
+<li>当有读者正在读时，写者必须等待。</li>
+</ul>
+</li>
+</ul>
+<h3 id="不同策略">不同策略</h3>
+<ul>
+<li>读者优先：只要系统中存在读者，写者就不能进入；读者无需等待其他读者，可直接进入读操作。写者可能饥饿；</li>
+<li>写者优先：写者一旦到来，就阻塞所有后续到达的读者，直到所有写者完成写操作。但读者可能饥饿；</li>
+<li>公平策略：所有到达的读者和写者按到达顺序排队，谁先到谁先服务。避免饥饿。</li>
+</ul>
+<h3 id="信号量设计（读者优先）">信号量设计（读者优先）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">semaphore mutex <span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span><span class="token comment">// 保护读者计数</span>
+semaphore wrt   <span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span><span class="token comment">// 控制对共享数据的访问</span>
+<span class="token keyword">int</span> readcount <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span class="token comment">// 当前读者数量</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<h3 id="读者进程（Reader）">读者进程（Reader）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Reader</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">P</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    readcount<span class="token operator">++</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>readcount <span class="token operator">==</span><span class="token number">1</span><span class="token punctuation">)</span>
+      <span class="token function">P</span><span class="token punctuation">(</span>wrt<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 第一个读者阻止写者</span>
+    <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">read_data</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 读共享数据</span>
+
+    <span class="token function">P</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    readcount<span class="token operator">--</span><span class="token punctuation">;</span>
+		<span class="token keyword">if</span> <span class="token punctuation">(</span>readcount <span class="token operator">==</span><span class="token number">0</span><span class="token punctuation">)</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>wrt<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 最后一个读者释放写权限</span>
+    <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="写者进程（Writer）">写者进程（Writer）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Writer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">P</span><span class="token punctuation">(</span>wrt<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 独占访问</span>
+    <span class="token function">write_data</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 写共享数据</span>
+    <span class="token function">V</span><span class="token punctuation">(</span>wrt<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="理发师问题（Sleeping-Barber-Problem）">理发师问题（Sleeping Barber Problem）</h2>
+<h3 id="问题描述-4">问题描述</h3>
+<p>系统中有：</p>
+<ul>
+<li>1 名理发师</li>
+<li>1 把理发椅</li>
+<li>N 把等候椅</li>
+</ul>
+<p>理发师在没有顾客时会睡觉；顾客来到理发店时：</p>
+<ul>
+<li>若理发师空闲，则立即理发；</li>
+<li>若理发师正在理发：
+<ul>
+<li>若等候椅未满，顾客坐下等待；</li>
+<li>若等候椅已满，顾客离开。</li>
+</ul>
+</li>
+</ul>
+<h3 id="进程关系分析-4">进程关系分析</h3>
+<ul>
+<li>互斥约束
+<ul>
+<li>理发椅同一时刻只能服务一个顾客；</li>
+<li>等候椅数量有限，需要互斥访问计数。</li>
+</ul>
+</li>
+<li>同步约束
+<ul>
+<li>顾客到来时需要唤醒正在睡觉的理发师；</li>
+<li>理发师在没有顾客时应阻塞（睡眠），而不是忙等待。</li>
+</ul>
+</li>
+</ul>
+<h3 id="信号量设计-2">信号量设计</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">semaphore customers <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span class="token comment">// 等待理发的顾客数</span>
+semaphore barber <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span class="token comment">// 理发师是否就绪</span>
+semaphore mutex <span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">;</span><span class="token comment">// 保护等候椅计数</span>
+<span class="token keyword">int</span> waiting <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span><span class="token comment">// 当前等待顾客数</span>
+constint CHAIRS <span class="token operator">=</span> N<span class="token punctuation">;</span><span class="token comment">// 等候椅数量</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="理发师进程（Barber）">理发师进程（Barber）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Barber</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>customers<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 若无顾客则睡觉</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        waiting<span class="token operator">--</span><span class="token punctuation">;</span><span class="token comment">// 顾客进入理发椅</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>barber<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 唤醒一个顾客</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">cut_hair</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 理发</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="顾客进程（Customer）">顾客进程（Customer）</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Customer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">P</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">if</span> <span class="token punctuation">(</span>waiting <span class="token operator">&lt;</span> CHAIRS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        waiting<span class="token operator">++</span><span class="token punctuation">;</span><span class="token comment">// 坐到等候椅</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>customers<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 通知理发师有顾客</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">P</span><span class="token punctuation">(</span>barber<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 等待理发师</span>
+        <span class="token function">get_haircut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 理发</span>
+    <span class="token punctuation">&#125;</span><span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">V</span><span class="token punctuation">(</span>mutex<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 等候椅满，离开</span>
+        <span class="token function">leave_shop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>管程机制</h1>
+<p>管程就是统一封装共享资源。</p>
+<h2 id="管程的引入">管程的引入</h2>
+<p>早期常用的同步工具是信号量（Semaphore）。然而，信号量是一种低级同步机制，需要程序员显式地进行 P/V 操作，容易出现很多问题</p>
+<p>为降低并发程序设计的复杂度、减少同步错误，Hoare 提出了管程（Monitor）机制，将共享资源及其同步控制统一封装，从程序结构上保证正确性。</p>
+<h2 id="管程的定义">管程的定义</h2>
+<p>管程将共享数据、对共享数据的操作以及同步机制封装在一个模块中，并由系统保证任意时刻只有一个进程能够进入管程，从而实现自动互斥。</p>
+<h2 id="条件变量（Condition-Variable）">条件变量（Condition Variable）</h2>
+<h3 id="条件变量的作用">条件变量的作用</h3>
+<p>在管程中，虽然自动实现了互斥，但进程仍可能因为条件不满足而无法继续执行，此时需要一种机制让进程等待并被唤醒。</p>
+<p>为此，管程引入了条件变量。</p>
+<h3 id="条件变量的基本操作">条件变量的基本操作</h3>
+<p>条件变量通常支持两种操作：</p>
+<pre class="line-numbers language-none"><code class="language-none">wait(c);    &#x2F;&#x2F; 在条件变量 c 上等待
+signal(c);  &#x2F;&#x2F; 唤醒在条件变量 c 上等待的一个进程<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>其语义为：</p>
+<ul>
+<li><code>wait(c)</code>：调用进程阻塞，并释放管程的使用权；</li>
+<li><code>signal(c)</code>：唤醒一个因等待条件 c 而阻塞的进程。</li>
+</ul>
+<h3 id="条件变量的语义说明">条件变量的语义说明</h3>
+<p>在实际系统（如 Java、POSIX）中，普遍采用 Mesa 管程语义：</p>
+<ul>
+<li><code>signal</code> 只是通知；</li>
+<li>被唤醒进程需重新竞争进入管程；</li>
+<li>条件判断应使用 <code>while</code> 而非 <code>if</code>。</li>
+</ul>
+<h2 id="利用管程解决生产者–消费者问题">利用管程解决生产者–消费者问题</h2>
+<h3 id="问题回顾">问题回顾</h3>
+<p>系统中存在生产者和消费者进程，二者共享一个有限缓冲区：</p>
+<ul>
+<li>缓冲区满时，生产者必须等待；</li>
+<li>缓冲区空时，消费者必须等待；</li>
+<li>对缓冲区的访问需要互斥。</li>
+</ul>
+<h3 id="管程设计">管程设计</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c">monitor BoundedBuffer <span class="token punctuation">&#123;</span>
+  item buffer<span class="token punctuation">[</span>N<span class="token punctuation">]</span><span class="token punctuation">;</span>
+	<span class="token keyword">int</span> count <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+	<span class="token keyword">int</span> in <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> out <span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">;</span>
+  condition notFull<span class="token punctuation">;</span>
+  condition notEmpty<span class="token punctuation">;</span>
+
+  <span class="token function">procedureinsert</span><span class="token punctuation">(</span>item x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span>count <span class="token operator">==</span> N<span class="token punctuation">)</span>
+	    <span class="token function">wait</span><span class="token punctuation">(</span>notFull<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	
+    buffer<span class="token punctuation">[</span>in<span class="token punctuation">]</span> <span class="token operator">=</span> x<span class="token punctuation">;</span>
+    in <span class="token operator">=</span> <span class="token punctuation">(</span>in <span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">%</span> N<span class="token punctuation">;</span>
+    count<span class="token operator">++</span><span class="token punctuation">;</span>
+
+    <span class="token function">signal</span><span class="token punctuation">(</span>notEmpty<span class="token punctuation">)</span><span class="token punctuation">;</span>
+	 <span class="token punctuation">&#125;</span>
+
+  <span class="token function">procedureremove</span><span class="token punctuation">(</span>item <span class="token operator">&amp;</span>x<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+		<span class="token keyword">while</span> <span class="token punctuation">(</span>count <span class="token operator">==</span><span class="token number">0</span><span class="token punctuation">)</span>
+	    <span class="token function">wait</span><span class="token punctuation">(</span>notEmpty<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    x <span class="token operator">=</span> buffer<span class="token punctuation">[</span>out<span class="token punctuation">]</span><span class="token punctuation">;</span>
+    out <span class="token operator">=</span> <span class="token punctuation">(</span>out <span class="token operator">+</span><span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">%</span> N<span class="token punctuation">;</span>
+    count<span class="token operator">--</span><span class="token punctuation">;</span>
+
+    <span class="token function">signal</span><span class="token punctuation">(</span>notFull<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="生产者进程">生产者进程</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Producer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    item x <span class="token operator">=</span> <span class="token function">produce_item</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    BoundedBuffer<span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="消费者进程">消费者进程</h3>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token function">Consumer</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">while</span> <span class="token punctuation">(</span>true<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    item x<span class="token punctuation">;</span>
+    BoundedBuffer<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">consume_item</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>进程调度算法</h1>
+<p>进程提供很多属性作为调度算法的依据：</p>
+<ul>
+<li>到达时间：进程创建提交的时间刻</li>
+<li>估计运行时间：进程运行需要的时间长度</li>
+<li>优先级：标识进程的优先顺序</li>
+<li>等待时间：进程在就绪队列中等待被 CPU 调度执行的累计时间。</li>
+</ul>
+<p>对于调度后的结果：</p>
+<ul>
+<li>周转时间：完成时间 − 到达时间</li>
+<li>加权周转时间：周转时间 / 运行时间</li>
+</ul>
+<h2 id="先来先服务（FCFS-First-Come-First-Served）">先来先服务（FCFS, First-Come First-Served）</h2>
+<p>思想：</p>
+<p>按照进程到达就绪队列的先后顺序运行，非抢占式。</p>
+<p>特点：</p>
+<ul>
+<li>实现简单</li>
+<li>公平但可能导致 长作业阻塞短作业（队头效应 / Convoy Effect）</li>
+</ul>
+<p>适用场景： 批处理系统、不要求响应速度的场合。</p>
+<h2 id="短作业优先（SJF-Shortest-Job-First）">短作业优先（SJF, Shortest Job First）</h2>
+<p>思想：</p>
+<p>优先运行估计运行时间最短的进程。</p>
+<p>特点：</p>
+<ul>
+<li>平均等待时间最小、理论最优</li>
+<li>需要预知作业运行时间 → 难以精确获得</li>
+<li>非抢占式的 SJF，抢占式版本称 SRTF</li>
+</ul>
+<p>问题：</p>
+<p>可能导致长作业长期得不到调度 → 饥饿（Starvation）</p>
+<h2 id="高响应比优先（HRRN-Highest-Response-Ratio-Next）">高响应比优先（HRRN, Highest Response Ratio Next）</h2>
+<p>思想：</p>
+<p>使用动态优先级解决 SJF 的饥饿问题。</p>
+<p>公式：</p>
+<p>响应比 = (等待时间 + 运行时间) / 运行时间</p>
+<p>特点：</p>
+<ul>
+<li>等待越久的进程响应比越高 → 不会饥饿</li>
+<li>折中方案：短作业优先，同时保证公平性</li>
+<li>非抢占式</li>
+</ul>
+<h2 id="优先级调度（Priority-Scheduling）">优先级调度（Priority Scheduling）</h2>
+<p>思想：</p>
+<p>进程携带优先级字段（系统/用户指定）；优先级高的先运行。</p>
+<p>类型：</p>
+<ul>
+<li>抢占式：运行中被更高优先级剥夺 CPU</li>
+<li>非抢占式：只在进程切换时比较优先级</li>
+</ul>
+<p>问题：</p>
+<p>低优先级进程可能长期不被执行 → 饥饿</p>
+<p>解决：</p>
+<p>优先级老化（Aging）——等待越久，优先级逐步提高。</p>
+<h2 id="时间片轮转（RR-Round-Robin）">时间片轮转（RR, Round Robin）</h2>
+<p>思想：</p>
+<p>每个进程按顺序轮流获得等长时间片（Quantum），时间片到即切换。</p>
+<p>特点：</p>
+<ul>
+<li>抢占式</li>
+<li>非常适合交互式系统（如终端、GUI）</li>
+<li>时间片过大 → 像 FCFS</li>
+<li>时间片过小 → 上下文切换过多（开销大）</li>
+</ul>
+<h2 id="多级队列调度（Multilevel-Queue-Scheduling）">多级队列调度（Multilevel Queue Scheduling）</h2>
+<p>思想：</p>
+<p>根据进程类型划分多个队列，每个队列独立调度策略，队列之间有固定优先级。</p>
+<p>示例队列：</p>
+<ul>
+<li>系统进程队列（最高优先级）</li>
+<li>交互进程队列</li>
+<li>批处理作业队列</li>
+</ul>
+<p>特点：</p>
+<ul>
+<li>不同队列之间优先级严格固定 → 下层队列可能饥饿</li>
+<li>每个队列内部可使用 FCFS / RR / SJF 等</li>
+</ul>
+<p>关键点：</p>
+<p>队列之间 固定优先级，不允许进程跨队列移动。</p>
+<h2 id="多级反馈队列调度（MLFQ-Multilevel-Feedback-Queue）">多级反馈队列调度（MLFQ, Multilevel Feedback Queue）</h2>
+<p>思想：</p>
+<p>最常用的交互式系统调度器，提供“动态优先级”。</p>
+<p>规则核心（三大法则）：</p>
+<ol>
+<li>新进程进入最高优先级队列</li>
+<li>如果时间片用完 → 降低一个队列等级</li>
+<li>如果进程经常阻塞（I/O 频繁）→ 保持高优先级</li>
+</ol>
+<p>特点：</p>
+<ul>
+<li>自动分辨 I/O 型与 CPU 型进程</li>
+<li>交互型进程响应极快</li>
+<li>CPU 密集型逐渐降到低优先级</li>
+</ul>
+<p>现代实现：</p>
+<p>Linux CFS 不直接是 MLFQ，但遵循类似思想。</p>
+<h1>进程通信</h1>
+<p>进程通信是指不同进程之间交换信息和进行协作的机制。由于进程具有独立的地址空间，一个进程不能直接访问另一个进程的数据，因此必须通过操作系统提供的通信机制完成信息交换与同步。</p>
+<h2 id="进程通信类型">进程通信类型</h2>
+<h3 id="共享存储器系统通信">共享存储器系统通信</h3>
+<p>基本思想：</p>
+<p>由操作系统在多个进程的地址空间中映射同一块物理内存区域，进程通过读写该共享区域实现通信。共享内存区（Shared Memory），共享变量、共享缓冲区。</p>
+<p>特点：</p>
+<ul>
+<li>通信效率高（不需要内核频繁介入）</li>
+<li>需要配合同步机制（如信号量、管程）防止数据不一致</li>
+</ul>
+<p>优缺点：</p>
+<ul>
+<li>优点：速度最快</li>
+<li>缺点：同步控制复杂，易出现竞态条件</li>
+</ul>
+<h3 id="消息传递系统通信">消息传递系统通信</h3>
+<p>基本思想：</p>
+<p>进程之间不直接共享内存，而是通过发送/接收消息完成通信，所有消息由操作系统管理。</p>
+<p>通信方式：</p>
+<ul>
+<li>直接通信：指定发送进程和接收进程，由OS实现的send和receive。</li>
+<li>间接通信：通过信箱（Mailbox）（私用信箱，公用信箱，共享信箱）或消息队列</li>
+</ul>
+<p>特点：</p>
+<ul>
+<li>通信效率高，简化编程复杂度，信箱实现非实时通信</li>
+</ul>
+<p>典型机制：</p>
+<ul>
+<li>消息队列</li>
+<li>Socket（套接字）</li>
+<li>RPC（远程过程调用）</li>
+</ul>
+<h3 id="管道通信">管道通信</h3>
+<p>基本思想：</p>
+<p>管道是一种半双工的字节流通信机制，数据只能单向流动。</p>
+<p>用于连接一个发送进程和一个接收进程，以实现它们之间通信的共享文件(pipe文件,又称为FIFO文件) 。每个管道文件被打开后,都有两个文件描述符fd[0] (用于从管道读数据)和fd[1] (用于向管道写数据)</p>
+<p>类型：</p>
+<ul>
+<li>匿名管道：仅用于具有亲缘关系的进程（如父子进程），临时文件存储在高速缓存中</li>
+<li>命名管道（FIFO）：可用于无亲缘关系进程，可长期存储在磁盘</li>
+</ul>
+<p>特点：</p>
+<ul>
+<li>数据按 FIFO 顺序传输</li>
+<li>无结构字节流</li>
+<li>读空阻塞、写满阻塞</li>
+</ul>
+<p>应用场景：</p>
+<ul>
+<li>Linux 命令行：<code>ls | grep txt</code></li>
+</ul>
+<h3 id="客户-服务器系统通信（C-S模式）">客户-服务器系统通信（C/S模式）</h3>
+<p>基本思想</p>
+<p>通信双方分为：：</p>
+<ul>
+<li>客户进程（Client）：发出请求</li>
+<li>服务器进程（Server）：提供服务并返回结果</li>
+</ul>
+<p>通信机制：</p>
+<ul>
+<li>Socket</li>
+<li>消息队列</li>
+<li>RPC / RMI</li>
+</ul>
+<p>特点：</p>
+<ul>
+<li>支持分布式系统</li>
+<li>扩展性强</li>
+<li>通信过程复杂</li>
+</ul>
+<h2 id="消息缓冲队列通信机制">消息缓冲队列通信机制</h2>
+<h3 id="基本思想">基本思想</h3>
+<p>消息缓冲队列通信是一种以消息为单位的进程通信方式。</p>
+<p>操作系统为每个进程维护一个消息队列，进程之间通过发送和接收消息缓冲区进行通信。</p>
+<p>消息本身不直接在进程之间共享，而是通过内核管理的消息缓冲区完成传递，从而实现进程间的隔离与安全通信。</p>
+<h3 id="相关数据结构">相关数据结构</h3>
+<p>消息缓冲区</p>
+<pre class="line-numbers language-c" data-language="c"><code class="language-c"><span class="token keyword">struct</span> <span class="token class-name">message_buffer</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> sender<span class="token punctuation">;</span>          <span class="token comment">// 发送进程ID</span>
+    <span class="token keyword">int</span> receiver<span class="token punctuation">;</span>        <span class="token comment">// 接收进程ID</span>
+    <span class="token keyword">int</span> type<span class="token punctuation">;</span>            <span class="token comment">// 消息类型</span>
+    <span class="token keyword">int</span> size<span class="token punctuation">;</span>            <span class="token comment">// 消息长度</span>
+    <span class="token keyword">char</span> data<span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>         <span class="token comment">// 消息正文</span>
+    <span class="token keyword">struct</span> <span class="token class-name">message_buffer</span> <span class="token operator">*</span>next<span class="token punctuation">;</span> <span class="token comment">// 下一个消息指针</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>维护一个消息队列</p>
+<h3 id="发送原语：send">发送原语：send</h3>
+<p>功能：将一条消息从发送进程传送到指定接收进程的消息队列中。</p>
+<p>步骤：</p>
+<ol>
+<li>发送进程事先在自身地址空间中设置发送区，并填入待发送的消息；</li>
+<li>发送进程调用 <code>send</code> 原语，向操作系统申请一个消息缓冲区；</li>
+<li>操作系统将发送区中的消息复制到该消息缓冲区中；</li>
+<li>操作系统将该消息缓冲区挂入接收进程的消息队列；</li>
+<li>若接收进程因等待消息而阻塞，则将其唤醒。</li>
+</ol>
+<h3 id="接收原语：receive">接收原语：receive</h3>
+<p>功能：从本进程的消息队列中接收一条消息。</p>
+<p>步骤：</p>
+<ol>
+<li>若本进程消息队列为空，则接收进程阻塞等待；</li>
+<li>从自身的消息队列中取出一个消息缓冲区；</li>
+<li>将消息缓冲区中的数据复制到自己的接收区；</li>
+<li>释放该消息缓冲区，归还给系统。</li>
+</ol>
+<h1>进程死锁</h1>
+<p>死锁是指一组进程相互等待对方占有的资源，导致所有进程都无法继续执行。</p>
+<h2 id="判断是否存在死锁">判断是否存在死锁</h2>
+<p>构建资源分配图 / 等待图：</p>
+<ul>
+<li>无环：一定没有死锁</li>
+<li>有环：
+<ul>
+<li>每一类资源只有一个实例：必定死锁</li>
+<li>每一类资源不只有一个实例：可能死锁</li>
+</ul>
+</li>
+</ul>
+<h2 id="预防死锁">预防死锁</h2>
+<p>死锁预防的基本思想是：</p>
+<p>在系统设计阶段，主动破坏死锁产生的四个必要条件之一或多个，从而保证死锁不可能发生。</p>
+<p>死锁的四个必要条件：</p>
+<ul>
+<li>互斥</li>
+<li>占有且等待</li>
+<li>不可剥夺</li>
+<li>循环等待</li>
+</ul>
+<h3 id="破坏“占有且等待”条件">破坏“占有且等待”条件</h3>
+<p>占有且等待是指：</p>
+<p>进程已占有部分资源，同时又申请新的资源，并在申请未满足时保持对已占有资源的占有。</p>
+<p>破坏方式两种：</p>
+<ul>
+<li>一次性申请所有资源，即进程在开始执行前：
+<ul>
+<li>必须一次性申请它运行所需的全部资源，若资源不满足，则不分配任何资源</li>
+<li>进程要么全拿到，要么一个都不拿，不存在“占有一部分再等待”的情况</li>
+</ul>
+</li>
+<li>申请新资源前先释放已占有资源，即进程在申请新资源前：
+<ul>
+<li>必须释放已占有的所有资源</li>
+<li>之后再重新申请所需资源</li>
+</ul>
+</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>实现简单</li>
+<li>能从根本上消除占有且等待</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>资源利用率低</li>
+<li>可能造成进程长期饥饿</li>
+<li>进程难以预先准确知道所需全部资源</li>
+</ul>
+<h3 id="破坏“不可剥夺”条件（-仅适用于可剥夺资源：-CPU、内存等）">破坏“不可剥夺”条件（**仅适用于可剥夺资源：**CPU、内存等）</h3>
+<p>不可剥夺是指：</p>
+<p>进程已获得的资源，在未使用完之前，不能被强制剥夺，只能由进程主动释放。</p>
+<p>破坏方式：</p>
+<p>当进程请求某资源失败时：</p>
+<ul>
+<li>系统强制剥夺该进程已占有的资源，进入堵塞</li>
+<li>或者判断是否能从其他堵塞进程进行剥夺</li>
+<li>等该进程重新获得所需资源后，再继续执行</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>可打破进程之间的“僵持状态”</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>实现复杂</li>
+<li>易造成进程回滚和性能下降</li>
+<li>可能造成进程饥饿</li>
+</ul>
+<h3 id="破坏“循环等待”条件">破坏“循环等待”条件</h3>
+<p>循环等待是指：</p>
+<p>存在一个进程集合，集合中的每个进程都在等待下一个进程所占有的资源，形成环路。</p>
+<p>破坏方式（资源有序分配法）：</p>
+<ul>
+<li>对系统中<strong>所有资源类型进行统一编号</strong></li>
+<li>规定：进程只能按资源编号递增的顺序申请资源</li>
+</ul>
+<p>例如：</p>
+<ul>
+<li>R1 → R2 → R3</li>
+<li>进程申请顺序只能是 R1 再 R2，再 R3</li>
+<li>不允许先申请 R3 再申请 R1</li>
+</ul>
+<p>优点：</p>
+<ul>
+<li>理论上最干净、最彻底</li>
+<li>广泛用于数据库系统、文件锁设计</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>编程不灵活</li>
+<li>对资源使用顺序限制严格</li>
+<li>可能降低并发度</li>
+</ul>
+<h2 id="避免死锁">避免死锁</h2>
+<p>对于线程而言，会有非常多种资源，每个资源都有一定的数量。</p>
+<p>一个进程需求各种资源，例如在某个时刻，可能对A类型要3个，B类型要1个，某时刻A类型要1个，B类型要3个。</p>
+<p>最大资源需求：是每一种资源都计算最大数量。例如上面的例子就是 3, 3</p>
+<h3 id="安全状态">安全状态</h3>
+<p>如果系统存在一个进程序列 ⟨P1, P2, …, Pn⟩，使得： 对序列中的每一个进程 Pi，在它提出最大资源需求时，系统当前可用资源 + 所有排在它前面的进程最终释放的资源，都能够满足 Pi 的最大需求，则称系统处于安全状态，该序列称为安全序列。</p>
+<p>安全状态不可能死锁，不安全状态可能死锁。</p>
+<h3 id="银行家算法">银行家算法</h3>
+<p>系统中有 <code>m</code> 类资源，<code>n</code> 个进程。</p>
+<p>可用资源向量 <code>Available</code></p>
+<pre class="line-numbers language-none"><code class="language-none">Available[j]：系统中第 j 类资源的可用数量<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>最大需求矩阵 <code>Max</code> ： <code>Max[i][j]</code> 进程 i 对第 j 类资源可能需要的最大数量</p>
+<p>已分配矩阵 <code>Allocation</code> ： <code>Allocation[i][j]</code> 当前已分配给进程 i 的第 j 类资源数量</p>
+<p>需求矩阵 <code>Need</code> ： <code>Need[i][j] = Max[i][j] − Allocation[i][j]</code></p>
+<p><strong>资源请求算法（Request Algorithm）</strong></p>
+<p>当进程 <code>Pi</code> 请求资源 <code>Request[i]</code> 时：</p>
+<ol>
+<li>
+<p><strong>合法性检查</strong></p>
+<pre class="line-numbers language-none"><code class="language-none">Request[i] ≤ Need[i] ？<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>否 → 错误请求</p>
+</li>
+<li>
+<p><strong>可用性检查</strong></p>
+<pre class="line-numbers language-none"><code class="language-none">Request[i] ≤ Available ？<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>否 → 进程阻塞等待</p>
+</li>
+<li>
+<p><strong>试探性分配</strong></p>
+<pre class="line-numbers language-none"><code class="language-none">Available -&#x3D; Request[i]
+Allocation[i] +&#x3D; Request[i]
+Need[i] -&#x3D; Request[i]<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+</li>
+<li>
+<p><strong>安全性检查</strong></p>
+<ul>
+<li>若系统仍安全 → 正式分配</li>
+<li>否 → 回滚分配，进程等待</li>
+</ul>
+</li>
+</ol>
+<h2 id="死锁检测与解除">死锁检测与解除</h2>
+<h3 id="Coffman算法">Coffman算法</h3>
+<p>Coffman 算法用于分析和判断死锁产生的必要条件。</p>
+<p>该算法指出：当系统同时满足四个必要条件时，可能发生死锁；若破坏其中任意一个条件，则可以避免或解除死锁。</p>
+<h3 id="Coffman-死锁四个必要条件">Coffman 死锁四个必要条件</h3>
+<ol>
+<li>
+<p>互斥条件（Mutual Exclusion）</p>
+<p>至少存在一种资源在同一时刻只能被一个进程占有。</p>
+</li>
+<li>
+<p>请求并保持条件（Hold and Wait）</p>
+<p>进程在已占有部分资源的情况下，又继续请求新的资源，并保持已占有资源不释放。</p>
+</li>
+<li>
+<p>不可剥夺条件（No Preemption）</p>
+<p>进程已获得的资源在使用完之前，不能被系统强制剥夺，只能由进程主动释放。</p>
+</li>
+<li>
+<p>循环等待条件（Circular Wait）</p>
+<p>系统中存在一个进程循环等待链，每个进程都在等待下一个进程所占有的资源。</p>
+</li>
+</ol>
+<h3 id="结论">结论</h3>
+<ul>
+<li>四个条件同时成立 → 系统可能发生死锁</li>
+<li>破坏任意一个条件 → 可避免或解除死锁</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/05/OS-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0/">操作系统笔记——操作系统概述</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/30/MiniOB-note-sql/">MiniOB 项目结构——SQL板块</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/23/OS-mmap%E5%92%8C%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4/">操作系统笔记——mmap 和进程的地址空间</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/18/OS-%E7%A8%8B%E5%BA%8F%E4%B8%8E%E8%BF%9B%E7%A8%8B&%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86API/">操作系统笔记——程序与进程&进程管理API</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 10px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

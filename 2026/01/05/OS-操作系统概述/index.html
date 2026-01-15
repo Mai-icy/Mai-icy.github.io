@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>操作系统笔记——操作系统概述 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="操作系统笔记——操作系统概述"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>操作系统笔记——操作系统概述</h2>
+            <div class="post-meta">
+                <time class="date">2026.01.05</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>计算机系统</h1>
+<p>计算机系统由硬件和软件两部分组成。</p>
+<ul>
+<li>硬件：包括 CPU、内存、外存及各种外部设备</li>
+<li>软件：用于管理硬件资源并完成具体任务，主要包括：
+<ul>
+<li>系统软件：操作系统，编译汇编程序</li>
+<li>支撑软件：数据库管理系统和开发工具。</li>
+<li>应用软件：面向实际需求编制的程序，直接为用户完成特定应用功能。</li>
+</ul>
+</li>
+</ul>
+<h1>操作系统概念</h1>
+<h2 id="用户观点">用户观点</h2>
+<p>从用户角度看，操作系统是用户与计算机硬件之间的接口。</p>
+<ul>
+<li>命令接口：允许用户通过命令直接向计算机发出操作请求，如启动程序、管理文件等。</li>
+<li>程序接口：为应用程序提供一组系统调用，使程序能够间接使用计算机硬件资源。</li>
+</ul>
+<h2 id="资源管理观点">资源管理观点</h2>
+<p>从资源管理角度看，操作系统是计算机系统资源的管理者。</p>
+<ul>
+<li>处理器资源：进行进程管理与调度，合理分配 CPU 使用时间。</li>
+<li>存储器资源：进行内存管理，负责内存的分配、回收与保护。</li>
+<li>I/O设备资源：进行设备管理，协调和控制各类 I/O 设备的使用。</li>
+<li>外存资源：进行文件管理，实现数据的存储、组织和访问。</li>
+</ul>
+<h2 id="虚拟机观点">虚拟机观点</h2>
+<p>从虚拟机观点看，操作系统在裸机硬件之上构造了一台功能更强、使用更方便的扩展机器（虚拟机）。</p>
+<p>操作系统通过对硬件资源的封装与抽象，向用户和应用程序提供统一、简化的使用接口，使用户无需直接操作复杂的硬件细节即可使用计算机系统。</p>
+<h1>操作系统发展</h1>
+<h2 id="初期阶段">初期阶段</h2>
+<h3 id="手工操作阶段">手工操作阶段</h3>
+<p>用纸带卡片进行打孔输入输出</p>
+<h3 id="脱机I-O技术">脱机I/O技术</h3>
+<p>减少主机CPU空闲时间，提高IO速度</p>
+<h3 id="单道批处理系统">单道批处理系统</h3>
+<ul>
+<li>作业的概念：作业=程序+数据+作业说明书</li>
+</ul>
+<p>作业说明书用于向操作系统描述作业的控制信息，如所需资源、输入输出方式及执行要求。</p>
+<ul>
+<li>基本原理</li>
+</ul>
+<p>系统将多个作业预先输入到外存中，由监控程序按顺序自动将作业装入内存并依次执行。</p>
+<ul>
+<li>单道批处理系统的性能分析</li>
+</ul>
+<p>由于内存中始终只保留一个作业，CPU 在作业进行 I/O 操作时往往处于空闲状态，系统资源利用率较低。</p>
+<h2 id="操作系统的形成">操作系统的形成</h2>
+<h3 id="多道批处理系统（提高系统吞吐量和资源利用率）">多道批处理系统（提高系统吞吐量和资源利用率）</h3>
+<p>通过在内存中同时存放多个作业，使用例如I/O 与 CPU 计算的并行等，多种系统资源的重叠利用来实现作业之间的交替执行，从而提高 CPU 利用率和系统吞吐量。但CPU在一个时间只能操作一个作业，通过操作系统调度器自行决定。</p>
+<ul>
+<li>缺点：用户只能事先提交作业，运行过程中无法与程序进行交互，出错往往要等整个作业结束后才能发现。</li>
+</ul>
+<h3 id="分时系统（提高用户交互性和响应速度）">分时系统（提高用户交互性和响应速度）</h3>
+<p>时间片是一个终端用户作业能连续使用 CPU 的最长时间。</p>
+<p>将 CPU 时间划分为若干时间片，轮流分配给多个用户或进程，使用户获得良好的交互体验。</p>
+<p>用户体验上任务是连续的，实际上是CPU快速在多个任务之间跳转。</p>
+<p>强调资源共享，用户交互</p>
+<h3 id="实时系统（满足时间约束和确定性响应）">实时系统（满足时间约束和确定性响应）</h3>
+<p>以满足严格的时间约束为首要目标，要求系统对外部事件在规定时限内作出确定性的响应。例如火星车空间站</p>
+<h2 id="操作系统的成熟">操作系统的成熟</h2>
+<h3 id="微机操作系统">微机操作系统</h3>
+<p>主要运行在个人计算机上，面向终端用户</p>
+<ul>
+<li>单用户单任务：MS-DOS</li>
+<li>单用户多任务：Windows，macOS（单用户使用场景下）</li>
+<li>多用户多任务：Unix，Linux</li>
+</ul>
+<h3 id="网络操作系统">网络操作系统</h3>
+<p>以网络为核心，为多台计算机提供资源共享与通信服务的操作系统。配置在网络中用于管理网络通信和共享资源,协调各计算机上任务的运行，并向用户提供统一的、有效方便的网络接口的程序集合。</p>
+<p>多个独立计算机，无公共内存，具备消息通信机制</p>
+<h3 id="分布式系统">分布式系统</h3>
+<p>管理多个通过网络连接的计算机，使其在用户看来像一台统一的计算机系统。</p>
+<p>用户感知的是一个整体系统，有一个分布式操作系统对资源进行全局和动态管理控制，系统和资源对用户是透明的。</p>
+<p>可扩展性，增加性能，高可靠性</p>
+<h3 id="嵌入式操作系统">嵌入式操作系统</h3>
+<p>运行在嵌入式设备中，为特定功能服务的操作系统</p>
+<p>Android，IOS，黑莓，pSOS，QNX，LynxOS</p>
+<h1>操作系统内核结构</h1>
+<h2 id="整体式结构">整体式结构</h2>
+<p>将操作系统的主要功能模块（进程管理、存储管理、文件系统、设备驱动等）统一集成在一个内核空间中运行。每个过程都有接口定义，可以互相调用。接口简单效率高。</p>
+<p>缺点：没有模块独立性，难以维护</p>
+<p>实例：MS-DOS、Linux、传统 Unix</p>
+<h2 id="模块化结构">模块化结构</h2>
+<p>在整体式内核基础上，将内核划分为若干相对独立的模块，支持按需加载和卸载。模块之间可以任意调用。</p>
+<p>缺点：模块关系复杂，OS结构不清晰</p>
+<p>实例：Choices系统，Linux（Loadable Kernel Modules）</p>
+<h2 id="层次结构模型">层次结构模型</h2>
+<p>将操作系统划分为若干层次，每一层只能调用其下一层提供的服务。每一层之间的模块只能单向调用。 缺点：系统开销增加导致效率降低</p>
+<p>实例：THE 操作系统（Dijkstra 提出），Unix</p>
+<h2 id="微内核结构模型">微内核结构模型</h2>
+<p>将内核功能最小化，仅保留最基本机制，如：</p>
+<ul>
+<li>进程/线程管理</li>
+<li>地址空间管理（低级存储器管理）</li>
+<li>中断和陷入处理</li>
+<li>进程间通信（IPC）</li>
+</ul>
+<p>其它核心：其余服务（文件系统、设备驱动等）运行在用户态</p>
+<p>特点：内核精简，服务以用户进程形式存在，依赖消息传递进行通信</p>
+<p>缺点：IPC开销大，性能低于整体式内核</p>
+<p>例子：Mach，Minix，QNX，win NT，鸿蒙</p>
+<h1>中断</h1>
+<h2 id="中断的基本概念">中断的基本概念</h2>
+<p>在程序运行过程中，当系统外部、系统内部或当前运行程序本身出现紧急事件时，处理器会暂停当前程序的执行，自动转入相应的中断服务程序（ISR）进行处理； 待事件处理完毕后，再返回被中断的程序继续执行。 这一完整过程称为中断处理。</p>
+<h2 id="采用中断系统的主要目的">采用中断系统的主要目的</h2>
+<p>现代计算机引入中断机制，主要是为了：</p>
+<ol>
+<li>
+<p>提高系统效率</p>
+<p>协调 CPU 与外设之间速度不匹配的问题，避免处理器空等。</p>
+</li>
+<li>
+<p>保证系统可靠运行</p>
+<p>当发生越界访问、非法操作等异常时，及时中断并采取保护措施。</p>
+</li>
+<li>
+<p>满足实时处理需求</p>
+<p>在实时系统中，处理器可随时响应外部设备的随机中断请求。</p>
+</li>
+<li>
+<p>提供故障处理与现场保护手段</p>
+<p>一旦检测到硬件或系统错误，立即中断并记录现场，为后续处理提供依据。</p>
+</li>
+</ol>
+<h2 id="中断与异常的基本分类">中断与异常的基本分类</h2>
+<p>中断会改变 CPU 的指令执行顺序，通常与 CPU 内部或外部硬件信号有关。</p>
+<p>从 产生方式和时序特性 看，可分为两大类：</p>
+<ul>
+<li>
+<p>中断（Interrupt）：</p>
+<p>一般是异步的，由外部事件触发，与当前执行指令无关。</p>
+</li>
+<li>
+<p>异常（Exception）：</p>
+<p>一般是同步的，在执行特定指令或出现错误时由 CPU 产生。</p>
+</li>
+</ul>
+<h2 id="中断的进一步分类">中断的进一步分类</h2>
+<h3 id="按是否可屏蔽分类">按是否可屏蔽分类</h3>
+<ul>
+<li>可屏蔽中断：可由程序控制是否响应，屏蔽时 CPU 忽略中断请求，I/O 设备中断通常属于可屏蔽中断</li>
+<li>非屏蔽中断：不能被程序屏蔽，必须立即处理，数量少、紧急性高，例如：断电、电源故障等</li>
+</ul>
+<h3 id="按中断源分类">按中断源分类</h3>
+<h3 id="硬件中断">硬件中断</h3>
+<ul>
+<li>外部中断：由外部设备产生，如键盘中断、定时器中断、磁盘中断等，是异步的</li>
+<li>内部中断：由硬件故障或运算异常引起，如除零、溢出、掉电等，是不可屏蔽的</li>
+</ul>
+<h3 id="软件中断">软件中断</h3>
+<ul>
+<li>并非真正由硬件触发</li>
+<li>由程序执行特定指令产生</li>
+<li>常用于用户态向内核态切换，实现系统调用</li>
+</ul>
+<h2 id="3-按中断的主动性分类">3. 按中断的主动性分类</h2>
+<ul>
+<li>自愿性中断（访管中断）：用户程序主动请求操作系统服务，如 I/O 操作、进程创建、内存分配等。</li>
+<li>程序中断：程序执行过程中出现异常或紧急情况，CPU 被动中断当前程序并处理。例如非法指令，越界等问题</li>
+</ul>
+<h2 id="异常的分类（重点）">异常的分类（重点）</h2>
+<p>异常是由 CPU 在执行指令过程中检测到的同步事件。</p>
+<h3 id="处理器探测异常">处理器探测异常</h3>
+<p>根据异常发生时 EIP 保存的地址不同，分为三类：</p>
+<h3 id="故障（Fault）">故障（Fault）</h3>
+<ul>
+<li>EIP 指向引发异常的指令</li>
+<li>异常处理结束后，该指令可能重新执行</li>
+<li>例：缺页异常</li>
+</ul>
+<h3 id="陷阱（Trap）">陷阱（Trap）</h3>
+<ul>
+<li>EIP 指向下一条指令</li>
+<li>不需要重新执行当前指令</li>
+<li>常用于调试（断点、单步执行）</li>
+</ul>
+<h3 id="异常中止（Abort）">异常中止（Abort）</h3>
+<ul>
+<li>严重错误，无法确定出错指令位置</li>
+<li>通常导致进程被强制终止</li>
+<li>例：硬件故障、系统表损坏</li>
+</ul>
+<h2 id="编程异常（软中断）">编程异常（软中断）</h2>
+<ul>
+<li>由程序员显式触发</li>
+<li>使用 <code>int</code>、<code>int3</code>、<code>into</code>、<code>bound</code> 等指令</li>
+<li>CPU 将其作为陷阱处理</li>
+<li>主要用途：
+<ul>
+<li>执行系统调用</li>
+<li>向调试程序报告特定事件</li>
+</ul>
+</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li>
+                
+                
+                    <li>下一篇: <a href="/2025/12/30/MiniOB-note-sql/">MiniOB 项目结构——SQL板块</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" rel="tag">操作系统</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/05/OS-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0/">操作系统笔记——操作系统概述</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/30/MiniOB-note-sql/">MiniOB 项目结构——SQL板块</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/23/OS-mmap%E5%92%8C%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4/">操作系统笔记——mmap 和进程的地址空间</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/18/OS-%E7%A8%8B%E5%BA%8F%E4%B8%8E%E8%BF%9B%E7%A8%8B&%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86API/">操作系统笔记——程序与进程&进程管理API</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 10px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
