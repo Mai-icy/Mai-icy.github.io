@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>基于 stdio 的 IPC 通信 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="基于 stdio 的 IPC 通信"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>基于 stdio 的 IPC 通信</h2>
+            <div class="post-meta">
+                <time class="date">2026.03.01</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>我们的主要目标：</p>
+<p>将不同进程的标准输入输出来进行通信</p>
+<h1>核心函数和方法</h1>
+<h2 id="dup2">dup2</h2>
+<p>dup2 将文件描述符 oldfd 复制到 newfd 上，复制后，oldfd 和 newfd 指向同一个内核文件表项，可以共享缓冲和状态，但引用计数独立。</p>
+<p>常用于将 pipe 或 socket fd 重定向到标准输入（STDIN_FILENO）或标准输出（STDOUT_FILENO），以便通过 stdio 函数进行 IPC。</p>
+<p>函数签名：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">dup2</span><span class="token punctuation">(</span><span class="token keyword">int</span> oldfd<span class="token punctuation">,</span> <span class="token keyword">int</span> newfd<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>注：如果 newfd 已经被占用，会先关闭它。</p>
+<h1>pipe 方案</h1>
+<h2 id="效果">效果</h2>
+<p>进程A 执行 <code>cout &lt;&lt; “message” &lt;&lt; endl</code> ，进程B执行 <code>cin &gt;&gt; msg</code> ，结果是 msg = “message”;</p>
+<h2 id="特点">特点</h2>
+<p>匿名管道，仅限亲缘进程间通信，随进程结束而销毁，无需手动清理</p>
+<h2 id="pipe函数">pipe函数</h2>
+<p>调用 <code>pipe(fd)</code> 会在内核创建一个单向缓冲区，返回两个 fd，其中 <code>fd[0]</code> 用于读取，<code>fd[1]</code> 用于写入。函数签名如下：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">pipe</span><span class="token punctuation">(</span><span class="token keyword">int</span> pipefd<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="缓冲区">缓冲区</h2>
+<p>对于缓冲区而言，本身只有一端用于写、一端用于读，我们可以将fd(文件描述符) 绑定到端上，一个端可以绑定多个fd。</p>
+<p>一个写端对应多个 fd 时，所有 fd 共享同一缓冲区，写入数据均进入该缓冲区。</p>
+<p>关闭任一 fd 仅减少引用计数，只有当最后一个写端 fd 关闭时，读端才会收到 EOF。因此，绑定读写端后应关闭多余的 fd。</p>
+<h2 id="实例">实例</h2>
+<p>这里例子的效果是两个进程互相用stdio通信，所以需要两个管道，为了演示，将一个进程的输出改为了标准输出。</p>
+<p>使用 pipe 实现父子进程通信的步骤如下：</p>
+<ul>
+<li>管道创建：首先创建两条管道 <code>father2son</code> 和 <code>son2father</code>，然后 <code>fork</code> 子进程。</li>
+<li>绑定管道（子进程）：子进程通过 <code>dup2</code> 将 <code>father2son</code> 的读端绑定到 <code>stdin</code>，将 <code>son2father</code> 的写端绑定到 <code>stdout</code>，随后关闭所有管道 fd（已重定向，不再需要）。</li>
+<li>绑定管道（父进程）：父进程关闭不需要的端：<code>father2son[0]</code>（不读）和 <code>son2father[1]</code>（不写）。</li>
+<li>数据发送：父进程通过 <code>father2son[1]</code> 写入数据，写完后关闭写端，触发 EOF。</li>
+<li>数据接受：子进程使用 <code>getline</code> 从 <code>stdin</code> 读取数据，并通过 <code>stdout</code> 将回复写回父进程。父进程从 <code>son2father[0]</code> 读取子进程的输出，最后等待子进程结束。</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;iostream></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/wait.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> father2son<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>  <span class="token comment">// 父进程 -> 子进程</span>
+    <span class="token keyword">int</span> son2father<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>  <span class="token comment">// 子进程 -> 父进程</span>
+    <span class="token function">pipe</span><span class="token punctuation">(</span>father2son<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">pipe</span><span class="token punctuation">(</span>son2father<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    pid_t pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 子进程</span>
+        <span class="token comment">// 重定向标准输入和输出</span>
+        <span class="token function">dup2</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> STDIN_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 从 father2son 读</span>
+        <span class="token function">dup2</span><span class="token punctuation">(</span>son2father<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> STDOUT_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 向 son2father 写</span>
+        
+        <span class="token comment">// 关闭所有管道 fd（已重定向，不再需要）</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>son2father<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>son2father<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        std<span class="token double-colon punctuation">::</span>string msg<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span><span class="token function">getline</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>cin<span class="token punctuation">,</span> msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Child received: "</span> <span class="token operator">&lt;&lt;</span> msg <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout<span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 父进程</span>
+        <span class="token comment">// 关闭不需要的端</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 不读 father2son</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>son2father<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 不写 son2father</span>
+
+        <span class="token comment">// 向子进程发送消息</span>
+        std<span class="token double-colon punctuation">::</span>string msg <span class="token operator">=</span> <span class="token string">"Hello from parent via pipe"</span><span class="token punctuation">;</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> msg<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msg<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"\\n"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>father2son<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>   <span class="token comment">// 发送完毕，关闭写端</span>
+
+        <span class="token comment">// 读取子进程回复</span>
+        <span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">256</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> n <span class="token operator">=</span> <span class="token function">read</span><span class="token punctuation">(</span>son2father<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> buf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>n <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            buf<span class="token punctuation">[</span>n<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token char">'\\0'</span><span class="token punctuation">;</span>
+            std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Parent received: "</span> <span class="token operator">&lt;&lt;</span> buf<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>son2father<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token function">wait</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 等待子进程结束</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行结果：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">Parent received<span class="token operator">:</span> Child received<span class="token operator">:</span> Hello from parent via pipe<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h1>FIFO 方案</h1>
+<h2 id="效果：">效果：</h2>
+<p>进程 A 执行 <code>cout &lt;&lt; &quot;message&quot; &lt;&lt; endl</code>，进程 B 执行 <code>cin &gt;&gt; msg</code>，结果为 <code>msg = &quot;message&quot;</code></p>
+<h2 id="特点：">特点：</h2>
+<ul>
+<li>命名管道，以文件形式存在于文件系统</li>
+<li>生命周期独立于进程，创建后持续存在，可供任意进程多次打开使用</li>
+<li>使用结束后需手动 <code>unlink</code> 删除文件</li>
+</ul>
+<h2 id="简介">简介</h2>
+<p>FIFO，也称为命名管道，是一种可以在文件系统中存在的管道。它和 pipe 类似，也是字节流通信，但可以被不同进程通过文件路径访问，实现跨进程通信。FIFO 需要使用 <code>mkfifo(path, mode)</code> 创建，之后通过 open、read、write 或 stdio 函数操作。</p>
+<h2 id="mkfifo">mkfifo</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">mkfifo</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span>pathname<span class="token punctuation">,</span> mode_t mode<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p><code>mkfifo</code> 用于在文件系统中创建一个命名管道（FIFO）。<code>pathname</code> 指定 FIFO 文件路径，<code>mode</code> 指定权限。成功返回 0，失败返回 -1 并设置 <code>errno</code>。FIFO 允许多个进程通过文件路径打开并进行读写，实现跨进程通信。</p>
+<h2 id="实例-2">实例</h2>
+<p>在使用 FIFO 进行父子或多进程通信时，需要注意打开方式和阻塞行为。fifo实际上和pipe其他都类似，不同于 FIFO 的生命周期不依赖于进程，只要文件存在就可以被新进程打开，适合长期或跨进程通信。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;iostream></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;fcntl.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/stat.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span> fifo_path <span class="token operator">=</span> <span class="token string">"/tmp/myfifo"</span><span class="token punctuation">;</span>
+    <span class="token function">mkfifo</span><span class="token punctuation">(</span>fifo_path<span class="token punctuation">,</span> <span class="token number">0666</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 创建命名管道（FIFO）</span>
+
+    pid_t pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 子进程：只读</span>
+        <span class="token comment">// 以只读方式打开 FIFO</span>
+        <span class="token keyword">int</span> fd <span class="token operator">=</span> <span class="token function">open</span><span class="token punctuation">(</span>fifo_path<span class="token punctuation">,</span> O_RDONLY<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">dup2</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> STDIN_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 将 FIFO 读端重定向到标准输入</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>                <span class="token comment">// 关闭原 fd（已重定向，不再需要）</span>
+
+        std<span class="token double-colon punctuation">::</span>string msg<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span><span class="token function">getline</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>cin<span class="token punctuation">,</span> msg<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 从标准输入（即 FIFO）读取</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Child received: "</span> <span class="token operator">&lt;&lt;</span> msg <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout<span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 父进程：只写</span>
+        <span class="token comment">// 以只写方式打开 FIFO</span>
+        <span class="token keyword">int</span> fd <span class="token operator">=</span> <span class="token function">open</span><span class="token punctuation">(</span>fifo_path<span class="token punctuation">,</span> O_WRONLY<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">dup2</span><span class="token punctuation">(</span>fd<span class="token punctuation">,</span> STDOUT_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 将 FIFO 写端重定向到标准输出</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>fd<span class="token punctuation">)</span><span class="token punctuation">;</span>                <span class="token comment">// 关闭原 fd</span>
+
+        std<span class="token double-colon punctuation">::</span>string msg <span class="token operator">=</span> <span class="token string">"Hello via FIFO"</span><span class="token punctuation">;</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>STDOUT_FILENO<span class="token punctuation">,</span> msg<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msg<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 写入标准输出（即 FIFO）</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>STDOUT_FILENO<span class="token punctuation">,</span> <span class="token string">"\\n"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>STDOUT_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 关闭标准输出，触发 EOF</span>
+
+        <span class="token function">wait</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 等待子进程结束</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token function">unlink</span><span class="token punctuation">(</span>fifo_path<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 删除 FIFO 文件</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>输出结果：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">Child received<span class="token operator">:</span> Hello via FIFO<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h1>socket-pair 方案</h1>
+<h2 id="效果：-2">效果：</h2>
+<p>进程 A 执行 <code>cout &lt;&lt; &quot;message&quot; &lt;&lt; endl</code>，进程 B 执行 <code>cin &gt;&gt; msg</code>，结果为 <code>msg = &quot;message&quot;</code></p>
+<h2 id="特点：-2">特点：</h2>
+<ul>
+<li>双向通信，单条通道即可实现数据收发</li>
+<li>仅限亲缘进程间通信（如父子进程）</li>
+<li>随进程结束而销毁，无需手动清理</li>
+<li>支持流式数据传输（<code>SOCK_STREAM</code>）和数据报模式（<code>SOCK_DGRAM</code>）</li>
+</ul>
+<h2 id="简介-2">简介</h2>
+<p>socketpair 是一种基于 UNIX domain 的套接字通信方式，可以在父子或任意两进程之间实现全双工通信。与 pipe 不同，socketpair 本身就是双向的，因此不需要创建两条通道即可完成双向 stdio 通信。通过 <code>dup2</code> 可以将 socket fd 绑定到标准输入输出，从而使用 <code>cin</code>/<code>cout</code> 或 <code>scanf</code>/<code>printf</code> 进行通信。</p>
+<h2 id="socketpair-函数">socketpair 函数</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">socketpair</span><span class="token punctuation">(</span><span class="token keyword">int</span> domain<span class="token punctuation">,</span> <span class="token keyword">int</span> type<span class="token punctuation">,</span> <span class="token keyword">int</span> protocol<span class="token punctuation">,</span> <span class="token keyword">int</span> sv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p><code>socketpair</code> 用于创建一对互相连接的套接字，<code>domain</code> 通常使用 <code>AF_UNIX</code> 表示本地进程通信，<code>type</code> 一般为 <code>SOCK_STREAM</code> 表示流式套接字，<code>protocol</code> 通常填 0，<code>sv</code> 是返回的两个文件描述符数组。成功返回 0，失败返回 -1 并设置 <code>errno</code>。这两个 fd 可以通过 <code>dup2</code> 重定向到 stdio，实现父子进程的双向通信。</p>
+<h2 id="实例-3">实例</h2>
+<p>父子进程通过 socketpair 进行通信时，需要注意关闭多余 fd 并处理 stdio 缓冲问题。</p>
+<p>不同点在于不用考虑缓冲区的读写端，两边都可读写。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;iostream></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/socket.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/wait.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">int</span> sv<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token comment">// 创建双向通信的 socketpair（AF_UNIX 域，SOCK_STREAM 类型）</span>
+    <span class="token function">socketpair</span><span class="token punctuation">(</span>AF_UNIX<span class="token punctuation">,</span> SOCK_STREAM<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> sv<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    pid_t pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 子进程</span>
+        <span class="token comment">// 将 sv[0] 重定向到标准输入和输出，实现双向通信</span>
+        <span class="token function">dup2</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> STDIN_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">dup2</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> STDOUT_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 关闭原套接字 fd（已重定向，不再需要）</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 从标准输入（即 sv[0]）读取父进程消息</span>
+        std<span class="token double-colon punctuation">::</span>string msg<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span><span class="token function">getline</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>cin<span class="token punctuation">,</span> msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token comment">// 通过标准输出（即 sv[0]）将回复写回父进程</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Child received: "</span> <span class="token operator">&lt;&lt;</span> msg <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout<span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 父进程</span>
+        <span class="token comment">// 关闭 sv[0]，只保留 sv[1] 与子进程通信</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 向子进程发送消息（通过 sv[1] 写入，子进程从 sv[0] 读取）</span>
+        std<span class="token double-colon punctuation">::</span>string msg <span class="token operator">=</span> <span class="token string">"Hello from parent via socketpair"</span><span class="token punctuation">;</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> msg<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> msg<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">write</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"\\n"</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment">// 尝试从 sv[1] 读取子进程回复</span>
+        <span class="token comment">// 注意：这里会读到子进程通过 stdout 写入的数据（因为子进程将 stdout 重定向到 sv[0]）</span>
+        <span class="token keyword">char</span> buf<span class="token punctuation">[</span><span class="token number">256</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+        <span class="token keyword">int</span> n <span class="token operator">=</span> <span class="token function">read</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> buf<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>buf<span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>n <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            buf<span class="token punctuation">[</span>n<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token char">'\\0'</span><span class="token punctuation">;</span>
+            std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Parent received: "</span> <span class="token operator">&lt;&lt;</span> buf<span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+        
+        <span class="token function">close</span><span class="token punctuation">(</span>sv<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">wait</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 等待子进程结束</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>socketpair 的特点是全双工、无需双管道，适合父子或任意两进程之间双向通信。</p>
+<h1>Unix Domain Socket 方案</h1>
+<h2 id="效果-2">效果</h2>
+<p>进程 A 执行 <code>cout &lt;&lt; &quot;message&quot; &lt;&lt; endl</code>，进程 B 执行 <code>cin &gt;&gt; msg</code>，结果为 <code>msg = &quot;message&quot;</code></p>
+<h2 id="特点-2">特点</h2>
+<ul>
+<li>支持全双工通信（可双向收发数据）</li>
+<li>可以用于任意两个进程之间通信，不必是亲缘进程</li>
+<li>通过文件系统创建 socket 文件，实现命名访问</li>
+<li>生命周期独立于进程，创建后可由多个进程打开，使用完成后需手动 <code>unlink</code> 删除</li>
+<li>支持流式通信（<code>SOCK_STREAM</code>）和数据报通信（<code>SOCK_DGRAM</code>）</li>
+</ul>
+<h2 id="简介-3">简介</h2>
+<p>Unix Domain Socket（本地套接字）是一种在同一台机器上的进程间通信方式。它可以通过文件系统路径命名，允许任意两个进程打开同一个 socket 文件进行通信。</p>
+<p>使用步骤：</p>
+<ol>
+<li>创建 socket</li>
+<li>绑定到文件路径（<code>bind</code>）</li>
+<li>监听连接（<code>listen</code>，适用于 <code>SOCK_STREAM</code>）</li>
+<li>接受连接（<code>accept</code>，客户端用 <code>connect</code>）</li>
+<li>读写数据（<code>read/write</code> 或 <code>cin/cout</code> 重定向）</li>
+<li>关闭 socket，必要时删除文件</li>
+</ol>
+<h2 id="Unix-Domain-Socket-函数">Unix Domain Socket 函数</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">int</span> <span class="token function">socket</span><span class="token punctuation">(</span><span class="token keyword">int</span> domain<span class="token punctuation">,</span> <span class="token keyword">int</span> type<span class="token punctuation">,</span> <span class="token keyword">int</span> protocol<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> <span class="token function">bind</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">struct</span> <span class="token class-name">sockaddr</span> <span class="token operator">*</span>addr<span class="token punctuation">,</span> socklen_t addrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> <span class="token function">listen</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">int</span> backlog<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> <span class="token function">accept</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">struct</span> <span class="token class-name">sockaddr</span> <span class="token operator">*</span>addr<span class="token punctuation">,</span> socklen_t <span class="token operator">*</span>addrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> <span class="token function">connect</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">const</span> <span class="token keyword">struct</span> <span class="token class-name">sockaddr</span> <span class="token operator">*</span>addr<span class="token punctuation">,</span> socklen_t addrlen<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">int</span> <span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token keyword">int</span> sockfd<span class="token punctuation">,</span> <span class="token keyword">int</span> how<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<ul>
+<li><code>domain</code> 通常使用 <code>AF_UNIX</code> 表示本地通信</li>
+<li><code>type</code> 可以为 <code>SOCK_STREAM</code>（面向流）或 <code>SOCK_DGRAM</code>（数据报）</li>
+<li><code>bind</code> 将 socket 文件与进程关联</li>
+<li><code>listen</code>/<code>accept</code> 用于服务器端处理连接</li>
+<li><code>connect</code> 用于客户端连接服务器</li>
+<li><code>shutdown</code> 用户关闭连接</li>
+</ul>
+<h2 id="实例-4">实例</h2>
+<p>父子进程通过 Unix Domain Socket 进行通信：</p>
+<ul>
+<li>父进程创建 listen_fd，开始监听</li>
+<li>fork() 创建子进程（此时连接还未建立）</li>
+<li>子进程：创建 client_fd，connect() 到 addr</li>
+<li>父进程：accept() 接受连接，得到 conn_fd</li>
+<li>连接建立完成，父子进程通过这个连接通信</li>
+</ul>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;iostream></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/socket.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/un.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;unistd.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;sys/wait.h></span></span>
+<span class="token macro property"><span class="token directive-hash">#</span><span class="token directive keyword">include</span> <span class="token string">&lt;string.h></span></span>
+
+<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> <span class="token keyword">char</span><span class="token operator">*</span> socket_path <span class="token operator">=</span> <span class="token string">"/tmp/my_unix_socket"</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">int</span> listen_fd <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_UNIX<span class="token punctuation">,</span> SOCK_STREAM<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">struct</span> <span class="token class-name">sockaddr_un</span> addr<span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+    addr<span class="token punctuation">.</span>sun_family <span class="token operator">=</span> AF_UNIX<span class="token punctuation">;</span>
+    <span class="token function">strcpy</span><span class="token punctuation">(</span>addr<span class="token punctuation">.</span>sun_path<span class="token punctuation">,</span> socket_path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">unlink</span><span class="token punctuation">(</span>socket_path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">bind</span><span class="token punctuation">(</span>listen_fd<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">sockaddr</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>addr<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">listen</span><span class="token punctuation">(</span>listen_fd<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    pid_t pid <span class="token operator">=</span> <span class="token function">fork</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>pid <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 子进程：接收端</span>
+        <span class="token keyword">int</span> client_fd <span class="token operator">=</span> <span class="token function">socket</span><span class="token punctuation">(</span>AF_UNIX<span class="token punctuation">,</span> SOCK_STREAM<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">connect</span><span class="token punctuation">(</span>client_fd<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">struct</span> <span class="token class-name">sockaddr</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span>addr<span class="token punctuation">,</span> <span class="token keyword">sizeof</span><span class="token punctuation">(</span>addr<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 关闭写端，只能读取</span>
+        <span class="token function">shutdown</span><span class="token punctuation">(</span>client_fd<span class="token punctuation">,</span> SHUT_WR<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token function">dup2</span><span class="token punctuation">(</span>client_fd<span class="token punctuation">,</span> STDIN_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>client_fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        std<span class="token double-colon punctuation">::</span>string msg<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span><span class="token function">getline</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>cin<span class="token punctuation">,</span> msg<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> <span class="token string">"Child received: "</span> <span class="token operator">&lt;&lt;</span> msg <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+        <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>  <span class="token comment">// 父进程：发送端</span>
+        <span class="token keyword">int</span> conn_fd <span class="token operator">=</span> <span class="token function">accept</span><span class="token punctuation">(</span>listen_fd<span class="token punctuation">,</span> <span class="token keyword">nullptr</span><span class="token punctuation">,</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token comment">// 关闭读端，只能写入</span>
+        <span class="token function">shutdown</span><span class="token punctuation">(</span>conn_fd<span class="token punctuation">,</span> SHUT_RD<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        
+        <span class="token function">dup2</span><span class="token punctuation">(</span>conn_fd<span class="token punctuation">,</span> STDOUT_FILENO<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>conn_fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">close</span><span class="token punctuation">(</span>listen_fd<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        std<span class="token double-colon punctuation">::</span>string msg <span class="token operator">=</span> <span class="token string">"Hello from parent (one-way communication)"</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout <span class="token operator">&lt;&lt;</span> msg <span class="token operator">&lt;&lt;</span> std<span class="token double-colon punctuation">::</span>endl<span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>cout<span class="token punctuation">.</span><span class="token function">flush</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token function">wait</span><span class="token punctuation">(</span><span class="token keyword">nullptr</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">unlink</span><span class="token punctuation">(</span>socket_path<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>运行结果：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">Child received<span class="token operator">:</span> Hello from <span class="token function">parent</span> <span class="token punctuation">(</span>one<span class="token operator">-</span>way communication<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="安卓-Binder-机制">安卓 Binder 机制</h2>
+<p>属于题外话，因为binder机制不使用stdio而是一套独立的框架，可以做到跨进程互相调用各自的方法。</p>
+<p>定义接口</p>
+<ul>
+<li>编写 <code>.aidl</code> 文件，定义可跨进程调用的方法。</li>
+</ul>
+<p>服务端实现</p>
+<ul>
+<li>编译 AIDL 生成 <code>Stub</code> 类。</li>
+<li>服务端继承 Stub，实现接口方法。</li>
+<li>将 Stub 注册到系统（ServiceManager 或 bindService）。</li>
+</ul>
+<p>客户端获取代理</p>
+<ul>
+<li>客户端通过 ServiceManager 或 bindService 获取 Binder 对象。</li>
+<li>调用 <code>asInterface()</code> 得到 Proxy 对象（如果跨进程），否则直接得到 Stub。</li>
+</ul>
+<p>客户端调用方法</p>
+<ul>
+<li>调用 Proxy 方法 → 内部把方法参数写入 Parcel。</li>
+<li>Proxy 调用 <code>transact()</code>，通过 Binder 内核驱动发送 Parcel。</li>
+</ul>
+<p>Binder 内核转发</p>
+<ul>
+<li>内核根据 Binder 对象句柄找到服务端进程。</li>
+<li>调用服务端 Stub 的 <code>onTransact()</code>，把 Parcel 数据交给它。</li>
+</ul>
+<p>服务端处理请求</p>
+<ul>
+<li>Stub <code>onTransact()</code> 从 Parcel 读取参数。</li>
+<li>调用服务端实际方法。</li>
+<li>把返回值写入返回 Parcel。</li>
+</ul>
+<p>返回客户端</p>
+<ul>
+<li>Binder 内核把返回 Parcel 发回客户端 Proxy。</li>
+<li>Proxy 解析 Parcel，返回调用结果给客户端代码。</li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/IPC/" rel="tag">IPC</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/03/01/%E5%9F%BA%E4%BA%8E%20stdio%20%E7%9A%84%20IPC%20%E9%80%9A%E4%BF%A1/">基于 stdio 的 IPC 通信</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/05/OS-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0/">操作系统笔记——操作系统概述</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/30/MiniOB-note-sql/">MiniOB 项目结构——SQL板块</a></li><li class="post-list-item"><a class="post-list-link" href="/2025/12/23/OS-mmap%E5%92%8C%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%9C%B0%E5%9D%80%E7%A9%BA%E9%97%B4/">操作系统笔记——mmap 和进程的地址空间</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/IPC/" style="font-size: 10px;">IPC</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 10px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
