@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>C++ 异步模型 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="C++ 异步模型"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>C++ 异步模型</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.08</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>异步的本质：顺序与执行的拆分</h1>
+<p>通过个人理解，可以把异步问题拆成两部分：</p>
+<ul>
+<li>顺序：如何描述“接下来做什么”</li>
+<li>执行：谁来在合适的时机触发这些步骤</li>
+</ul>
+<p>同步代码中，这两件事是绑定在一起的：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">auto</span> data <span class="token operator">=</span> <span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">updatePage</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>顺序写在代码里，执行由调用栈立即完成。而异步的核心变化在于：</p>
+<p>顺序和执行被拆开了。</p>
+<h1>Callback：把“顺序”从调用栈中拿出来</h1>
+<h2 id="目标">目标</h2>
+<p>Callback 模型试图解决的问题很直接：</p>
+<ul>
+<li>发起操作时不阻塞线程</li>
+<li>在等待 IO 的过程中，程序仍然可以继续执行</li>
+</ul>
+<h2 id="基本形式">基本形式</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">void</span> <span class="token function">downloadData</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">void</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>string<span class="token punctuation">)</span><span class="token operator">></span> callback<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span><span class="token function">thread</span><span class="token punctuation">(</span><span class="token punctuation">[</span>callback<span class="token punctuation">]</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        std<span class="token double-colon punctuation">::</span>this_thread<span class="token double-colon punctuation">::</span><span class="token function">sleep_for</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>chrono<span class="token double-colon punctuation">::</span><span class="token function">seconds</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        std<span class="token double-colon punctuation">::</span>string data <span class="token operator">=</span> <span class="token string">"服务器返回的数据"</span><span class="token punctuation">;</span>
+        <span class="token function">callback</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">detach</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>调用方式：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>string data<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">updatePage</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>这里发生了一个关键变化：</p>
+<p>“下一步做什么”不再依赖返回值，而是被作为参数传入。</p>
+<h2 id="顺序的表达方式改变了">顺序的表达方式改变了</h2>
+<p>同步代码中：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">auto</span> data <span class="token operator">=</span> <span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">updatePage</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>顺序通过返回值串联。</p>
+<p>而在 callback 中：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>string data<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">updatePage</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>顺序通过 callback 表达。</p>
+<p>也就是说：</p>
+<ul>
+<li>同步：顺序在调用栈里</li>
+<li>异步：顺序被显式传递</li>
+</ul>
+<h2 id="本质：continuation-被显式化">本质：continuation 被显式化</h2>
+<p>callback 实际上就是 continuation，也就是“接下来要执行的代码”。</p>
+<p>同步：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">auto</span> data <span class="token operator">=</span> <span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// continuation 在调用栈中</span>
+<span class="token function">updatePage</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>异步：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>string data<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token comment">// continuation 被手动包装</span>
+    <span class="token function">updatePage</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这一步的意义在于：</p>
+<p>程序不再依赖调用栈来保存执行状态，而是由开发者自己管理 continuation。</p>
+<h1>Callback 的问题：顺序被结构吞掉</h1>
+<p>当只有一步时，callback 很自然。</p>
+<p>但当依赖变多时：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">login</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>User user<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">getProfile</span><span class="token punctuation">(</span>user<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>Profile p<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        <span class="token function">getPosts</span><span class="token punctuation">(</span>p<span class="token punctuation">.</span>id<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>Posts posts<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">render</span><span class="token punctuation">(</span>posts<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>原本是线性的顺序：</p>
+<pre class="line-numbers language-none"><code class="language-none">login → getProfile → getPosts → render<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>却变成了嵌套结构。</p>
+<p>问题不在于“难看”，而在于：</p>
+<p>顺序被编码进了语法结构本身。</p>
+<p>于是：</p>
+<ul>
+<li>控制流不再是线性的</li>
+<li>continuation 被层层嵌套</li>
+<li>无法独立操作和组合</li>
+</ul>
+<p>这就是 callback 的极限。</p>
+<h1>Callback 容器：从“嵌套”到“PUSH”</h1>
+<p>为了解决这个问题，一个自然的想法出现了：</p>
+<p>不要立即执行 callback，而是先把它们收集起来。</p>
+<p>也就是说，把 callback 从“语法里的下一步”变成“容器中的数据”。</p>
+<h2 id="一个实际的实现">一个实际的实现</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">template</span><span class="token operator">&lt;</span><span class="token keyword">typename</span> <span class="token class-name">T</span> <span class="token operator">=</span> <span class="token keyword">void</span><span class="token operator">></span>
+<span class="token keyword">class</span> <span class="token class-name">AbilityTransactionCallbackInfo</span> <span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+    <span class="token keyword">using</span> CallbackFunc <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">void</span><span class="token punctuation">(</span>T<span class="token operator">&amp;</span><span class="token punctuation">)</span><span class="token operator">></span><span class="token punctuation">;</span>
+
+    <span class="token keyword">static</span> AbilityTransactionCallbackInfo <span class="token operator">*</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">return</span> <span class="token keyword">new</span><span class="token punctuation">(</span>std<span class="token double-colon punctuation">::</span>nothrow<span class="token punctuation">)</span> <span class="token function">AbilityTransactionCallbackInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">Destroy</span><span class="token punctuation">(</span>AbilityTransactionCallbackInfo <span class="token operator">*</span>callbackInfo<span class="token punctuation">,</span> <span class="token keyword">void</span><span class="token operator">*</span> data <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        callbackInfo<span class="token operator">-></span><span class="token function">Finalize</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">delete</span> callbackInfo<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">Push</span><span class="token punctuation">(</span><span class="token keyword">const</span> CallbackFunc <span class="token operator">&amp;</span>callback<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        callbackStack_<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>callback<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">SetFinalizeCallback</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">void</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">></span> <span class="token operator">&amp;</span>finalize<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        finalizeCallback_ <span class="token operator">=</span> finalize<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">Finalize</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token operator">*</span> data<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span>finalizeCallback_ <span class="token operator">!=</span> <span class="token keyword">nullptr</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            <span class="token function">finalizeCallback_</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            finalizeCallback_ <span class="token operator">=</span> <span class="token keyword">nullptr</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">void</span> <span class="token function">Call</span><span class="token punctuation">(</span>T <span class="token operator">&amp;</span>callbackResult<span class="token punctuation">)</span>
+    <span class="token punctuation">&#123;</span>
+        <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>callbackStack_<span class="token punctuation">.</span><span class="token function">empty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+            CallbackFunc <span class="token operator">&amp;</span>callbackFunc <span class="token operator">=</span> callbackStack_<span class="token punctuation">.</span><span class="token function">top</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token function">callbackFunc</span><span class="token punctuation">(</span>callbackResult<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            callbackStack_<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+<span class="token keyword">private</span><span class="token operator">:</span>
+    std<span class="token double-colon punctuation">::</span>stack<span class="token operator">&lt;</span>CallbackFunc<span class="token operator">></span> callbackStack_<span class="token punctuation">;</span>
+    std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token keyword">void</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">></span> finalizeCallback_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="核心变化：callback-被“压入”，而不是“嵌套”">核心变化：callback 被“压入”，而不是“嵌套”</h2>
+<p>使用方式不再是：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token function">step1</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">step2</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>而是：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">auto</span><span class="token operator">*</span> info <span class="token operator">=</span> <span class="token class-name">AbilityTransactionCallbackInfo</span><span class="token operator">&lt;</span>Result<span class="token operator">></span><span class="token double-colon punctuation">::</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+info<span class="token operator">-></span><span class="token function">Push</span><span class="token punctuation">(</span>step1<span class="token punctuation">)</span><span class="token punctuation">;</span>
+info<span class="token operator">-></span><span class="token function">Push</span><span class="token punctuation">(</span>step2<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里的变化非常关键：</p>
+<p>callback 不再写在语法结构里，而是被压入一个容器。</p>
+<p>顺序开始由“数据结构”决定，而不是“代码嵌套”。</p>
+<h2 id="Push-与-Call：注册与触发分离">Push 与 Call：注册与触发分离</h2>
+<p>这个模型可以明显分成两个阶段：</p>
+<p>第一阶段是注册：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">info<span class="token operator">-></span><span class="token function">Push</span><span class="token punctuation">(</span>callback<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>只是记录未来要执行的逻辑。</p>
+<p>第二阶段是触发：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">info<span class="token operator">-></span><span class="token function">Call</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>统一执行所有 callback。</p>
+<p>这一步把 callback 的语义从“立即调用”变成了“延迟执行”。</p>
+<h2 id="Finalize：异步不只有“结果”">Finalize：异步不只有“结果”</h2>
+<p>这个类里还有一个额外的机制：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">finalizeCallback_<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>它代表的是：</p>
+<p>整个异步流程结束之后的收尾逻辑。</p>
+<p>例如：</p>
+<ul>
+<li>资源释放</li>
+<li>生命周期结束</li>
+<li>上下文清理</li>
+</ul>
+<p>这说明异步流程不仅仅是“执行 callback”，还包括“结束后的处理”。</p>
+<h1>Runtime：谁来触发 Call</h1>
+<p>到这里为止，我们已经解决了：顺序如何被组织（callback → 容器 → PUSH）</p>
+<p>但还有一个问题：什么时候调用 <code>Call</code>？</p>
+<h2 id="执行者的角色">执行者的角色</h2>
+<p>在最初的例子中，是线程：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span><span class="token function">thread</span><span class="token punctuation">(</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">detach</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>在更通用的模型中，是 runtime：</p>
+<ul>
+<li>event loop</li>
+<li>线程池</li>
+<li>IO 调度器</li>
+</ul>
+<p>它们的职责是：</p>
+<p>在某个时刻触发：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">info<span class="token operator">-></span><span class="token function">Call</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="一个抽象模型">一个抽象模型</h2>
+<p>runtime 可以理解为：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">auto</span> task <span class="token operator">=</span> queue<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">task</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>它做的事情是：</p>
+<ul>
+<li>等待事件完成</li>
+<li>把 callback 放入队列</li>
+<li>在循环中执行</li>
+</ul>
+<h2 id="到这里的完整模型">到这里的完整模型</h2>
+<p>现在可以把系统拆成两部分：</p>
+<ul>
+<li>callback / 容器：定义顺序</li>
+<li>runtime：负责执行</li>
+</ul>
+<p>顺序与执行完全解耦。</p>
+<h1>Promise：结构化的 callback 容器</h1>
+<p>callback 容器已经解决了一个问题：</p>
+<p>顺序可以被收集，而不是嵌套。</p>
+<p>但它仍然缺少一个关键能力：</p>
+<p>状态。</p>
+<p>例如：</p>
+<ul>
+<li>任务是否完成</li>
+<li>是否失败</li>
+<li>如果 callback 在完成之后才注册怎么办</li>
+</ul>
+<h2 id="Promise-做的事情">Promise 做的事情</h2>
+<p>Promise 在 callback 容器之上增加了：</p>
+<ul>
+<li>状态（pending / fulfilled / rejected）</li>
+<li>回调分类（then / catch）</li>
+<li>与 runtime 的标准化对接</li>
+</ul>
+<h2 id="顺序重新变成链">顺序重新变成链</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token function">login</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span>getProfile<span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span>getPosts<span class="token punctuation">)</span>
+    <span class="token punctuation">.</span><span class="token function">then</span><span class="token punctuation">(</span>render<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>这里的顺序不再是嵌套，而是链式结构。</p>
+<p>本质上仍然是：</p>
+<ul>
+<li>保存 continuation</li>
+<li>逐步触发</li>
+</ul>
+<p>只是形式从“栈”变成了“链”。</p>
+<h1>async / await：把链重新铺平成代码</h1>
+<p>再往上一步，就是 async / await：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">auto</span> data <span class="token operator">=</span> await <span class="token function">downloadData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token function">process</span><span class="token punctuation">(</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>看起来像同步代码，但本质没有变化。</p>
+<p>底层仍然是：</p>
+<ul>
+<li>continuation 被保存</li>
+<li>runtime 在未来恢复执行</li>
+</ul>
+<p>只是：</p>
+<ul>
+<li>Promise 帮你管理容器</li>
+<li>编译器帮你生成 continuation</li>
+</ul>
+<h1>最终统一</h1>
+<p>从 callback 到 async/await，可以统一成同一个模型：</p>
+<ul>
+<li>最开始：callback 手动表达 continuation</li>
+<li>然后：callback 被放入容器（PUSH）</li>
+<li>接着：Promise 标准化容器 + 状态</li>
+<li>最后：async/await 把 continuation 隐藏在语法中</li>
+</ul>
+<p>整个过程中唯一不变的是：</p>
+<p>continuation 被保存，并由 runtime 在未来某个时刻执行。</p>
+<h3 id="概述">概述</h3>
+<p>异步的本质不是“多线程”，也不是“语法技巧”，而是两件事：顺序如何被表达。执行如何被调度。</p>
+<p>callback 解决了顺序的表达，但带来了结构问题。</p>
+<p>callback 容器让顺序脱离语法，变成数据。</p>
+<p>Promise 让这种数据结构标准化并引入状态。</p>
+<p>async/await 则把这一切重新伪装成线性代码。</p>
+<p>从这个角度看，现代异步模型并不是新的东西，而是对 callback 模型的一层层抽象与重构。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: <a href="/2026/04/17/MiniOB-note-expr/">MiniOB 项目结构——表达式&amp;记录</a></li>
+                
+                
+                    <li>下一篇: <a href="/2026/03/30/Android%20App%20Bundle%20%E8%A7%A3%E6%9E%90/">Android App Bundle 解析</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/C/" rel="tag">C++</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/17/MiniOB-note-expr/">MiniOB 项目结构——表达式&记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/08/C++%20%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%9E%8B/">C++ 异步模型</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/30/Android%20App%20Bundle%20%E8%A7%A3%E6%9E%90/">Android App Bundle 解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/01/%E5%9F%BA%E4%BA%8E%20stdio%20%E7%9A%84%20IPC%20%E9%80%9A%E4%BF%A1/">基于 stdio 的 IPC 通信</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">April 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/Android/" style="font-size: 10px;">Android</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/C/" style="font-size: 10px;">C++</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/IPC/" style="font-size: 10px;">IPC</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 11.43px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

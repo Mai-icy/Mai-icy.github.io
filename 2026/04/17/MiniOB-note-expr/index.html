@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>MiniOB 项目结构——表达式&amp;记录 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="MiniOB 项目结构——表达式&amp;记录"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>MiniOB 项目结构——表达式&amp;记录</h2>
+            <div class="post-meta">
+                <time class="date">2026.04.17</time>
+            
+                <span class="category"><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a></span>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <p>在上篇关于SQL的流程实现大致说明后，我们来细化内部细节，例如列信息，表信息，再或是我们的记录是怎么传递的，以及到最后是怎么处理的。主要会展现表达式的细节和记录的细节。</p>
+<p>同样会再同步介绍如何去拓展DML语句，DDL语句</p>
+<h1>表达式 Expression</h1>
+<p>表达式中最基础的就是值，因此我们要设计Value，</p>
+<h2 id="Value">Value</h2>
+<p>值有众多不同的类型，例如int，float这种，对于不同类型的转换规则，或者是隐式转换等，需要有定制化的行为，因此需要设计一套专门的Value类。</p>
+<h3 id="值-类型（Tagged-Union）">值+类型（Tagged Union）</h3>
+<p>将实际数据存储在Union当中，节约内存，后续也可以在这里拓展类型。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">AttrType attr_type_<span class="token punctuation">;</span>
+<span class="token keyword">union</span> Val <span class="token punctuation">&#123;</span> <span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span> <span class="token punctuation">&#125;</span> value_<span class="token punctuation">;</span>
+
+<span class="token keyword">union</span> Val
+<span class="token punctuation">&#123;</span>
+  <span class="token keyword">int32_t</span>    int_value_<span class="token punctuation">;</span>
+  date       date_value_<span class="token punctuation">;</span>
+  <span class="token keyword">float</span>      float_value_<span class="token punctuation">;</span>
+  <span class="token keyword">bool</span>       bool_value_<span class="token punctuation">;</span>
+  <span class="token keyword">char</span>      <span class="token operator">*</span>pointer_value_<span class="token punctuation">;</span>
+  TextManager<span class="token double-colon punctuation">::</span>TextMeta  text_meta_value_<span class="token punctuation">;</span>
+  <span class="token keyword">float</span>  <span class="token operator">*</span>vector_value_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span> value_ <span class="token operator">=</span> <span class="token punctuation">&#123;</span><span class="token punctuation">.</span>int_value_ <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="提供计算-类型转换接口">提供计算+类型转换接口</h3>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> RC <span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">static</span> RC <span class="token function">subtract</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">static</span> RC <span class="token function">multiply</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">static</span> RC <span class="token function">divide</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">static</span> RC <span class="token function">negative</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">static</span> RC <span class="token function">cast_to</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">,</span> AttrType to_type<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Value只负责提供接口，将实际的运算逻辑都交给DataType，DataType类似于一个方法类</p>
+<h2 id="DataType">DataType</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">DataType</span>
+<span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token keyword">explicit</span> <span class="token function">DataType</span><span class="token punctuation">(</span>AttrType attr_type<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">attr_type_</span><span class="token punctuation">(</span>attr_type<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token operator">~</span><span class="token function">DataType</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token keyword">inline</span> <span class="token keyword">static</span> DataType <span class="token operator">*</span><span class="token function">type_instance</span><span class="token punctuation">(</span>AttrType attr_type<span class="token punctuation">)</span>
+  <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> type_instances_<span class="token punctuation">.</span><span class="token function">at</span><span class="token punctuation">(</span><span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>attr_type<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">inline</span> AttrType <span class="token function">get_attr_type</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> attr_type_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">int</span> <span class="token function">compare</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">int</span> <span class="token function">compare</span><span class="token punctuation">(</span><span class="token keyword">const</span> Column <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Column <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> <span class="token keyword">int</span> left_idx<span class="token punctuation">,</span> <span class="token keyword">int</span> right_idx<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">add</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">subtract</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">multiply</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">divide</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>left<span class="token punctuation">,</span> <span class="token keyword">const</span> Value <span class="token operator">&amp;</span>right<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">negative</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>val<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">cast_to</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>val<span class="token punctuation">,</span> AttrType type<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">to_string</span><span class="token punctuation">(</span><span class="token keyword">const</span> Value <span class="token operator">&amp;</span>val<span class="token punctuation">,</span> string <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">int</span> <span class="token function">cast_cost</span><span class="token punctuation">(</span>AttrType type<span class="token punctuation">)</span>
+  <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>type <span class="token operator">==</span> attr_type_<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> INT32_MAX<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">set_value_from_str</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>val<span class="token punctuation">,</span> <span class="token keyword">const</span> string <span class="token operator">&amp;</span>data<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNSUPPORTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">protected</span><span class="token operator">:</span>
+  AttrType attr_type_<span class="token punctuation">;</span>
+  <span class="token keyword">static</span> array<span class="token operator">&lt;</span>unique_ptr<span class="token operator">&lt;</span>DataType<span class="token operator">></span><span class="token punctuation">,</span> <span class="token generic-function"><span class="token function">static_cast</span><span class="token generic class-name"><span class="token operator">&lt;</span><span class="token keyword">int</span><span class="token operator">></span></span></span><span class="token punctuation">(</span>AttrType<span class="token double-colon punctuation">::</span>MAXTYPE<span class="token punctuation">)</span><span class="token operator">></span> type_instances_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>每种值类型要自己继承一个类，例如CharType，FloatType，然后重载支持的运算方法，将所有逻辑都存储在自己的Type类实现中，Value会通过type_instance的方式来自动获取应该调用的方法，同样，遇到一些隐式类型转换也应在其中处理。</p>
+<h2 id="Expression">Expression</h2>
+<p>我们有了不同的值和其类型，并且已经处理了所有的类型转换，接下来就应该设计表达式了。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">class</span> <span class="token class-name">Expression</span>
+<span class="token punctuation">&#123;</span>
+<span class="token keyword">public</span><span class="token operator">:</span>
+  <span class="token function">Expression</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> <span class="token operator">~</span><span class="token function">Expression</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token keyword">default</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">></span> <span class="token function">copy</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">bool</span> <span class="token function">equal</span><span class="token punctuation">(</span><span class="token keyword">const</span> Expression <span class="token operator">&amp;</span>other<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> <span class="token boolean">false</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+
+  <span class="token keyword">virtual</span> RC <span class="token function">get_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">get_values</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> vector<span class="token operator">&lt;</span>Value<span class="token operator">></span> <span class="token operator">&amp;</span>values<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">virtual</span> RC <span class="token function">try_get_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNIMPLEMENTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">open</span><span class="token punctuation">(</span>Trx<span class="token operator">*</span> trx<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">get_column</span><span class="token punctuation">(</span>Chunk <span class="token operator">&amp;</span>chunk<span class="token punctuation">,</span> Column <span class="token operator">&amp;</span>column<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNIMPLEMENTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">traverse_check</span><span class="token punctuation">(</span><span class="token keyword">const</span> std<span class="token double-colon punctuation">::</span>function<span class="token operator">&lt;</span><span class="token function">RC</span><span class="token punctuation">(</span>Expression<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">></span><span class="token operator">&amp;</span> check_func<span class="token punctuation">,</span> function<span class="token operator">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">(</span>Expression<span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">></span> filter <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">(</span>Expression<span class="token operator">*</span>expr<span class="token punctuation">)</span><span class="token punctuation">&#123;</span><span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>
+  <span class="token punctuation">&#123;</span>
+    <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token operator">not</span> <span class="token function">filter</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+      <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">return</span> <span class="token function">check_func</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> ExprType <span class="token function">type</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> AttrType <span class="token function">value_type</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">int</span> <span class="token function">value_length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">const</span> <span class="token keyword">char</span> <span class="token operator">*</span><span class="token function">name</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> name_<span class="token punctuation">.</span><span class="token function">c_str</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> std<span class="token double-colon punctuation">::</span>string <span class="token function">alias</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> alias_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">void</span>        <span class="token function">set_name</span><span class="token punctuation">(</span>string name<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> name_ <span class="token operator">=</span> name<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">void</span>        <span class="token function">set_alias</span><span class="token punctuation">(</span>string alias<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> alias_ <span class="token operator">=</span> alias<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">int</span>  <span class="token function">pos</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> pos_<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> <span class="token keyword">void</span> <span class="token function">set_pos</span><span class="token punctuation">(</span><span class="token keyword">int</span> pos<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> pos_ <span class="token operator">=</span> pos<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+  <span class="token keyword">virtual</span> RC <span class="token function">eval</span><span class="token punctuation">(</span>Chunk <span class="token operator">&amp;</span>chunk<span class="token punctuation">,</span> vector<span class="token operator">&lt;</span><span class="token keyword">uint8_t</span><span class="token operator">></span> <span class="token operator">&amp;</span>select<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span> <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>UNIMPLEMENTED<span class="token punctuation">;</span> <span class="token punctuation">&#125;</span>
+<span class="token keyword">protected</span><span class="token operator">:</span>
+  <span class="token comment">/**
+   * @brief 表达式在下层算子返回的 chunk 中的位置
+   * @details 当 pos_ = -1 时表示下层算子没有在返回的 chunk 中计算出该表达式的计算结果，
+   * 当 pos_ >= 0时表示在下层算子中已经计算出该表达式的值（比如聚合表达式），且该表达式对应的结果位于
+   * chunk 中 下标为 pos_ 的列中。
+   */</span>
+  <span class="token keyword">int</span> pos_ <span class="token operator">=</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+<span class="token keyword">private</span><span class="token operator">:</span>
+  string name_<span class="token punctuation">;</span>
+  string alias_<span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>在SQL语句中，表达式有非常多种形式，例如</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">enum</span> <span class="token keyword">class</span> <span class="token class-name">ExprType</span>
+<span class="token punctuation">&#123;</span>
+  NONE<span class="token punctuation">,</span>
+  STAR<span class="token punctuation">,</span>                 <span class="token comment">///&lt; 星号，表示所有字段</span>
+  UNBOUND_FIELD<span class="token punctuation">,</span>        <span class="token comment">///&lt; 未绑定的字段，需要在resolver阶段解析为FieldExpr</span>
+  UNBOUND_AGGREGATION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 未绑定的聚合函数，需要在resolver阶段解析为AggregateExpr</span>
+
+  FIELD<span class="token punctuation">,</span>        <span class="token comment">///&lt; 字段。在实际执行时，根据行数据内容提取对应字段的值</span>
+  VALUE<span class="token punctuation">,</span>        <span class="token comment">///&lt; 常量值</span>
+  CAST<span class="token punctuation">,</span>         <span class="token comment">///&lt; 需要做类型转换的表达式</span>
+  COMPARISON<span class="token punctuation">,</span>   <span class="token comment">///&lt; 需要做比较的表达式</span>
+  CONJUNCTION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 多个表达式使用同一种关系(AND或OR)来联结</span>
+  ARITHMETIC<span class="token punctuation">,</span>   <span class="token comment">///&lt; 算术运算</span>
+  AGGREGATION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 聚合运算</span>
+  SYSFUNCTION<span class="token punctuation">,</span>  <span class="token comment">///&lt; 函数（length、round、date_format）</span>
+  SUBQUERY<span class="token punctuation">,</span>     <span class="token comment">///&lt; 子查询</span>
+  EXPRLIST<span class="token punctuation">,</span>     <span class="token comment">///&lt; 表达式集合</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>对于任意表达式都可以用我们这个Expr来构建，例如 <code>(col1 + col2) - 114 &lt; col3</code></p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">                 <span class="token function">COMPARISON</span>  <span class="token punctuation">(</span><span class="token operator">&lt;</span><span class="token punctuation">)</span>
+                 <span class="token operator">/</span>           \\
+                <span class="token operator">/</span>             \\
+     <span class="token function">ARITHMETIC</span> <span class="token punctuation">(</span><span class="token operator">-</span><span class="token punctuation">)</span>         <span class="token function">FIELD</span><span class="token punctuation">(</span>col3<span class="token punctuation">)</span>
+        <span class="token operator">/</span>      \\
+       <span class="token operator">/</span>        \\
+<span class="token function">ARITHMETIC</span><span class="token punctuation">(</span><span class="token operator">+</span><span class="token punctuation">)</span>   <span class="token function">VALUE</span><span class="token punctuation">(</span><span class="token number">114</span><span class="token punctuation">)</span>
+   <span class="token operator">/</span>     \\
+  <span class="token operator">/</span>       \\
+<span class="token function">FIELD</span><span class="token punctuation">(</span>col1<span class="token punctuation">)</span> <span class="token function">FIELD</span><span class="token punctuation">(</span>col2<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>其中我们可以看到，例如 FieldExpr，实际上是 <code>select col from</code> 中的 <code>col</code> , 至于为什么会有UNBOUND_FIELD，因为在初步语法解析SQL的时候只有文本，得到语法解析后的 <code>ParsedSql</code> 来容纳各个字符串。</p>
+<p>下一步就是绑定字符串：将表名绑定到表对象，字段名绑定到对应column等等。</p>
+<p>这一步就需要将Expr进行一个遍历，这里可以使用上面设计的 <code>traverse_check</code> ，会不断递归调用进行一个 check ， 并且将 check 的行为以及 需要 check 的节点过滤作为两个 <code>callback</code> 传入，更加灵活处理。</p>
+<h3 id="获取表达式的值">获取表达式的值</h3>
+<p>获取表达式的值有两种方式，get_value 和 try_get_value，分别是将一行 Tuple 传入后计算得到的值，和传入 Tuple 不被使用的纯数字表达式。</p>
+<p>对于任意一个Expr，当 get_value 获取值的时候，也会从左右两个表达式种 get_value 得到结果，返回出结果值。</p>
+<p>例如 FieldExpr</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">FieldExpr</span><span class="token double-colon punctuation">::</span><span class="token function">get_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span>
+<span class="token punctuation">&#123;</span>
+  <span class="token keyword">return</span> tuple<span class="token punctuation">.</span><span class="token function">find_cell</span><span class="token punctuation">(</span><span class="token function">TupleCellSpec</span><span class="token punctuation">(</span><span class="token function">table_name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">field_name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>例如 CastExpr</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token class-name">CastExpr</span><span class="token double-colon punctuation">::</span><span class="token function">get_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>result<span class="token punctuation">)</span> <span class="token keyword">const</span>
+<span class="token punctuation">&#123;</span>                                             
+  Value value<span class="token punctuation">;</span>
+  RC rc <span class="token operator">=</span> child_<span class="token operator">-></span><span class="token function">get_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>rc <span class="token operator">!=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">return</span> rc<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">if</span><span class="token punctuation">(</span>value<span class="token punctuation">.</span><span class="token function">is_null</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    result <span class="token operator">=</span> std<span class="token double-colon punctuation">::</span><span class="token function">move</span><span class="token punctuation">(</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+  <span class="token keyword">return</span> <span class="token function">cast</span><span class="token punctuation">(</span>value<span class="token punctuation">,</span> result<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="SYSFUNCTION">SYSFUNCTION</h2>
+<p>函数表达式是很重要的一点，例如length、round、date_format或者是后续的向量计算等等函数，将参数定义为 <code>std::vector&lt;std::unique_ptr&lt;Expression&gt;&gt; params_;</code> 即可获取动态数量的参数进行读取和运算。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">RC <span class="token function">try_get_func_length_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+RC <span class="token function">get_func_round_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+RC <span class="token function">try_get_func_round_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+RC <span class="token function">get_func_date_format_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+RC <span class="token function">try_get_func_date_format_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+RC <span class="token function">get_func_vector_to_string_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+RC <span class="token function">try_get_func_vector_to_string_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+RC <span class="token function">get_func_string_to_vector_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+RC <span class="token function">try_get_func_string_to_vector_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+RC <span class="token function">get_func_distance_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+RC <span class="token function">try_get_func_distance_value</span><span class="token punctuation">(</span>Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span><span class="token punctuation">;</span>
+
+RC <span class="token function">get_value</span><span class="token punctuation">(</span><span class="token keyword">const</span> Tuple <span class="token operator">&amp;</span>tuple<span class="token punctuation">,</span> Value <span class="token operator">&amp;</span>value<span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token keyword">override</span><span class="token punctuation">&#123;</span>
+  RC rc <span class="token operator">=</span> RC<span class="token double-colon punctuation">::</span>SUCCESS<span class="token punctuation">;</span>
+  <span class="token keyword">switch</span><span class="token punctuation">(</span>func_type_<span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token keyword">case</span> SYS_FUNC_LENGTH<span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      rc <span class="token operator">=</span> <span class="token function">get_func_length_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">case</span> SYS_FUNC_ROUND<span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      rc <span class="token operator">=</span> <span class="token function">get_func_round_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">case</span> SYS_FUNC_DATE_FORMAT<span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      rc <span class="token operator">=</span> <span class="token function">get_func_date_format_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">case</span> SYS_FUNC_VECTOR_TO_STRING<span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      rc <span class="token operator">=</span> <span class="token function">get_func_vector_to_string_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">case</span> SYS_FUNC_STRING_TO_VECTOR<span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      rc <span class="token operator">=</span> <span class="token function">get_func_string_to_vector_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+    <span class="token keyword">case</span> SYS_FUNC_DISTANCE<span class="token operator">:</span> <span class="token punctuation">&#123;</span>
+      rc <span class="token operator">=</span> <span class="token function">get_func_distance_value</span><span class="token punctuation">(</span>tuple<span class="token punctuation">,</span> value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">break</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>以上只需要定义自己的函数，以及运算方法即可扩展任意的函数表达式，使得自定义函数生效。</p>
+<h1>记录 Record&amp;Tuple</h1>
+<p>Record存储了记录的字节流，Tuple可以读取信息</p>
+<h2 id="Record">Record</h2>
+<p>即一块内存管理类，可以复制读改。支持深拷贝/移动语义，可直接引用页面数据（需持有锁）或复制独立内存副本。按字节偏移访问。</p>
+<p>以字节流为基础，不展现其他例如管理实际数据为能力，是存储格式。</p>
+<h2 id="Tuple">Tuple</h2>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">          <span class="token function">Tuple</span> <span class="token punctuation">(</span>抽象基类<span class="token punctuation">)</span>
+             │
+    ┌────────┼────────┐
+    │        │        │
+RowTuple ProjectTuple ValueListTuple
+    │
+    │
+JoinedTuple<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>Tuple 是 SQL 层的逻辑行抽象，表示查询结果中的一行数据。可以理解为带类型信息的 Value。</p>
+<p>按字段名/索引访问，是逻辑视图。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>作用</th>
+<th>关键特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tuple</strong></td>
+<td>抽象基类</td>
+<td>定义 <code>cell_num()</code>, <code>cell_at()</code>, <code>find_cell()</code> 接口</td>
+</tr>
+<tr>
+<td><strong>RowTuple</strong></td>
+<td>直接映射表的记录</td>
+<td>持有 <code>Record*</code>，通过 <code>FieldMeta</code> 解析字段，支持 NULL bitmap</td>
+</tr>
+<tr>
+<td><strong>ProjectTuple</strong></td>
+<td>投影操作</td>
+<td>持有 <code>Expression</code> 列表，支持表达式计算、类型转换、重命名</td>
+</tr>
+<tr>
+<td><strong>ValueListTuple</strong></td>
+<td>常量值组成的行</td>
+<td>存储 <code>vector&lt;Value&gt;</code>，用于字面量结果</td>
+</tr>
+<tr>
+<td><strong>JoinedTuple</strong></td>
+<td>连接两个 Tuple</td>
+<td>持有左右 <code>Tuple*</code>，用于 JOIN 操作</td>
+</tr>
+</tbody>
+</table>
+<h3 id="RowTuple（数据基于Record-）">RowTuple（数据基于Record*）</h3>
+<p>RowTuple 持有 Record*，通过 FieldMeta 将二进制数据解析为 Value。</p>
+<p>还持有每个 <code>Value</code> 的 <code>FieldMeta</code> ，知道每个类型的数据类型，可设置表头。</p>
+<p>支持通过 <code>cell_at</code> 下标查询值，通过 <code>spec_at</code> 查询列名表名别名等</p>
+<p>支持通过 <code>find_cell</code> 列名表名别名来查询值</p>
+<p>顺便可以使用 <code>bitmap_</code> 来记录null值</p>
+<h3 id="ProjectTuple（数据基于Tuple）">ProjectTuple（数据基于Tuple）</h3>
+<p>ProjectTuple 对 Tuple 做投影/表达式计算。通常是 Select 行为的逻辑运算。</p>
+<p>持有下层包含 Value 的 Tuple，持有 投影信息的 vector&lt;unique_ptr<Expression>&gt;</Expression></p>
+<p>通过投影信息，获取持有的 Tuple其中数据，计算投影后的值，作为自己的 cell 值</p>
+<h3 id="ValueListTuple（数据基于Value）">ValueListTuple（数据基于Value）</h3>
+<p>存储已计算的 Value 列表，用于物化（materialize）中间结果。</p>
+<p>持有 vector<Value> ，使用场景例如 作为 GROUP BY 分组的 Key，缓存所有行用于排序，缓存多个子查询的结果等功能。</Value></p>
+<p>更多作为Value的容器，像RowTuple一定要持有Record，然后计算的中间值只会有Value。</p>
+<h3 id="JoinedTuple（数据基于Tuple）">JoinedTuple（数据基于Tuple）</h3>
+<p>将两个tuple合并为一个tuple，用于 Join 算子的结果，让 Join 算子有结果值的容器，其持有两个Tuple，分别是 左 和 右。</p>
+<p>其查询操作也就是在两者中轮流查询。</p>
+<h2 id="Tuple的额外设计">Tuple的额外设计</h2>
+<p>Tuple不单可以存储我们记录行中所见的数据，也可以将记录行的事务相关信息一并存储，事务相关信息可以从Tuple中轻易读取，并且 Select 都是投影操作，不会读取事务相关信息输出展示</p>
+<p>例如 Select 中的 * 表达式，其会忽略所有不可见列。</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">wildcard_fields</span><span class="token punctuation">(</span>Table <span class="token operator">*</span>table<span class="token punctuation">,</span> 
+                            vector<span class="token operator">&lt;</span>unique_ptr<span class="token operator">&lt;</span>Expression<span class="token operator">>></span> <span class="token operator">&amp;</span>expressions<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">const</span> TableMeta <span class="token operator">&amp;</span>table_meta <span class="token operator">=</span> table<span class="token operator">-></span><span class="token function">table_meta</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  
+  <span class="token comment">// 跳过系统字段（如事务字段）</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> table_meta<span class="token punctuation">.</span><span class="token function">sys_field_num</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> field_num<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    Field <span class="token function">field</span><span class="token punctuation">(</span>table<span class="token punctuation">,</span> table_meta<span class="token punctuation">.</span><span class="token function">field</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    FieldExpr <span class="token operator">*</span>field_expr <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token function">FieldExpr</span><span class="token punctuation">(</span>field<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    field_expr<span class="token operator">-></span><span class="token function">set_name</span><span class="token punctuation">(</span>field<span class="token punctuation">.</span><span class="token function">field_name</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    expressions<span class="token punctuation">.</span><span class="token function">emplace_back</span><span class="token punctuation">(</span>field_expr<span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// 添加到投影列表</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>此处将所有系统字段例如事务字段放在Tuple的最前面，通过 sys_field_num 获取第一个非系统字段。</p>
+<h3 id="事务字段设计">事务字段设计</h3>
+<p>在 MVCC 事务模式下，每条记录会携带以下隐藏字段：</p>
+<pre class="line-numbers language-none"><code class="language-none">FieldMeta(&quot;__trx_xid_begin&quot;, AttrType::INTS, 0, 4, false, -1),  &#x2F;&#x2F; 创建事务ID
+FieldMeta(&quot;__trx_xid_end&quot;,   AttrType::INTS, 0, 4, false, -2),  &#x2F;&#x2F; 删除事务ID<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>这些字段存储在 Record 中：作为每行数据的组成部分，占用磁盘空间</p>
+<p>标记为 <code>visible=false</code>：用户不可见，SELECT 不会返回。且用于 MVCC 可见性判断：判断记录对当前事务是否可见</p>
+<p>SQL 层通过 Tuple 访问数据时，事务字段对用户查询完全透明，并且事务信息和用户数据存储在同一 Record 中，避免额外的间接寻址。</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/08/C++%20%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%9E%8B/">C++ 异步模型</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/MiniOB/" rel="tag">MiniOB</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/04/17/MiniOB-note-expr/">MiniOB 项目结构——表达式&记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/08/C++%20%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%9E%8B/">C++ 异步模型</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/30/Android%20App%20Bundle%20%E8%A7%A3%E6%9E%90/">Android App Bundle 解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/01/%E5%9F%BA%E4%BA%8E%20stdio%20%E7%9A%84%20IPC%20%E9%80%9A%E4%BF%A1/">基于 stdio 的 IPC 通信</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/10/OS-%E8%AE%BE%E5%A4%87%E7%AE%A1%E7%90%86/">操作系统笔记——设备管理</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">April 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/Android/" style="font-size: 10px;">Android</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/C/" style="font-size: 10px;">C++</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/IPC/" style="font-size: 10px;">IPC</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 11.43px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
