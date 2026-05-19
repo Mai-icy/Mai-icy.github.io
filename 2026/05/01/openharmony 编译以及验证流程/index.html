@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>openharmony 编译以及验证流程 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="openharmony 编译以及验证流程"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>openharmony 编译以及验证流程</h2>
+            <div class="post-meta">
+                <time class="date">2026.05.01</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h1>环境准备</h1>
+<h2 id="wsl环境配置（prompt）">wsl环境配置（prompt）</h2>
+<p>目标路径可以自行替换</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">我使用 Windows <span class="token operator">+</span> WSL2。请帮我写一套完整、稳妥的操作步骤，实现以下目标：
+
+<span class="token number">1.</span> 安装指定版本的 Ubuntu <span class="token number">22.04</span>，而不是默认 Ubuntu 版本。
+<span class="token number">2.</span> 将 Ubuntu <span class="token number">22.04</span> 设置为 WSL 默认发行版。
+<span class="token number">3.</span> 给 Ubuntu <span class="token number">22.04</span> 更换 apt 软件源，优先使用国内镜像源，例如清华源或阿里源。
+<span class="token number">4.</span> 将 WSL 的 Ubuntu <span class="token number">22.04</span> 文件系统迁移到指定磁盘目录，例如 `D<span class="token operator">:</span>\\WSL\\Ubuntu<span class="token operator">-</span><span class="token number">22.04</span>`。
+<span class="token number">5.</span> 说明如何使用 `wsl <span class="token operator">--</span><span class="token keyword">export</span>`、`wsl <span class="token operator">--</span>unregister`、`wsl <span class="token operator">--</span><span class="token keyword">import</span>` 完成迁移。
+<span class="token number">6.</span> 说明迁移后默认用户变成 root 时，如何通过 `<span class="token operator">/</span>etc<span class="token operator">/</span>wsl<span class="token punctuation">.</span>conf` 修复。
+<span class="token number">7.</span> 标注哪些命令需要在 PowerShell 管理员中执行，哪些命令需要在 Ubuntu 终端中执行。
+<span class="token number">8.</span> 对危险步骤给出提醒，例如 `wsl <span class="token operator">--</span>unregister` 会删除原发行版注册信息，必须先确认导出成功。
+<span class="token number">9.</span> 最后给出一份可直接复制执行的命令清单。
+
+我的目标路径是：`D<span class="token operator">:</span>\\WSL\\Ubuntu<span class="token operator">-</span><span class="token number">22.04</span>`
+备份 tar 路径是：`D<span class="token operator">:</span>\\WSL\\backup\\ubuntu22<span class="token punctuation">.</span>tar`
+请使用中文回答，命令尽量完整，不要省略关键步骤。<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h2 id="前置环境">前置环境</h2>
+<h3 id="工具集准备">工具集准备</h3>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">sudo</span> <span class="token function">apt</span> update
+
+<span class="token function">sudo</span> <span class="token function">apt</span> <span class="token function">install</span> <span class="token parameter variable">-y</span> <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  binutils binutils-dev <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  <span class="token function">git</span> git-lfs git-core <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  gnupg flex bison gperf <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  build-essential <span class="token function">zip</span> <span class="token function">curl</span> <span class="token function">wget</span> <span class="token function">unzip</span> <span class="token function">tar</span> <span class="token function">rsync</span> <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  zlib1g-dev gcc-multilib g++-multilib <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  gcc-arm-linux-gnueabi gcc-arm-none-eabi <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  libc6-dev-i386 libc6-dev-amd64 <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  lib32ncurses5-dev lib32z1-dev lib32z-dev <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  x11proto-core-dev libx11-dev <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  libgl1-mesa-dev libxml2-utils libxml2-dev xsltproc <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  m4 <span class="token function">bc</span> gnutls-bin ruby <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  genext2fs device-tree-compiler <span class="token function">make</span> <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  libffi-dev e2fsprogs pkg-config perl openssl libssl-dev <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  libelf-dev libdwarf-dev u-boot-tools mtd-utils cpio <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  doxygen liblz4-tool openjdk-8-jre default-jre default-jdk <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  gcc g++ texinfo dosfstools <span class="token function">mtools</span> <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  libncurses5 libncurses5-dev libncursesw5 <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  apt-utils scons python3 python3-pip python3-setuptools <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  python3-distutils <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  grsync xxd libglib2.0-dev libpixman-1-dev <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  kmod jfsutils reiserfsprogs xfsprogs squashfs-tools <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  pcmciautils <span class="token function">quota</span> ppp libtinfo-dev libtinfo5 <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  <span class="token function">vim</span> <span class="token function">ssh</span> locales ccache<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="repo-安装（prompt）">repo 安装（prompt）</h3>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">我在 WSL2 Ubuntu <span class="token number">22.04</span> 中，后续要用 `repo` 拉取远程代码。
+请先给我一套前置环境安装和配置命令，不要长篇介绍。
+内容包括：检查 WSL2、更新 apt、安装 git<span class="token operator">/</span>curl<span class="token operator">/</span>python3<span class="token operator">/</span>python3<span class="token operator">-</span>pip<span class="token operator">/</span>ca<span class="token operator">-</span>certificates<span class="token operator">/</span>gnupg<span class="token operator">/</span>openssh<span class="token operator">-</span>client<span class="token operator">/</span>unzip<span class="token operator">/</span>xz<span class="token operator">-</span>utils<span class="token operator">/</span>build<span class="token operator">-</span>essential，
+配置 Git 用户信息和换行规则，生成并配置 SSH key，安装 repo 到 `<span class="token operator">~</span><span class="token operator">/</span>bin`，配置 PATH，验证 repo。
+请区分 PowerShell 和 Ubuntu 终端命令，最后给出可直接复制执行的完整命令清单。<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h3 id="拉取源码">拉取源码</h3>
+<p>切换到你想存储代码的文件夹位置（预计编译后共占用空间 ~133G）</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">repo init <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  <span class="token parameter variable">-u</span> <span class="token operator">&lt;</span>https://gitcode.com/openharmony/manifest.git<span class="token operator">></span> <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  <span class="token parameter variable">-b</span> master <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  --repo-url<span class="token operator">=</span>https://gitee.com/oschina/repo.git <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  --repo-branch<span class="token operator">=</span>stable <span class="token punctuation">\</span><span class="token punctuation">\</span>
+  --no-repo-verify
+repo <span class="token function">sync</span> <span class="token parameter variable">-c</span>
+repo forall <span class="token parameter variable">-c</span> <span class="token string">'git lfs pull'</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p>拉取源码后，需要运行前置脚本</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token function">bash</span> build/prebuilts_download.sh<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>这一步会下载编译器、Node、GN/Ninja、Clang 等预置工具，时间会比较长。OpenHarmony 常见编译流程要求在源码根目录执行这个脚本安装编译器和二进制工具。</p>
+<p>编译指定模块（自行替换 MODULE_NAME ）</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">./build.sh --product-name rk3568 --build-target MODULE_NAME<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<p>期中出现模块缺失使用 <code>apt install</code> 进行安装</p>
+<h1>硬件准备</h1>
+<h2 id="RK3568刷机">RK3568刷机</h2>
+<h3 id="系统镜像">系统镜像</h3>
+<p>每日构建：<a target="_blank" rel="noopener" href="https://dcp.openharmony.cn/workbench/cicd/dailybuild/dailylist">https://dcp.openharmony.cn/workbench/cicd/dailybuild/dailylist</a></p>
+<p>选择repo拉取对应时间的dayu200镜像进行下载。</p>
+<h3 id="烧录工具">烧录工具</h3>
+<p>仓库地址：<a target="_blank" rel="noopener" href="https://gitee.com/hihope_iot/docs">https://gitee.com/hihope_iot/docs</a></p>
+<p>先安装 DriverAssitant 驱动，在对应的工具文件夹内有 DriverInstall.exe。</p>
+<p>连接到开发版后有以下界面</p>
+<p><img src="/2026/05/01/openharmony%20%E7%BC%96%E8%AF%91%E4%BB%A5%E5%8F%8A%E9%AA%8C%E8%AF%81%E6%B5%81%E7%A8%8B/1.png" alt="image.png"></p>
+<p>按住开发板上的recovery再按一下reset，烧录软件会变化为“发现一个LOADER设备”</p>
+<p><img src="/2026/05/01/openharmony%20%E7%BC%96%E8%AF%91%E4%BB%A5%E5%8F%8A%E9%AA%8C%E8%AF%81%E6%B5%81%E7%A8%8B/2.png" alt="image.png"></p>
+<p>右键空白处选择导入配置，选择到下载后镜像的 .cfg 即可</p>
+<p><img src="/2026/05/01/openharmony%20%E7%BC%96%E8%AF%91%E4%BB%A5%E5%8F%8A%E9%AA%8C%E8%AF%81%E6%B5%81%E7%A8%8B/3.png" alt="image.png"></p>
+<p>之后再在每一项有打勾的项点击最后一格空白处可以选择文件对应上去。</p>
+<p>对应完后点击执行烧录即可。</p>
+<h2 id="修改源码后上板">修改源码后上板</h2>
+<p>修改拉取的openharmony源码后编译，在out文件夹中找到编译产物 <code>.so</code>。</p>
+<p>定位对应动态库在板中系统中的位置</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">hdc shell
+<span class="token builtin class-name">cd</span> system
+<span class="token function">find</span> <span class="token builtin class-name">.</span> <span class="token parameter variable">-name</span> XXX.z.so
+<span class="token builtin class-name">exit</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>做替换推送</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">hdc target <span class="token function">mount</span>
+hdc <span class="token function">file</span> send XXX.z.so XXX/XXX/XXX<span class="token punctuation">(</span>find出来的路径<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<p>重启设备使用demo验证</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">hdc shell <span class="token function">reboot</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<h2 id="例如编写installerdemo">例如编写installerdemo</h2>
+<pre class="line-numbers language-jsx" data-language="jsx"><code class="language-jsx"><span class="token keyword">async</span> <span class="token function">installAllApps</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+  <span class="token keyword">const</span> basePath <span class="token operator">=</span> <span class="token string">'/data/storage/el1/base'</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> bundleInstaller <span class="token operator">=</span> <span class="token keyword">await</span> installer<span class="token punctuation">.</span><span class="token function">getBundleInstaller</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">// 列出目录内容</span>
+    <span class="token keyword">let</span> <span class="token literal-property property">files</span><span class="token operator">:</span> string<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> fs<span class="token punctuation">.</span><span class="token function">listFileSync</span><span class="token punctuation">(</span>basePath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>files <span class="token operator">&amp;&amp;</span> files<span class="token punctuation">.</span>length <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">let</span> detail <span class="token operator">=</span> files<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token literal-property property">fileName</span><span class="token operator">:</span> string</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">&#123;</span>
+        <span class="token keyword">let</span> fullPath <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>basePath<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">/</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>fileName<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span>
+        <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+          <span class="token keyword">let</span> stat <span class="token operator">=</span> fs<span class="token punctuation">.</span><span class="token function">statSync</span><span class="token punctuation">(</span>fullPath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token keyword">return</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>fileName<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">    size=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>stat<span class="token punctuation">.</span>size<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span>e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+          <span class="token keyword">return</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>fileName<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">    size=unknown</span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span>
+        <span class="token punctuation">&#125;</span>
+      <span class="token punctuation">&#125;</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>fileList <span class="token operator">=</span> detail<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token string">'\\n'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span> <span class="token keyword">else</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>fileList <span class="token operator">=</span> <span class="token string">'目录为空'</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token comment">// 自动筛选当前目录下所有 .app 文件</span>
+    <span class="token keyword">let</span> <span class="token literal-property property">appFiles</span><span class="token operator">:</span> string<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> files
+      <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token literal-property property">fileName</span><span class="token operator">:</span> string</span><span class="token punctuation">)</span> <span class="token operator">=></span> fileName<span class="token punctuation">.</span><span class="token function">toLowerCase</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">endsWith</span><span class="token punctuation">(</span><span class="token string">'.app'</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+      <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token parameter"><span class="token literal-property property">fileName</span><span class="token operator">:</span> string</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>basePath<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">/</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>fileName<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>appFiles<span class="token punctuation">.</span>length <span class="token operator">===</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>message <span class="token operator">=</span> <span class="token string">'.app 安装失败'</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>installResult <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">未找到任何 .app 文件，目录：</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>basePath<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">let</span> <span class="token literal-property property">validAppFiles</span><span class="token operator">:</span> string<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">let</span> filePath <span class="token keyword">of</span> appFiles<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">try</span> <span class="token punctuation">&#123;</span>
+        fs<span class="token punctuation">.</span><span class="token function">accessSync</span><span class="token punctuation">(</span>filePath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        validAppFiles<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>filePath<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span>e<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+        console<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">文件不可访问: </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>filePath<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">&#125;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>validAppFiles<span class="token punctuation">.</span>length <span class="token operator">===</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>message <span class="token operator">=</span> <span class="token string">'.app 安装失败'</span><span class="token punctuation">;</span>
+      <span class="token keyword">this</span><span class="token punctuation">.</span>installResult <span class="token operator">=</span> <span class="token string">'找到 .app 文件名，但都无法访问'</span><span class="token punctuation">;</span>
+      <span class="token keyword">return</span><span class="token punctuation">;</span>
+    <span class="token punctuation">&#125;</span>
+
+    <span class="token keyword">await</span> bundleInstaller<span class="token punctuation">.</span><span class="token function">install</span><span class="token punctuation">(</span>validAppFiles<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">this</span><span class="token punctuation">.</span>message <span class="token operator">=</span> <span class="token string">'.app 安装成功'</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>installResult <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">安装成功，共安装 </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>validAppFiles<span class="token punctuation">.</span>length<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string"> 个 .app：\\n</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>validAppFiles<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span><span class="token string">'\\n'</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span>
+    console<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>installResult<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span>err<span class="token punctuation">)</span> <span class="token punctuation">&#123;</span>
+    <span class="token keyword">const</span> error <span class="token operator">=</span> err <span class="token keyword">as</span> BusinessError<span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>message <span class="token operator">=</span> <span class="token string">'.app 安装失败'</span><span class="token punctuation">;</span>
+    <span class="token keyword">this</span><span class="token punctuation">.</span>installResult <span class="token operator">=</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">错误信息：</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>error<span class="token punctuation">.</span>message<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token string">\\n错误码：</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$&#123;</span>error<span class="token punctuation">.</span>code<span class="token interpolation-punctuation punctuation">&#125;</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">;</span>
+    console<span class="token punctuation">.</span><span class="token function">error</span><span class="token punctuation">(</span><span class="token string">'安装失败:'</span><span class="token punctuation">,</span> error<span class="token punctuation">.</span>code<span class="token punctuation">,</span> error<span class="token punctuation">.</span>message<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">&#125;</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<h1>TDD测试</h1>
+<p>新建一个文件夹用于测试作为根目录</p>
+<h2 id="下载测试">下载测试</h2>
+<p>新建一个目录用于存放测试用例，作为测试目录</p>
+<p>经过门禁编译后，从通过记录中寻找编译后的TDD测试用例进行后续样例测试</p>
+<p><img src="/2026/05/01/openharmony%20%E7%BC%96%E8%AF%91%E4%BB%A5%E5%8F%8A%E9%AA%8C%E8%AF%81%E6%B5%81%E7%A8%8B/4.png" alt="image.png"></p>
+<p>将unittest文件夹放入测试目录。</p>
+<h2 id="准备测试框架">准备测试框架</h2>
+<p>在根目录下拉取仓库</p>
+<p><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/testfwk_developer_test">https://gitcode.com/openharmony/testfwk_developer_test</a></p>
+<p><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/testfwk_xdevice">https://gitcode.com/openharmony/testfwk_xdevice</a></p>
+<p>再进入 <code>developer_test\\config\\user_config.xml</code> 中设置</p>
+<pre class="line-numbers language-markup" data-language="markup"><code class="language-markup"><span class="token comment">&lt;!--  configure test cases path  --></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>test_cases</span><span class="token punctuation">></span></span>
+	<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>dir</span><span class="token punctuation">></span></span>测试目录<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>dir</span><span class="token punctuation">></span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>test_cases</span><span class="token punctuation">></span></span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<p>后续点开 <code>developer_test</code> 文件夹点击运行 <code>start.bat</code> 选中要测试的设备后</p>
+<p>运行 <code>run -t UT</code> 即可</p>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/04/17/MiniOB-note-expr/">MiniOB 项目结构——表达式&amp;记录</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/openharmony/" rel="tag">openharmony</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/05/01/openharmony%20%E7%BC%96%E8%AF%91%E4%BB%A5%E5%8F%8A%E9%AA%8C%E8%AF%81%E6%B5%81%E7%A8%8B/">openharmony 编译以及验证流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/17/MiniOB-note-expr/">MiniOB 项目结构——表达式&记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/08/C++%20%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%9E%8B/">C++ 异步模型</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/30/Android%20App%20Bundle%20%E8%A7%A3%E6%9E%90/">Android App Bundle 解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/01/%E5%9F%BA%E4%BA%8E%20stdio%20%E7%9A%84%20IPC%20%E9%80%9A%E4%BF%A1/">基于 stdio 的 IPC 通信</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/01/15/OS-%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/">操作系统笔记——进程管理</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/05/">May 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">April 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/Android/" style="font-size: 10px;">Android</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/C/" style="font-size: 10px;">C++</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/IPC/" style="font-size: 10px;">IPC</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 11.43px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/openharmony/" style="font-size: 10px;">openharmony</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
