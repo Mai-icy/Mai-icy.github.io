@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="UTF-8">
+    <title>HarmonyOS Context 使用解析 - Mai Icy</title>
+    <link rel="shortcut icon" href="/static/img/icon.png">
+    <link rel="icon" href="/static/img/icon.png" sizes="192x192"/>
+    
+<link rel="stylesheet" href="/static/kico.css">
+<link rel="stylesheet" href="/static/hingle.css">
+
+    
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1"/>
+    <meta property="og:site_name" content="Mai Icy">
+    <meta property="og:title" content="HarmonyOS Context 使用解析"/>
+    
+<meta name="generator" content="Hexo 6.2.0"></head>
+
+  <body>
+    <header>
+    <div class="head-title">
+        <h4>Mai Icy</h4>
+    </div>
+    <div class="head-action">
+        <div class="toggle-btn"></div>
+        <div class="light-btn"></div>
+        <div class="search-btn"></div>
+    </div>
+    <form class="head-search" method="post">
+        <input type="text" name="s" placeholder="搜索什么？">
+    </form>
+    <nav class="head-menu">
+        <a href="/">首页</a>
+        <div class="has-child">
+            <a>分类</a>
+            <div class="sub-menu">
+                <a class="category-link" href="/categories/C/">C</a><a class="category-link" href="/categories/java/">java</a><a class="category-link" href="/categories/python/">python</a><a class="category-link" href="/categories/rust/">rust</a><a class="category-link" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B/">大模型</a><a class="category-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a><a class="category-link" href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/">数据库</a><a class="category-link" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/">机器学习</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">算法学习笔记</a><a class="category-link" href="/categories/%E7%AE%97%E6%B3%95%E8%AF%BE%E7%AC%94%E8%AE%B0/">算法课笔记</a><a class="category-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C%E7%AC%94%E8%AE%B0/">计算机网络笔记</a>
+            </div>
+        </div>
+        
+            <a href="/about">关于我</a>
+        
+            <a href="/friends">朋友们</a>
+        
+    </nav>
+</header>
+
+    <main>
+    <div class="wrap min">
+        <section class="post-title">
+            <h2>HarmonyOS Context 使用解析</h2>
+            <div class="post-meta">
+                <time class="date">2026.05.10</time>
+            
+            </div>
+        </section>
+        <article class="post-content">
+        
+            <h2 id="概述">概述</h2>
+<p>在 HarmonyOS/OpenHarmony 应用开发中，<code>Context</code> 是一个核心概念，它贯穿了整个系统的各个服务模块。本文基于多个官方仓库的源码分析，深入探讨 Context 在不同子系统中的使用模式和数据流转。</p>
+<h2 id="Context-的本质">Context 的本质</h2>
+<p>Context 是应用运行时上下文的抽象表示，它提供了：</p>
+<ul>
+<li><strong>应用身份信息</strong>：bundleName、moduleName、hapName</li>
+<li><strong>运行环境信息</strong>：存储路径、区域、权限状态</li>
+<li><strong>生命周期管理</strong>：token、abilityInfo、abilityRecordId</li>
+</ul>
+<hr>
+<h2 id="一、数据持久化层">一、数据持久化层</h2>
+<h3 id="1-Preferences（首选项存储）">1. Preferences（首选项存储）</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_preferences">https://gitcode.com/openharmony/distributeddatamgr_preferences</a></p>
+<p><strong>转换类型</strong>：StageContext</p>
+<p><strong>提取信息</strong>：</p>
+<ul>
+<li><code>GetSystemPreferencesDir()</code> → 构造存储路径</li>
+<li><code>GetBundleName()</code> → 权限校验（IsInTrustList）</li>
+</ul>
+<p><strong>数据流</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">Context (ETS)
+  ↓
+GetContextMode → 判断 Stage
+  ↓
+GetStageModeContext
+  ↓
+stageContext
+  ├── GetSystemPreferencesDir → preferencesDir
+  └── GetBundleName → bundleName
+  ↓
+封装进入 PreferencesInfo
+  ├── path
+  └── bundleName
+  ↓
+Options
+  ↓
+PreferencesHelper<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>关键代码</strong>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">contextInfo<span class="token punctuation">.</span>preferencesDir<span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span><span class="token string">"/"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">append</span><span class="token punctuation">(</span>preferencesInfo<span class="token punctuation">.</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
+contextInfo<span class="token punctuation">.</span>bundleName <span class="token operator">=</span> stageContext<span class="token operator">-></span><span class="token function">GetBundleName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+<hr>
+<h3 id="2-RDB（关系型数据库）">2. RDB（关系型数据库）</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_relational_store">https://gitcode.com/openharmony/distributeddatamgr_relational_store</a></p>
+<p><strong>转换类型</strong>：AppDataMgrJsKit::Context</p>
+<p><strong>提取信息</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>bundleName</td>
+<td>GetBundleName()</td>
+</tr>
+<tr>
+<td>moduleName</td>
+<td>GetModuleName()</td>
+</tr>
+<tr>
+<td>baseDir</td>
+<td>GetDatabaseDir()</td>
+</tr>
+<tr>
+<td>area</td>
+<td>GetArea()</td>
+</tr>
+<tr>
+<td>isSystemApp</td>
+<td>IsSystemAppCalled()</td>
+</tr>
+<tr>
+<td>isStageMode</td>
+<td>IsStageMode()</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context 使用流程</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">GetRdbStore(context, config)
+    ↓
+Context → AppDataMgrJsKit::Context
+    ↓
+initContextParam(param)
+    ↓
+GetRealPath(rdbConfig, param, abilitycontext)
+    ↓
+getRdbStoreConfig(rdbConfig, param)
+    ↓
+RdbHelper::GetRdbStore(...)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>作用总结</strong>：</p>
+<ul>
+<li>提供应用身份信息：bundleName、moduleName</li>
+<li>提供存储环境信息：baseDir、area</li>
+<li>提供运行模式信息：isStageMode、isSystemApp</li>
+</ul>
+<hr>
+<h3 id="3-KVStore（分布式KV存储）">3. KVStore（分布式KV存储）</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_kv_store">https://gitcode.com/openharmony/distributeddatamgr_kv_store</a></p>
+<p><strong>ContextParam 结构</strong>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp"><span class="token keyword">struct</span> <span class="token class-name">ContextParam</span> <span class="token punctuation">&#123;</span>
+    std<span class="token double-colon punctuation">::</span>string baseDir <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>      <span class="token comment">// 基础目录路径</span>
+    std<span class="token double-colon punctuation">::</span>string hapName <span class="token operator">=</span> <span class="token string">""</span><span class="token punctuation">;</span>      <span class="token comment">// HAP 应用名称</span>
+    <span class="token keyword">int32_t</span> area <span class="token operator">=</span> DistributedKv<span class="token double-colon punctuation">::</span>Area<span class="token double-colon punctuation">::</span>EL1<span class="token punctuation">;</span>  <span class="token comment">// 存储区域</span>
+    <span class="token keyword">bool</span> isSystemApp <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>      <span class="token comment">// 是否为系统应用</span>
+    <span class="token keyword">int32_t</span> apiVersion <span class="token operator">=</span> <span class="token number">9</span><span class="token punctuation">;</span>       <span class="token comment">// API 版本号</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>在 getKVStore 中的使用</strong>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">ctxt<span class="token operator">-></span>options<span class="token punctuation">.</span>baseDir <span class="token operator">=</span> ctxt<span class="token operator">-></span>options<span class="token punctuation">.</span>isCustomDir <span class="token operator">?</span> ctxt<span class="token operator">-></span>options<span class="token punctuation">.</span>baseDir <span class="token operator">:</span> kvm<span class="token operator">-></span>param_<span class="token operator">-></span>baseDir<span class="token punctuation">;</span>
+ctxt<span class="token operator">-></span>options<span class="token punctuation">.</span>area <span class="token operator">=</span> kvm<span class="token operator">-></span>param_<span class="token operator">-></span>area <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+ctxt<span class="token operator">-></span>options<span class="token punctuation">.</span>hapName <span class="token operator">=</span> kvm<span class="token operator">-></span>param_<span class="token operator">-></span>hapName<span class="token punctuation">;</span>
+ctxt<span class="token operator">-></span>options<span class="token punctuation">.</span>apiVersion <span class="token operator">=</span> kvm<span class="token operator">-></span>param_<span class="token operator">-></span>apiVersion<span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+<hr>
+<h2 id="二、数据共享层">二、数据共享层</h2>
+<h3 id="1-DataShare">1. DataShare</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_data_share">https://gitcode.com/openharmony/distributeddatamgr_data_share</a></p>
+<p><strong>转换类型</strong>：stageContext</p>
+<p><strong>核心用途</strong>：提取 <code>GetToken()</code> 传递给 Ability Management Service (AMS)</p>
+<p><strong>完整调用链</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">用户代码
+    ↓
+dataShare.createDataShareHelper(context, uri, options?)
+    ↓ [@ohos.data.dataShare.ets:93]
+taskpool.execute(create, context, uri, options)
+    ↓ [@ohos.data.dataShare.ets:63]
+native create(context, uri, options)
+    ↓ [ani_datashare_helper.cpp:209]
+ANI_Create(ani_env *env, ani_object context, ani_string uri, ani_object options)
+    ↓ [ani_datashare_helper.cpp:232]
+AbilityRuntime::GetStageModeContext(env, context)  &#x2F;&#x2F; Context 转换
+    ↓ [ani_datashare_helper.cpp:239]
+DataShareHelper::Creator(ctx-&gt;GetToken(), strUri)
+    ↓
+底层 C++ 实现<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>关键代码</strong>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">CreateOptions opts <span class="token operator">=</span> <span class="token punctuation">&#123;</span>
+    isProxy<span class="token punctuation">,</span>
+    ctx<span class="token operator">-></span><span class="token function">GetToken</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>           <span class="token comment">// 从 Context 获取 token</span>
+    <span class="token function">Uri</span><span class="token punctuation">(</span>strUri<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">GetScheme</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token string">"datashareproxy"</span><span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span class="token punctuation">;</span>
+<span class="token keyword">return</span> <span class="token class-name">DataShareHelper</span><span class="token double-colon punctuation">::</span><span class="token function">Creator</span><span class="token punctuation">(</span>strUri<span class="token punctuation">,</span> opts<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<hr>
+<h3 id="2-Contacts">2. Contacts</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/applications_contacts_data">https://gitcode.com/openharmony/applications_contacts_data</a></p>
+<p><strong>转换类型</strong>：CJAbilityContext</p>
+<p><strong>核心用途</strong>：通过 token 创建 DataShareHelper 访问联系人数据库</p>
+<p><strong>Context 数据流</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">Context (ETS)
+  ↓
+contextId (FFI)
+  ↓
+CJAbilityContext
+  ↓
+GetToken()
+  ↓
+DataShareHelper::Creator(token, URI)
+  ↓
+DataShareHelper
+  ↓
+ContactsControl
+  ↓
+联系人数据库操作<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>一句话总结</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">context → CJAbilityContext → token → DataShareHelper → 联系人数据访问<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+<hr>
+<h2 id="三、系统服务层">三、系统服务层</h2>
+<h3 id="1-CalendarManager">1. CalendarManager</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/applications_calendar_data">https://gitcode.com/openharmony/applications_calendar_data</a></p>
+<p><strong>提取信息</strong>：</p>
+<ul>
+<li><code>GetBundleName()</code> → 应用标识</li>
+<li><code>IPCSkeleton::GetSelfTokenID()</code> → 安全身份标识</li>
+</ul>
+<p><strong>调用流程</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">ArkTS Context
+    ↓
+CJAbilityContext
+    ↓
+CJCalendarEnv.Init
+    ↓
+bundleName + tokenId
+    ↓
+CalendarEnv
+    ↓
+CalendarService<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>Context 的具体作用</strong>：</p>
+<pre class="line-numbers language-cpp" data-language="cpp"><code class="language-cpp">std<span class="token double-colon punctuation">::</span>string bundleName <span class="token operator">=</span> m_context<span class="token operator">-></span><span class="token function">GetBundleName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">uint64_t</span> tokenId <span class="token operator">=</span> <span class="token class-name">IPCSkeleton</span><span class="token double-colon punctuation">::</span><span class="token function">GetSelfTokenID</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token class-name">CalendarEnv</span><span class="token double-colon punctuation">::</span><span class="token function">GetInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">Init</span><span class="token punctuation">(</span>bundleName<span class="token punctuation">,</span> tokenId<span class="token punctuation">)</span><span class="token punctuation">;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+<p>最终传入 <code>bundleName + tokenId</code> 形成调用者身份，用于：</p>
+<ul>
+<li>权限校验</li>
+<li>数据访问控制</li>
+<li>调用者身份识别</li>
+</ul>
+<hr>
+<h3 id="2-BackgroundTaskManager">2. BackgroundTaskManager</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/resourceschedule_background_task_mgr">https://gitcode.com/openharmony/resourceschedule_background_task_mgr</a></p>
+<p><strong>转换类型</strong>：AbilityContext</p>
+<p><strong>提取信息</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>abilityName</td>
+<td><a target="_blank" rel="noopener" href="http://AbilityInfo.name">AbilityInfo.name</a></td>
+</tr>
+<tr>
+<td>abilityToken</td>
+<td>AbilityContext.GetToken()</td>
+</tr>
+<tr>
+<td>abilityId</td>
+<td>AbilityContext.GetAbilityRecordId()</td>
+</tr>
+<tr>
+<td>appIndex</td>
+<td>AbilityInfo.appIndex</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context 数据流</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">Context (ETS&#x2F;ArkTS)
+  ↓
+AbilityContext (ANI 层)
+  ├── GetAbilityInfo() → AbilityInfo
+  ├── GetToken() → IRemoteObject
+  └──GetAbilityRecordId() → int32_t
+  ↓
+ContinuousTaskParam (任务参数)
+  ├── abilityName_ ← info-&gt;name
+  ├── abilityToken_ ← token
+  ├── abilityId_ ← abilityId
+  └── appIndex_ ← info-&gt;appIndex
+  ↓
+ContinuousTaskRecord (任务记录)
+  ↓
+continuousTaskInfosMap_ (任务映射表)
+  Key: &quot;&#123;uid&#125;_&#123;abilityName&#125;_&#123;abilityId&#125;_&#123;continuousTaskId?&#125;&quot;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>最终用途</strong>：</p>
+<ul>
+<li>标识后台任务所属 Ability</li>
+<li>区分不同 Ability 实例</li>
+<li>构建后台任务唯一 Key</li>
+<li>进行权限与生命周期管理</li>
+</ul>
+<hr>
+<h3 id="3-VPN">3. VPN</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/communication_netmanager_ext">https://gitcode.com/openharmony/communication_netmanager_ext</a></p>
+<p><strong>特殊处理</strong>：VpnExtensionContext 仅用于参数验证，不传递给服务</p>
+<p><strong>调用链</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">JavaScript API Call
+    ↓
+napi_create_function (NAPI 框架)
+    ↓
+ModuleTemplate::NewInstance (模板处理)
+    ↓
+MakeDataExt (参数验证 &amp; 解包)
+    ↓
+NetworkVpnClient::CreateVpnConnection (客户端服务)
+    ↓
+INetworkVpnService::CreateVpnConnection (IPC 调用)
+    ↓
+VPN Manager Service (系统服务)
+    ↓
+返回 VpnConnection 对象<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>权限机制</strong>：通过 Binder IPC 底层自动完成，使用 Binder 机制进行进程间通信</p>
+<hr>
+<h2 id="四、安全权限层">四、安全权限层</h2>
+<h3 id="DLP-Permission">DLP Permission</h3>
+<p><strong>仓库地址</strong>：<a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/security_dlp_permission_service">https://gitcode.com/openharmony/security_dlp_permission_service</a></p>
+<p><strong>转换类型</strong>：AbilityContext</p>
+<p><strong>核心方法</strong>：<code>GetUIContent()</code> → <code>CreateModalUIExtension</code></p>
+<p><strong>Context 数据流</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">Context (ETS)
+  ↓
+IsStageContext
+  ↓
+GetStageModeContext
+  ↓
+AbilityContext
+  ↓
+GetUIContent()
+  ↓
+UIContent
+  ↓
+CreateModalUIExtension(want, callbacks)
+  ↓
+DLP UI 界面<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<p><strong>回调流程</strong>：</p>
+<pre class="line-numbers language-none"><code class="language-none">UIExtensionCallbacks
+  ↓
+OnResult(resultCode, want)
+  ↓
+Promise resolve&#x2F;reject
+  ↓
+JavaScript 收到结果<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<hr>
+<h2 id="Context-转换模式总结">Context 转换模式总结</h2>
+<pre class="line-numbers language-none"><code class="language-none">ArkTS Context
+    ↓
+IsStageContext() 验证
+    ↓
+GetStageModeContext() 转换
+    ↓
+具体 Context 类型
+    ├── AbilityContext
+    ├── StageContext
+    ├── CJAbilityContext
+    └── AppDataMgrJsKit::Context
+    ↓
+提取所需信息
+    ├── Token（用于跨进程通信）
+    ├── BundleName（应用标识）
+    ├── Dir Path（存储路径）
+    └── AbilityInfo（能力信息）<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+<hr>
+<h2 id="设计启示">设计启示</h2>
+<h3 id="1-统一抽象，分层提取">1. 统一抽象，分层提取</h3>
+<p>Context 作为统一入口，各子系统按需提取信息，避免了过度耦合。</p>
+<h3 id="2-类型安全">2. 类型安全</h3>
+<p>通过 <code>IsStageContext()</code> 等方法确保类型转换安全，防止运行时错误。</p>
+<h3 id="3-数据隔离">3. 数据隔离</h3>
+<p>bundleName + area + 确保应用间数据安全隔离，保护用户隐私。</p>
+<h3 id="4-权限控制">4. 权限控制</h3>
+<p>token + tokenId 构建完整的调用者身份标识，实现精细化的权限管理。</p>
+<h3 id="5-生命周期管理">5. 生命周期管理</h3>
+<p>abilityRecordId 等 ID 精确追踪组件生命周期，实现资源的高效管理。</p>
+<hr>
+<h2 id="最佳实践">最佳实践</h2>
+<h3 id="1-优先使用-Stage-模型-Context">1. 优先使用 Stage 模型 Context</h3>
+<p>新开发推荐使用 StageContext，FA 模型已逐步废弃。</p>
+<h3 id="2-按需提取信息">2. 按需提取信息</h3>
+<p>只提取必要字段，避免过度耦合 Context 的所有信息。</p>
+<h3 id="3-注意数据组隔离">3. 注意数据组隔离</h3>
+<p>dataGroupId 场景需特殊处理存储路径，确保数据访问正确。</p>
+<h3 id="4-Token-管理">4. Token 管理</h3>
+<p>跨进程通信场景正确传递和使用 token，确保调用链路完整。</p>
+<h3 id="5-路径长度限制">5. 路径长度限制</h3>
+<ul>
+<li>customDir 长度限制：128 字节</li>
+<li>realPath 长度限制：1024 字节</li>
+</ul>
+<hr>
+<h2 id="各子系统-Context-提取信息汇总">各子系统 Context 提取信息汇总</h2>
+<table>
+<thead>
+<tr>
+<th>子系统</th>
+<th>Context 类型</th>
+<th>主要提取信息</th>
+<th>核心用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Preferences</td>
+<td>StageContext</td>
+<td>preferencesDir, bundleName</td>
+<td>构造存储路径、权限校验</td>
+</tr>
+<tr>
+<td>RDB</td>
+<td>AppDataMgrJsKit::Context</td>
+<td>bundleName, moduleName, baseDir, area</td>
+<td>数据库路径计算、数据隔离</td>
+</tr>
+<tr>
+<td>KVStore</td>
+<td>ContextParam</td>
+<td>hapName, baseDir, area, apiVersion</td>
+<td>KVStore 配置</td>
+</tr>
+<tr>
+<td>DataShare</td>
+<td>stageContext</td>
+<td>token</td>
+<td>连接 DataShare Extension</td>
+</tr>
+<tr>
+<td>Contacts</td>
+<td>CJAbilityContext</td>
+<td>token</td>
+<td>创建 DataShareHelper</td>
+</tr>
+<tr>
+<td>CalendarManager</td>
+<td>CJAbilityContext</td>
+<td>bundleName + tokenId</td>
+<td>权限校验、身份识别</td>
+</tr>
+<tr>
+<td>BackgroundTaskManager</td>
+<td>AbilityContext</td>
+<td>token, abilityInfo, abilityRecordId</td>
+<td>后台任务管理</td>
+</tr>
+<tr>
+<td>VPN</td>
+<td>VpnExtensionContext</td>
+<td>参数验证</td>
+<td>仅验证，不传递</td>
+</tr>
+<tr>
+<td>DLP Permission</td>
+<td>AbilityContext</td>
+<td>UIContent</td>
+<td>启动 DLP 管理 UI</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="结语">结语</h2>
+<p>Context 是 HarmonyOS 架构中的核心胶水层，它以统一的方式为各子系统提供运行时信息，实现了应用与系统服务间的安全、高效交互。理解 Context 的使用模式，对于深入掌握 HarmonyOS 开发至关重要。</p>
+<hr>
+<p><strong>参考仓库</strong>：</p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_preferences">https://gitcode.com/openharmony/distributeddatamgr_preferences</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_relational_store">https://gitcode.com/openharmony/distributeddatamgr_relational_store</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_kv_store">https://gitcode.com/openharmony/distributeddatamgr_kv_store</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/distributeddatamgr_data_share">https://gitcode.com/openharmony/distributeddatamgr_data_share</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/applications_contacts_data">https://gitcode.com/openharmony/applications_contacts_data</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/applications_calendar_data">https://gitcode.com/openharmony/applications_calendar_data</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/resourceschedule_background_task_mgr">https://gitcode.com/openharmony/resourceschedule_background_task_mgr</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/communication_netmanager_ext">https://gitcode.com/openharmony/communication_netmanager_ext</a></li>
+<li><a target="_blank" rel="noopener" href="https://gitcode.com/openharmony/security_dlp_permission_service">https://gitcode.com/openharmony/security_dlp_permission_service</a></li>
+</ul>
+
+        </article>
+        <section class="post-near">
+            <ul>
+                
+                    <li>上一篇: 看完啦 (つд⊂)</li>
+                
+                
+                    <li>下一篇: <a href="/2026/05/06/openharmony%20%E4%BB%8E%E7%B3%BB%E7%BB%9F%E5%BA%94%E7%94%A8%E5%88%B0%E4%B8%89%E6%96%B9%E5%BA%94%E7%94%A8%E7%9A%84%E8%83%BD%E5%8A%9B%E5%BC%80%E6%94%BE/">openharmony 从系统应用到三方应用的能力开放</a></li>
+                
+            </ul>
+        </section>
+        
+            <section class="post-tags">
+            <a class="-none-link" href="/tags/openharmony/" rel="tag">openharmony</a>
+            </section>
+        
+    
+        <section class="post-author">
+        
+            <figure class="author-avatar">
+                <img src="https://avatars.githubusercontent.com/u/62082723" alt="Mai Icy" />
+            </figure>
+        
+            <div class="author-info">
+                <h4>Mai Icy</h4>
+                <p>wwwwwww</p>
+            </div>
+        </section>
+    
+    </div>
+</main>
+
+    <footer>
+    <div class="buttons">
+        <a class="to-top" href="#"></a>
+    </div>
+    <div class="wrap min">
+        <section class="widget">
+            <div class="row">
+                <div class="col-m-4">
+                    <h3 class="title-recent">最新文章：</h3>
+                    <ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2026/05/10/HarmonyOS%20Context%20%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/">HarmonyOS Context 使用解析</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/05/06/openharmony%20%E4%BB%8E%E7%B3%BB%E7%BB%9F%E5%BA%94%E7%94%A8%E5%88%B0%E4%B8%89%E6%96%B9%E5%BA%94%E7%94%A8%E7%9A%84%E8%83%BD%E5%8A%9B%E5%BC%80%E6%94%BE/">openharmony 从系统应用到三方应用的能力开放</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/05/01/openharmony%20%E7%BC%96%E8%AF%91%E4%BB%A5%E5%8F%8A%E9%AA%8C%E8%AF%81%E6%B5%81%E7%A8%8B/">openharmony 编译以及验证流程</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/17/MiniOB-note-expr/">MiniOB 项目结构——表达式&记录</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/04/08/C++%20%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%9E%8B/">C++ 异步模型</a></li><li class="post-list-item"><a class="post-list-link" href="/2026/03/30/Android%20App%20Bundle%20%E8%A7%A3%E6%9E%90/">Android App Bundle 解析</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-date">时光机：</h3>
+                    <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/05/">May 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/04/">April 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/03/">March 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/01/">January 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/12/">December 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/11/">November 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/10/">October 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/08/">August 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">June 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/04/">April 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/03/">March 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/02/">February 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/01/">January 2025</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/12/">December 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/11/">November 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/10/">October 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/09/">September 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/08/">August 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/07/">July 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/06/">June 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/05/">May 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/04/">April 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">March 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/01/">January 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/12/">December 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/11/">November 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/10/">October 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/09/">September 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/08/">August 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2023/02/">February 2023</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">May 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/04/">April 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">March 2022</a></li></ul>
+                </div>
+                <div class="col-m-4">
+                    <h3 class="title-tags">标签云：</h3>
+                    <a href="/tags/2-SAT/" style="font-size: 10px;">2-SAT</a> <a href="/tags/3D-3D-ICP/" style="font-size: 10px;">3D-3D:ICP</a> <a href="/tags/AC%E8%87%AA%E5%8A%A8%E6%9C%BA/" style="font-size: 10px;">AC自动机</a> <a href="/tags/ARISE%E4%BC%98%E5%8C%96/" style="font-size: 10px;">ARISE优化</a> <a href="/tags/Android/" style="font-size: 10px;">Android</a> <a href="/tags/B-%E6%A0%91/" style="font-size: 10px;">B+树</a> <a href="/tags/BitTorrent/" style="font-size: 10px;">BitTorrent</a> <a href="/tags/C/" style="font-size: 11.43px;">C</a> <a href="/tags/C/" style="font-size: 10px;">C++</a> <a href="/tags/CDN/" style="font-size: 10px;">CDN</a> <a href="/tags/CDQ%E5%88%86%E6%B2%BB/" style="font-size: 10px;">CDQ分治</a> <a href="/tags/DNS/" style="font-size: 11.43px;">DNS</a> <a href="/tags/Docker/" style="font-size: 10px;">Docker</a> <a href="/tags/HTTP%E6%B5%81/" style="font-size: 10px;">HTTP流</a> <a href="/tags/IPC/" style="font-size: 10px;">IPC</a> <a href="/tags/KMP/" style="font-size: 10px;">KMP</a> <a href="/tags/KNN/" style="font-size: 10px;">KNN</a> <a href="/tags/LDA/" style="font-size: 10px;">LDA</a> <a href="/tags/LLE/" style="font-size: 10px;">LLE</a> <a href="/tags/LSA/" style="font-size: 10px;">LSA</a> <a href="/tags/LSM%E6%A0%91/" style="font-size: 10px;">LSM树</a> <a href="/tags/LightHouse/" style="font-size: 10px;">LightHouse</a> <a href="/tags/Linux/" style="font-size: 11.43px;">Linux</a> <a href="/tags/MCP/" style="font-size: 10px;">MCP</a> <a href="/tags/Manacher%E7%AE%97%E6%B3%95/" style="font-size: 10px;">Manacher算法</a> <a href="/tags/MiniOB/" style="font-size: 11.43px;">MiniOB</a> <a href="/tags/NMF/" style="font-size: 10px;">NMF</a> <a href="/tags/Nginx/" style="font-size: 10px;">Nginx</a> <a href="/tags/OAuth2-0/" style="font-size: 11.43px;">OAuth2.0</a> <a href="/tags/P2P/" style="font-size: 10px;">P2P</a> <a href="/tags/PCA/" style="font-size: 10px;">PCA</a> <a href="/tags/Qwen/" style="font-size: 10px;">Qwen</a> <a href="/tags/RAG/" style="font-size: 11.43px;">RAG</a> <a href="/tags/RDT/" style="font-size: 10px;">RDT</a> <a href="/tags/SLAM/" style="font-size: 10px;">SLAM</a> <a href="/tags/SMTP-POP3-IMAP/" style="font-size: 10px;">SMTP/POP3/IMAP</a> <a href="/tags/ST%E8%A1%A8/" style="font-size: 10px;">ST表</a> <a href="/tags/Spring/" style="font-size: 11.43px;">Spring</a> <a href="/tags/Spring-Boot/" style="font-size: 12.86px;">Spring Boot</a> <a href="/tags/TCP/" style="font-size: 10px;">TCP</a> <a href="/tags/UDP/" style="font-size: 10px;">UDP</a> <a href="/tags/WebDAV/" style="font-size: 10px;">WebDAV</a> <a href="/tags/diesel/" style="font-size: 10px;">diesel</a> <a href="/tags/epoll/" style="font-size: 10px;">epoll</a> <a href="/tags/http/" style="font-size: 10px;">http</a> <a href="/tags/io%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">io多路复用</a> <a href="/tags/java/" style="font-size: 17.14px;">java</a> <a href="/tags/k-means/" style="font-size: 10px;">k-means</a> <a href="/tags/linux/" style="font-size: 10px;">linux</a> <a href="/tags/openharmony/" style="font-size: 12.86px;">openharmony</a> <a href="/tags/python/" style="font-size: 14.29px;">python</a> <a href="/tags/redo-undo%E6%97%A5%E5%BF%97/" style="font-size: 10px;">redo/undo日志</a> <a href="/tags/requests/" style="font-size: 11.43px;">requests</a> <a href="/tags/t-SNE/" style="font-size: 10px;">t-SNE</a> <a href="/tags/tarjan/" style="font-size: 10px;">tarjan</a> <a href="/tags/web%E7%BC%93%E5%AD%98/" style="font-size: 10px;">web缓存</a> <a href="/tags/%E4%B8%AD%E5%9B%BD%E5%89%A9%E4%BD%99%E5%AE%9A%E7%90%86/" style="font-size: 10px;">中国剩余定理</a> <a href="/tags/%E4%B9%90%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">乐观并发控制</a> <a href="/tags/%E4%BA%8B%E5%8A%A1/" style="font-size: 10px;">事务</a> <a href="/tags/%E4%BA%8C%E5%88%86%E5%9B%BE%E5%8C%B9%E9%85%8D/" style="font-size: 10px;">二分图匹配</a> <a href="/tags/%E4%BA%8C%E5%88%86%E7%AD%94%E6%A1%88/" style="font-size: 10px;">二分答案</a> <a href="/tags/%E4%BC%A0%E8%BE%93%E5%B1%82/" style="font-size: 10px;">传输层</a> <a href="/tags/%E4%BD%8D%E5%9B%BE%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">位图索引</a> <a href="/tags/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92/" style="font-size: 11.43px;">动态规划</a> <a href="/tags/%E5%8D%8F%E8%AE%AE%E5%88%86%E5%B1%82/" style="font-size: 10px;">协议分层</a> <a href="/tags/%E5%8F%8C%E8%BF%9E%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 10px;">双连通分量</a> <a href="/tags/%E5%90%8C%E4%BD%99/" style="font-size: 10px;">同余</a> <a href="/tags/%E5%90%8C%E4%BD%99%E9%80%86%E5%85%83/" style="font-size: 10px;">同余逆元</a> <a href="/tags/%E5%90%8E%E7%BC%80SA/" style="font-size: 10px;">后缀SA</a> <a href="/tags/%E5%93%88%E5%B8%8C%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">哈希索引</a> <a href="/tags/%E5%9B%BE%E7%AE%97%E6%B3%95/" style="font-size: 14.29px;">图算法</a> <a href="/tags/%E5%9B%BE%E8%AE%BA/" style="font-size: 14.29px;">图论</a> <a href="/tags/%E5%9F%BA%E7%8E%AF%E6%A0%91/" style="font-size: 10px;">基环树</a> <a href="/tags/%E5%A4%9A%E7%89%88%E6%9C%AC%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">多版本机制</a> <a href="/tags/%E5%A4%9A%E7%BB%B4%E7%B4%A2%E5%BC%95/" style="font-size: 10px;">多维索引</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%88%86%E8%A7%A3/" style="font-size: 10px;">多路分解</a> <a href="/tags/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/" style="font-size: 10px;">多路复用</a> <a href="/tags/%E5%AD%97%E5%85%B8%E6%A0%91/" style="font-size: 10px;">字典树</a> <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 10px;">字符串</a> <a href="/tags/%E5%AE%B9%E6%96%A5%E5%8E%9F%E7%90%86/" style="font-size: 10px;">容斥原理</a> <a href="/tags/%E5%B7%AE%E5%88%86%E7%BA%A6%E6%9D%9F/" style="font-size: 10px;">差分约束</a> <a href="/tags/%E5%BA%B7%E6%89%98%E5%B1%95%E5%BC%80/" style="font-size: 10px;">康托展开</a> <a href="/tags/%E5%BC%82%E6%88%96%E5%93%88%E5%B8%8C/" style="font-size: 10px;">异或哈希</a> <a href="/tags/%E5%BC%82%E6%AD%A5/" style="font-size: 10px;">异步</a> <a href="/tags/%E5%BC%BA%E8%81%94%E9%80%9A%E5%88%86%E9%87%8F/" style="font-size: 11.43px;">强联通分量</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2FFT/" style="font-size: 10px;">快速傅里叶变换FFT</a> <a href="/tags/%E5%BF%AB%E9%80%9F%E5%B9%82/" style="font-size: 10px;">快速幂</a> <a href="/tags/%E6%82%B2%E8%A7%82%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" style="font-size: 10px;">悲观并发控制</a> <a href="/tags/%E6%8E%A5%E5%85%A5%E6%8A%80%E6%9C%AF/" style="font-size: 10px;">接入技术</a> <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" style="font-size: 17.14px;">操作系统</a> <a href="/tags/%E6%94%AF%E6%8C%81%E5%90%91%E9%87%8F%E6%9C%BA/" style="font-size: 10px;">支持向量机</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" style="font-size: 17.14px;">数据库</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8/" style="font-size: 10px;">数据库存储</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E9%AA%8C/" style="font-size: 15.71px;">数据库实验</a> <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" style="font-size: 10px;">数据结构</a> <a href="/tags/%E6%95%B0%E8%AE%BA/" style="font-size: 10px;">数论</a> <a href="/tags/%E6%97%B6%E9%97%B4%E6%88%B3%E6%8E%92%E5%BA%8F%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">时间戳排序机制</a> <a href="/tags/%E6%9C%80%E5%A4%A7%E6%B5%81/" style="font-size: 10px;">最大流</a> <a href="/tags/%E6%9C%80%E5%B0%8F%E5%89%B2/" style="font-size: 10px;">最小割</a> <a href="/tags/%E6%9C%80%E7%9F%AD%E8%B7%AF%E5%BE%84/" style="font-size: 10px;">最短路径</a> <a href="/tags/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AF/" style="font-size: 10px;">朴素贝叶斯</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/" style="font-size: 17.14px;">机器学习</a> <a href="/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E6%A6%82%E8%A6%81/" style="font-size: 10px;">机器学习概要</a> <a href="/tags/%E6%9E%81%E8%A7%92%E6%8E%92%E5%BA%8F/" style="font-size: 10px;">极角排序</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E4%BC%98%E5%8C%96/" style="font-size: 10px;">查询优化</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E5%A4%84%E7%90%86/" style="font-size: 10px;">查询处理</a> <a href="/tags/%E6%9F%A5%E8%AF%A2%E6%89%A7%E8%A1%8C/" style="font-size: 10px;">查询执行</a> <a href="/tags/%E6%A0%91%E4%B8%8A%E5%90%AF%E5%8F%91%E5%BC%8F%E5%90%88%E5%B9%B6/" style="font-size: 10px;">树上启发式合并</a> <a href="/tags/%E6%A0%91%E7%8A%B6%E6%95%B0%E7%BB%84/" style="font-size: 10px;">树状数组</a> <a href="/tags/%E6%A0%91%E9%93%BE%E5%89%96%E5%88%86/" style="font-size: 10px;">树链剖分</a> <a href="/tags/%E6%A0%B9%E5%8F%B7%E5%88%86%E6%B2%BB/" style="font-size: 10px;">根号分治</a> <a href="/tags/%E6%AD%A3%E5%88%99%E5%8C%96/" style="font-size: 10px;">正则化</a> <a href="/tags/%E6%AF%8D%E5%87%BD%E6%95%B0/" style="font-size: 10px;">母函数</a> <a href="/tags/%E6%B7%B7%E5%90%88%E9%AB%98%E6%96%AF%E5%88%86%E5%B8%83/" style="font-size: 10px;">混合高斯分布</a> <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" style="font-size: 11.43px;">源码阅读</a> <a href="/tags/%E7%8A%B6%E6%80%81%E5%8E%8B%E7%BC%A9/" style="font-size: 10px;">状态压缩</a> <a href="/tags/%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/" style="font-size: 10px;">电子邮件</a> <a href="/tags/%E7%9F%A9%E9%98%B5/" style="font-size: 10px;">矩阵</a> <a href="/tags/%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">神经网络</a> <a href="/tags/%E7%AE%97%E6%B3%95/" style="font-size: 20px;">算法</a> <a href="/tags/%E7%BA%BF%E6%80%A7%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">线性回归</a> <a href="/tags/%E7%BA%BF%E6%AE%B5%E6%A0%91/" style="font-size: 10px;">线段树</a> <a href="/tags/%E7%BB%84%E5%90%88%E5%8D%9A%E5%BC%88/" style="font-size: 10px;">组合博弈</a> <a href="/tags/%E7%BD%91%E7%BB%9C/" style="font-size: 10px;">网络</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E5%B1%82/" style="font-size: 10px;">网络层</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E6%B5%81/" style="font-size: 12.86px;">网络流</a> <a href="/tags/%E7%BD%91%E7%BB%9C%E7%88%AC%E8%99%AB/" style="font-size: 10px;">网络爬虫</a> <a href="/tags/%E8%83%8C%E5%8C%85%E9%97%AE%E9%A2%98/" style="font-size: 10px;">背包问题</a> <a href="/tags/%E8%8E%AB%E6%AF%94%E4%B9%8C%E6%96%AF%E5%8F%8D%E6%BC%94/" style="font-size: 10px;">莫比乌斯反演</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E5%87%A0%E4%BD%95/" style="font-size: 10px;">计算几何</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" style="font-size: 18.57px;">计算机网络</a> <a href="/tags/%E8%B4%AA%E5%BF%83/" style="font-size: 10px;">贪心</a> <a href="/tags/%E8%B4%B9%E7%94%A8%E6%B5%81/" style="font-size: 10px;">费用流</a> <a href="/tags/%E9%80%92%E6%8E%A8/" style="font-size: 10px;">递推</a> <a href="/tags/%E9%80%BB%E8%BE%91%E5%9B%9E%E5%BD%92/" style="font-size: 10px;">逻辑回归</a> <a href="/tags/%E9%93%BE%E8%B7%AF%E5%B1%82/" style="font-size: 10px;">链路层</a> <a href="/tags/%E9%94%81%E6%9C%BA%E5%88%B6/" style="font-size: 10px;">锁机制</a> <a href="/tags/%E9%9A%8F%E6%9C%BA%E6%A3%AE%E6%9E%97/" style="font-size: 10px;">随机森林</a>
+                </div>
+            </div>
+        </section>
+        <section class="sub-footer">
+            <p>© 2026 <a href="/">Mai Icy</a>. All Rights Reserved. Theme By <a href="https://github.com/Dreamer-Paul/Hingle" target="_blank" rel="nofollow">Hingle</a>.</p>
+        </section>
+    </div>
+</footer>
+
+
+<script src="/static/kico.js"></script>
+<script src="/static/hingle.js"></script>
+
+
+<script>var hingle = new Paul_Hingle({"copyright":true,"night":true});</script>
+
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
